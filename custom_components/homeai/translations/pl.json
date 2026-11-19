@@ -25,17 +25,1333 @@
   "options": {
     "step": {
       "init": {
-        "title": "Szybkie ustawienia HomeAI",
-        "description": "Wszystkie pozostałe ustawienia są w panelu HomeAI.",
+        "title": "Opcje HomeAI",
+        "description": "Wybierz, co zmienić. Wartości ustawione tutaj dotyczą całego domu; w **Ustawieniach dla miejsca** piętro, obszar, urządzenie, encja albo osoba może mieć własne. Reguły i połączenia z AI dodaje się na stronie integracji.",
+        "menu_options": {
+          "general": "Ogólne",
+          "world": "Model domu",
+          "presence": "Domownicy i sen",
+          "privacy": "Prywatność",
+          "detectors": "Wykrywanie",
+          "situations": "Sprawy",
+          "triage": "Ocena",
+          "notify": "Powiadomienia",
+          "policy": "Polityka",
+          "executor": "Akcje",
+          "repair": "Samonaprawa",
+          "adapters": "Huby i mostki",
+          "schedule": "Plan",
+          "heating": "Ogrzewanie",
+          "ai": "AI",
+          "prompts": "Prompty AI",
+          "learning": "Uczenie",
+          "place": "Ustawienia dla miejsca",
+          "undo": "Cofnij ostatnią zmianę",
+          "reset": "Przywróć domyślne w sekcji"
+        },
+        "menu_option_descriptions": {
+          "general": "Język, pory dnia, dziennik i panel.",
+          "world": "Które encje HomeAI obserwuje i jakie etykiety rozumie.",
+          "presence": "Role, tryb domu i skąd HomeAI wie, kto śpi.",
+          "privacy": "Co może trafić do AI w chmurze.",
+          "detectors": "Co HomeAI obserwuje i jakie ma progi.",
+          "situations": "Kiedy sprawy się otwierają i zamykają.",
+          "triage": "Jak poważna jest sprawa.",
+          "notify": "Kto, jak i kiedy się dowiaduje.",
+          "policy": "Co HomeAI może samo, co wymaga zgody, a co nigdy się nie dzieje.",
+          "executor": "Jak akcje są wykonywane, sprawdzane i cofane.",
+          "repair": "Jak HomeAI naprawia, zanim kogoś zaniepokoi.",
+          "adapters": "Wiedza o hubach, mostkach i Zigbee2MQTT.",
+          "schedule": "Plan domu i wyjątki obecności.",
+          "heating": "Termostaty, które mówią kontraktem harmonogramu HomeAI: nadpisania, które HomeAI ustawia samo z obecności, i zmiany harmonogramu tygodniowego, które proponuje.",
+          "ai": "Poziomy AI, ocena, budżety.",
+          "prompts": "Własne instrukcje dla każdego zadania AI. Puste: wbudowany prompt (widoczny w diagnostyce).",
+          "learning": "Normy, anomalie, nawyki i przegląd tygodniowy.",
+          "place": "Piętro, obszar, urządzenie, encja albo osoba z własnymi wartościami.",
+          "undo": "Przywróć wartość sprzed ostatniej zmiany.",
+          "reset": "Wszystkie wartości jednej sekcji wracają do domyślnych; wartości dla miejsc zostają."
+        }
+      },
+      "general": {
+        "title": "Ogólne",
+        "description": "Język, pory dnia, dziennik i panel.",
         "data": {
           "general_language": "Język",
+          "general_assistant_name": "Nazwa asystenta",
+          "general_night_start": "Początek nocy",
+          "general_morning_start": "Początek poranka",
+          "general_day_start": "Początek dnia",
+          "general_evening_start": "Początek wieczoru",
+          "general_journal_retention_days": "Jak długo trzymać dziennik",
+          "general_panel_sidebar": "Panele w pasku bocznym",
+          "general_panels": "Które panele",
+          "general_panel_admin_only": "Panele tylko dla administratorów"
+        },
+        "data_description": {
+          "general_language": "Język powiadomień, dziennika i odpowiedzi AI. Auto oznacza język Home Assistanta.",
+          "general_assistant_name": "Jak HomeAI przedstawia się w wiadomościach i rozmowach.",
+          "general_night_start": "Od kiedy jest noc.",
+          "general_morning_start": "Od kiedy jest poranek.",
+          "general_day_start": "Od kiedy jest dzień.",
+          "general_evening_start": "Od kiedy jest wieczór.",
+          "general_journal_retention_days": "Jak długo wpisy zostają w dzienniku HomeAI.",
+          "general_panel_sidebar": "Pokazuj panele HomeAI w pasku bocznym Home Assistanta.",
+          "general_panels": "Panele, które HomeAI dodaje do paska bocznego. Każdy i tak może ukryć dowolny z nich w swoim pasku.",
+          "general_panel_admin_only": "Ukryj panele HomeAI przed osobami bez uprawnień administratora."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "general_startup_grace": "Spokój po starcie",
+              "general_tick_seconds": "Co ile sprawdzać"
+            },
+            "data_description": {
+              "general_startup_grace": "Po starcie Home Assistanta integracje potrzebują czasu. W tym czasie HomeAI nie ogłasza spraw i nie działa.",
+              "general_tick_seconds": "Jak często działają sprawdzenia zależne od czasu (niedostępność, terminy, harmonogram)."
+            }
+          }
+        }
+      },
+      "world": {
+        "title": "Model domu",
+        "description": "Które encje HomeAI obserwuje i jakie etykiety rozumie.",
+        "data": {
+          "world_scope": "Które encje HomeAI widzi",
+          "world_include_areas": "Wybrane pomieszczenia",
+          "world_create_labels": "Twórz etykiety HomeAI",
+          "world_room_roles": "Rola pokoju",
+          "world_room_roles_auto": "Odgaduj role pokoi"
+        },
+        "data_description": {
+          "world_scope": "Wszystkie encje, tylko udostępnione asystentom głosowym albo tylko wybrane pomieszczenia.",
+          "world_include_areas": "Pomieszczenia, które HomeAI obserwuje przy zakresie „wybrane pomieszczenia”.",
+          "world_create_labels": "Utwórz etykiety rozumiane przez HomeAI (pomiń, osobiste, krytyczne, akcja ochronna, prywatne), jeśli ich nie ma.",
+          "world_room_roles": "Do czego służy pokój: sypialnia, łazienka, część wspólna, miejsce pracy (może mieć kilka). Ustaw dla pokoju; puste znaczy: z etykiet HomeAI, a bez nich z ikony i nazwy pokoju. Brak znaczy: bez roli.",
+          "world_room_roles_auto": "Pokój bez ustawionej roli i bez etykiety dostaje ją z ikony (łóżko, kanapa, biurko…) albo z nazwy (sypialnia, salon, biuro…)."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "world_include_domains": "Tylko te domeny",
+              "world_exclude_entities": "Pominięte encje",
+              "world_include_hidden": "Uwzględniaj ukryte encje",
+              "world_label_ignore": "Etykieta: pomiń",
+              "world_label_personal": "Etykieta: osobiste",
+              "world_label_critical": "Etykieta: krytyczne",
+              "world_label_protective": "Etykieta: akcja ochronna",
+              "world_label_private": "Etykieta: prywatne",
+              "world_label_bedroom": "Etykieta: sypialnia",
+              "world_label_bathroom": "Etykieta: łazienka",
+              "world_label_common": "Etykieta: część wspólna",
+              "world_label_workplace": "Etykieta: miejsce pracy",
+              "world_label_activity": "Etykieta: aktywność"
+            },
+            "data_description": {
+              "world_include_domains": "Ogranicz HomeAI do tych domen encji. Puste oznacza wszystkie.",
+              "world_exclude_entities": "Wzorce encji, które HomeAI pomija, np. light.*_wyswietlacz.",
+              "world_include_hidden": "Obserwuj też encje ukryte w Home Assistancie.",
+              "world_label_ignore": "Encje i urządzenia z tą etykietą są dla HomeAI niewidoczne.",
+              "world_label_personal": "Urządzenia osobiste (telefony, laptopy) bywają offline; to nie awaria domu.",
+              "world_label_critical": "Problemy z tymi urządzeniami są zawsze pilne, a krytyczne, gdy dotyczą bezpieczeństwa (zalanie, dym, gaz, czad).",
+              "world_label_protective": "Akcje na tych encjach mogą działać automatycznie, by chronić dom (np. zamknięcie zaworu wody przy zalaniu).",
+              "world_label_private": "Dane tych encji nigdy nie trafiają do AI w chmurze.",
+              "world_label_bedroom": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to sypialnia.",
+              "world_label_bathroom": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to łazienka.",
+              "world_label_common": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to część wspólna (salon, kuchnia, jadalnia). Goście ogrzewają te pokoje.",
+              "world_label_workplace": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą (gniazdko przy biurku) to czyjeś miejsce pracy. Praca z domu je ogrzewa.",
+              "world_label_activity": "Encje z tą etykietą pokazują, że ktoś jest zajęty w swoim pokoju: czujnik mocy przy biurku, komputer, telewizor. Gdy któraś jest aktywna, ogrzewanie pokoju działa według ustawienia „Gdy ktoś jest aktywny”."
+            }
+          }
+        }
+      },
+      "presence": {
+        "title": "Domownicy i sen",
+        "description": "Role, tryb domu i skąd HomeAI wie, kto śpi.",
+        "data": {
+          "presence_role": "Rola",
+          "presence_home_mode_entity": "Pomocnik trybu domu",
+          "presence_vacation_mode": "Tryb urlopu",
+          "presence_sleep_sources": "Źródła snu",
+          "presence_sleep_helper": "Pomocnik snu",
+          "presence_night_start": "Początek nocy (dni robocze)",
+          "presence_night_end": "Koniec nocy (dni robocze)",
+          "presence_weekend_night_start": "Początek nocy (weekend)",
+          "presence_weekend_night_end": "Koniec nocy (weekend)",
+          "presence_charging_entities": "Czujniki ładowania telefonu",
+          "presence_bed_entities": "Czujniki łóżka",
+          "presence_workplace_areas": "Miejsce pracy"
+        },
+        "data_description": {
+          "presence_role": "Administratorzy zatwierdzają ryzykowne akcje i zmiany konfiguracji, domownicy dostają powiadomienia, goście i osoby pominięte nie są mieszkańcami.",
+          "presence_home_mode_entity": "Opcjonalny pomocnik (np. input_select) z trybem domu, np. dom, poza domem, urlop.",
+          "presence_vacation_mode": "Domownicy wyjechali: sprawy bezpieczeństwa mają wyższą wagę, a plan pomija wpisy wymagające kogoś w domu.",
+          "presence_sleep_sources": "Skąd HomeAI wie, że ktoś śpi, w kolejności zaufania: pomocnik, czujniki, wniosek AI, godziny nocy.",
+          "presence_sleep_helper": "Przełącznik albo pomocnik mówiący, że osoba śpi.",
+          "presence_night_start": "Zwykła pora snu w dni robocze.",
+          "presence_night_end": "Zwykła pora pobudki w dni robocze.",
+          "presence_weekend_night_start": "Zwykła pora snu w piątek i sobotę.",
+          "presence_weekend_night_end": "Zwykła pora pobudki w weekend.",
+          "presence_charging_entities": "Czujniki ładowania telefonu osoby; ładowanie w nocy sugeruje sen.",
+          "presence_bed_entities": "Czujniki zajętości łóżka osoby.",
+          "presence_workplace_areas": "Pokoje, w których ta osoba pracuje z domu. Bez nich: jedyny pokój z rolą miejsca pracy."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "presence_vacation_states": "Stany urlopu",
+              "presence_sleep_helper_state": "Stan pomocnika snu",
+              "presence_quiet_minutes": "Czas uspokojenia"
+            },
+            "data_description": {
+              "presence_vacation_states": "Stany pomocnika trybu domu oznaczające dłuższą nieobecność.",
+              "presence_sleep_helper_state": "Stan pomocnika snu oznaczający sen.",
+              "presence_quiet_minutes": "Jak długo zmiana obecności musi trwać, zanim HomeAI zareaguje."
+            }
+          }
+        }
+      },
+      "privacy": {
+        "title": "Prywatność",
+        "description": "Co może trafić do AI w chmurze.",
+        "data": {
           "privacy_level": "Dane wysyłane do AI w chmurze",
-          "notify_paused": "Wstrzymaj powiadomienia"
+          "privacy_never_send_entities": "Nigdy nie wysyłaj tych encji",
+          "privacy_never_send_areas": "Nigdy nie wysyłaj tych pomieszczeń"
+        },
+        "data_description": {
+          "privacy_level": "Standardowy wysyła nazwy urządzeń, pokoi i osób. Minimalny zastępuje osoby i pokoje neutralnymi etykietami. Pełny wysyła też tytuły z kalendarzy.",
+          "privacy_never_send_entities": "Encje, których dane nigdy nie opuszczają domu.",
+          "privacy_never_send_areas": "Pomieszczenia, których dane nigdy nie opuszczają domu."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "privacy_log_prompts": "Zapisuj zapytania AI",
+              "privacy_log_retention_days": "Jak długo trzymać zapytania AI"
+            },
+            "data_description": {
+              "privacy_log_prompts": "Przechowuj zapytania i odpowiedzi AI do diagnozowania problemów.",
+              "privacy_log_retention_days": "Jak długo przechowywać zapisane zapytania AI."
+            }
+          }
+        }
+      },
+      "detectors": {
+        "title": "Wykrywanie",
+        "description": "Co HomeAI obserwuje i jakie ma progi.",
+        "data": {},
+        "data_description": {},
+        "sections": {
+          "safety": {
+            "name": "Czujniki bezpieczeństwa",
+            "data": {
+              "detectors_safety_enabled": "Czujniki bezpieczeństwa: obserwuj",
+              "detectors_safety_severity_leak": "Zalanie: waga",
+              "detectors_safety_severity_smoke": "Dym: waga",
+              "detectors_safety_severity_gas": "Gaz: waga",
+              "detectors_safety_severity_carbon_monoxide": "Czad: waga",
+              "detectors_safety_severity_safety": "Alarm bezpieczeństwa: waga",
+              "detectors_safety_severity_tamper": "Sabotaż: waga"
+            },
+            "data_description": {
+              "detectors_safety_enabled": "Obserwuj czujniki zalania, dymu, gazu, czadu i sabotażu.",
+              "detectors_safety_severity_leak": "Waga 0–4 dla: zalanie (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_smoke": "Waga 0–4 dla: dym (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_gas": "Waga 0–4 dla: gaz (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_carbon_monoxide": "Waga 0–4 dla: czad (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_safety": "Waga 0–4 dla: alarm bezpieczeństwa (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_tamper": "Waga 0–3 dla: sabotaż (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "security": {
+            "name": "Zabezpieczenia",
+            "data": {
+              "detectors_security_enabled": "Zabezpieczenia: obserwuj",
+              "detectors_security_away_minutes": "Otwarte, gdy nikogo nie ma: czekaj",
+              "detectors_security_night_minutes": "Otwarte w nocy: czekaj",
+              "detectors_security_openings_at_night": "Okna w nocy"
+            },
+            "data_description": {
+              "detectors_security_enabled": "Obserwuj drzwi, okna, bramy i zamki otwarte, gdy nikogo nie ma albo wszyscy śpią.",
+              "detectors_security_away_minutes": "Jak długo drzwi, okno albo zamek muszą być otwarte, gdy nikogo nie ma.",
+              "detectors_security_night_minutes": "Jak długo coś musi być otwarte, gdy wszyscy w domu śpią.",
+              "detectors_security_openings_at_night": "Zgłaszaj też drzwi i okna (nie tylko zamki i bramy) otwarte w nocy."
+            }
+          },
+          "internet": {
+            "name": "Łącze z internetem",
+            "data": {
+              "detectors_internet_enabled": "Łącze z internetem: obserwuj",
+              "detectors_internet_entity": "Czujnik internetu",
+              "detectors_internet_minutes": "Brak internetu: czekaj",
+              "detectors_internet_severity": "Brak internetu: waga"
+            },
+            "data_description": {
+              "detectors_internet_enabled": "Obserwuj połączenie domu z internetem.",
+              "detectors_internet_entity": "Czujnik binarny włączony, gdy internet działa. Puste: pierwszy czujnik Ping.",
+              "detectors_internet_minutes": "Jak długo łącze musi nie działać, zanim to się liczy.",
+              "detectors_internet_severity": "Waga 0–3 dla: brak internetu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "availability": {
+            "name": "Urządzenia bez łączności",
+            "data": {
+              "detectors_availability_enabled": "Urządzenia bez łączności: obserwuj",
+              "detectors_availability_minutes": "Brak łączności po",
+              "detectors_availability_severity": "Urządzenie bez łączności: waga"
+            },
+            "data_description": {
+              "detectors_availability_enabled": "Obserwuj urządzenia, których wszystkie encje są niedostępne.",
+              "detectors_availability_minutes": "Jak długo wszystkie encje urządzenia muszą być niedostępne.",
+              "detectors_availability_severity": "Waga 0–3 dla: urządzenie bez łączności (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "integrations": {
+            "name": "Integracje",
+            "data": {
+              "detectors_integrations_enabled": "Integracje: obserwuj",
+              "detectors_integrations_severity": "Problem integracji: waga",
+              "detectors_integrations_repairs": "Zgłoszenia w Naprawach",
+              "detectors_integrations_repairs_severity": "Zgłoszenia w Naprawach: waga"
+            },
+            "data_description": {
+              "detectors_integrations_enabled": "Obserwuj integracje, które nie wstały albo proszą o ponowne logowanie, oraz zgłoszenia w Naprawach.",
+              "detectors_integrations_severity": "Waga 0–3 dla: problem integracji (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_integrations_repairs": "Zgłaszaj otwarte sprawy z Ustawienia → Naprawy.",
+              "detectors_integrations_repairs_severity": "Waga 0–3 dla: zgłoszenia w naprawach (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "backups": {
+            "name": "Kopie zapasowe",
+            "data": {
+              "detectors_backups_enabled": "Kopie zapasowe: obserwuj",
+              "detectors_backups_max_age_hours": "Kopia za stara po",
+              "detectors_backups_severity": "Problem z kopią: waga"
+            },
+            "data_description": {
+              "detectors_backups_enabled": "Obserwuj nieudane, stare albo niepełne automatyczne kopie.",
+              "detectors_backups_max_age_hours": "Godziny od ostatniej udanej automatycznej kopii.",
+              "detectors_backups_severity": "Waga 0–3 dla: problem z kopią (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "updates": {
+            "name": "Aktualizacje",
+            "data": {
+              "detectors_updates_enabled": "Aktualizacje: obserwuj",
+              "detectors_updates_severity": "Aktualizacje: waga"
+            },
+            "data_description": {
+              "detectors_updates_enabled": "Obserwuj dostępne aktualizacje.",
+              "detectors_updates_severity": "Waga 0–3 dla: aktualizacje (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "log": {
+            "name": "Log i automatyzacje",
+            "data": {
+              "detectors_log_enabled": "Log i automatyzacje: obserwuj",
+              "detectors_log_window_hours": "Okno logu",
+              "detectors_log_min_errors": "Minimum błędów w logu",
+              "detectors_log_severity": "Błędy w logu: waga",
+              "detectors_log_automations": "Nieudane automatyzacje",
+              "detectors_log_automation_severity": "Nieudana automatyzacja: waga"
+            },
+            "data_description": {
+              "detectors_log_enabled": "Obserwuj błędy w logu Home Assistanta i automatyzacje, które się nie udały.",
+              "detectors_log_window_hours": "Jak daleko wstecz liczą się błędy w logu i nieudane automatyzacje.",
+              "detectors_log_min_errors": "Zgłaszaj log dopiero od tylu błędów.",
+              "detectors_log_severity": "Waga 0–3 dla: błędy w logu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_log_automations": "Zgłaszaj automatyzacje, których ostatni przebieg się nie udał.",
+              "detectors_log_automation_severity": "Waga 0–3 dla: nieudana automatyzacja (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "battery": {
+            "name": "Baterie",
+            "data": {
+              "detectors_battery_enabled": "Baterie: obserwuj",
+              "detectors_battery_threshold": "Próg baterii",
+              "detectors_battery_severity": "Słaba bateria: waga",
+              "detectors_battery_safety_severity": "Słaba bateria w czujniku bezpieczeństwa: waga",
+              "detectors_battery_group": "Grupuj baterie"
+            },
+            "data_description": {
+              "detectors_battery_enabled": "Obserwuj słabe baterie.",
+              "detectors_battery_threshold": "Zgłaszaj baterie na tym poziomie lub niżej.",
+              "detectors_battery_severity": "Waga 0–3 dla: słaba bateria (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_battery_safety_severity": "Waga 0–3 dla: słaba bateria w czujniku bezpieczeństwa (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_battery_group": "Wszystkie słabe baterie w jednej sprawie."
+            }
+          },
+          "consumables": {
+            "name": "Materiały eksploatacyjne",
+            "data": {
+              "detectors_consumables_enabled": "Materiały eksploatacyjne: obserwuj",
+              "detectors_consumables_percent": "Próg materiałów",
+              "detectors_consumables_used_up_entities": "Czujniki zużycia",
+              "detectors_consumables_severity": "Materiał eksploatacyjny: waga"
+            },
+            "data_description": {
+              "detectors_consumables_enabled": "Obserwuj filtry, szczotki i inne części do wymiany.",
+              "detectors_consumables_percent": "Zgłaszaj materiały, którym zostało tyle życia lub mniej.",
+              "detectors_consumables_used_up_entities": "Czujniki pokazujące zużycie (100 = zużyty) zamiast pozostałej żywotności.",
+              "detectors_consumables_severity": "Waga 0–3 dla: materiał eksploatacyjny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "watering": {
+            "name": "Podlewanie roślin",
+            "data": {
+              "detectors_watering_enabled": "Podlewanie roślin: pilnuj",
+              "detectors_watering_min": "Próg wilgotności gleby",
+              "detectors_watering_severity": "Podlewanie roślin: waga"
+            },
+            "data_description": {
+              "detectors_watering_enabled": "Pilnuj czujników wilgotności gleby i mów, kiedy rośliny potrzebują wody.",
+              "detectors_watering_min": "Poniżej tej wilgotności gleby roślina potrzebuje wody.",
+              "detectors_watering_severity": "Waga 0–3 rośliny, która potrzebuje wody (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "problems": {
+            "name": "Urządzenia zgłaszające problem",
+            "data": {
+              "detectors_problems_enabled": "Urządzenia zgłaszające problem: obserwuj",
+              "detectors_problems_severity": "Problem urządzenia: waga",
+              "detectors_problems_plant_severity": "Problem rośliny: waga"
+            },
+            "data_description": {
+              "detectors_problems_enabled": "Obserwuj czujniki problemu i rośliny wymagające uwagi.",
+              "detectors_problems_severity": "Waga 0–3 dla: problem urządzenia (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_problems_plant_severity": "Waga 0–3 dla: problem rośliny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "stale": {
+            "name": "Milczące czujniki",
+            "data": {
+              "detectors_stale_enabled": "Milczące czujniki: obserwuj",
+              "detectors_stale_hours": "Milczy po",
+              "detectors_stale_severity": "Milczący czujnik: waga"
+            },
+            "data_description": {
+              "detectors_stale_enabled": "Obserwuj czujniki, które przestały raportować.",
+              "detectors_stale_hours": "Godziny bez raportu czujnika pomiarowego. 0 wyłącza.",
+              "detectors_stale_severity": "Waga 0–3 dla: milczący czujnik (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "environment": {
+            "name": "Warunki w domu",
+            "data": {
+              "detectors_environment_enabled": "Warunki w domu: obserwuj",
+              "detectors_environment_minutes": "Poza progiem przez",
+              "detectors_environment_appliance_words": "Czujniki w urządzeniach",
+              "detectors_environment_temperature_min_enabled": "Niska temperatura: obserwuj",
+              "detectors_environment_temperature_min": "Niska temperatura: próg",
+              "detectors_environment_temperature_min_severity": "Niska temperatura: waga",
+              "detectors_environment_temperature_max_enabled": "Wysoka temperatura: obserwuj",
+              "detectors_environment_temperature_max": "Wysoka temperatura: próg",
+              "detectors_environment_temperature_max_severity": "Wysoka temperatura: waga",
+              "detectors_environment_humidity_max_enabled": "Wysoka wilgotność: obserwuj",
+              "detectors_environment_humidity_max": "Wysoka wilgotność: próg",
+              "detectors_environment_humidity_max_severity": "Wysoka wilgotność: waga",
+              "detectors_environment_humidity_min_enabled": "Niska wilgotność: obserwuj",
+              "detectors_environment_humidity_min": "Niska wilgotność: próg",
+              "detectors_environment_humidity_min_severity": "Niska wilgotność: waga",
+              "detectors_environment_co2_max_enabled": "Wysokie CO₂: obserwuj",
+              "detectors_environment_co2_max": "Wysokie CO₂: próg",
+              "detectors_environment_co2_max_severity": "Wysokie CO₂: waga",
+              "detectors_environment_pm25_max_enabled": "Wysokie PM2,5: obserwuj",
+              "detectors_environment_pm25_max": "Wysokie PM2,5: próg",
+              "detectors_environment_pm25_max_severity": "Wysokie PM2,5: waga"
+            },
+            "data_description": {
+              "detectors_environment_enabled": "Obserwuj progi temperatury, wilgotności, CO₂ i PM2,5.",
+              "detectors_environment_minutes": "Jak długo wartość musi być poza progiem.",
+              "detectors_environment_appliance_words": "Słowa w nazwie czujnika albo urządzenia, które oznaczają, że mierzy wnętrze urządzenia (zamrażarki, lodówki, piekarnika, akwarium). Jego temperatura i wilgotność nie są traktowane jak pomieszczenia.",
+              "detectors_environment_temperature_min_enabled": "Zgłaszaj: niska temperatura w domu.",
+              "detectors_environment_temperature_min": "Próg dla: niska temperatura.",
+              "detectors_environment_temperature_min_severity": "Waga 0–3 dla: niska temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_temperature_max_enabled": "Zgłaszaj: wysoka temperatura w domu.",
+              "detectors_environment_temperature_max": "Próg dla: wysoka temperatura.",
+              "detectors_environment_temperature_max_severity": "Waga 0–3 dla: wysoka temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_humidity_max_enabled": "Zgłaszaj: wysoka wilgotność w domu.",
+              "detectors_environment_humidity_max": "Próg dla: wysoka wilgotność.",
+              "detectors_environment_humidity_max_severity": "Waga 0–3 dla: wysoka wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_humidity_min_enabled": "Zgłaszaj: niska wilgotność w domu.",
+              "detectors_environment_humidity_min": "Próg dla: niska wilgotność.",
+              "detectors_environment_humidity_min_severity": "Waga 0–3 dla: niska wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_co2_max_enabled": "Zgłaszaj: wysokie co₂ w domu.",
+              "detectors_environment_co2_max": "Próg dla: wysokie co₂.",
+              "detectors_environment_co2_max_severity": "Waga 0–3 dla: wysokie co₂ (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_pm25_max_enabled": "Zgłaszaj: wysokie pm2,5 w domu.",
+              "detectors_environment_pm25_max": "Próg dla: wysokie pm2,5.",
+              "detectors_environment_pm25_max_severity": "Waga 0–3 dla: wysokie pm2,5 (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "divergence": {
+            "name": "Rozbieżne czujniki",
+            "data": {
+              "detectors_divergence_enabled": "Rozbieżne czujniki: obserwuj",
+              "detectors_divergence_degrees": "Dozwolona różnica",
+              "detectors_divergence_severity": "Rozbieżne czujniki: waga"
+            },
+            "data_description": {
+              "detectors_divergence_enabled": "Obserwuj czujniki temperatury w jednym pokoju, które się nie zgadzają.",
+              "detectors_divergence_degrees": "Największa różnica między czujnikami temperatury w jednym pokoju.",
+              "detectors_divergence_severity": "Waga 0–3 dla: rozbieżne czujniki (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "lights_away": {
+            "name": "Światła w pustym domu",
+            "data": {
+              "detectors_lights_away_enabled": "Światła w pustym domu: obserwuj",
+              "detectors_lights_away_minutes": "Światło świeci przez",
+              "detectors_lights_away_severity": "Światła w pustym domu: waga"
+            },
+            "data_description": {
+              "detectors_lights_away_enabled": "Obserwuj światła włączone, gdy nikogo nie ma.",
+              "detectors_lights_away_minutes": "Jak długo światło musi świecić, gdy nikogo nie ma.",
+              "detectors_lights_away_severity": "Waga 0–3 dla: światła w pustym domu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "window_heating": {
+            "name": "Okno otwarte przy grzaniu",
+            "data": {
+              "detectors_window_heating_enabled": "Okno otwarte przy grzaniu: obserwuj",
+              "detectors_window_heating_minutes": "Okno otwarte przez",
+              "detectors_window_heating_severity": "Okno otwarte przy grzaniu: waga"
+            },
+            "data_description": {
+              "detectors_window_heating_enabled": "Obserwuj okno otwarte w ogrzewanym pokoju.",
+              "detectors_window_heating_minutes": "Jak długo okno musi być otwarte przy grzaniu.",
+              "detectors_window_heating_severity": "Waga 0–3 dla: okno otwarte przy grzaniu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "external": {
+            "name": "Sygnały innych integracji",
+            "data": {
+              "detectors_external_enabled": "Sygnały innych integracji: obserwuj",
+              "detectors_external_attributes": "Czytaj atrybuty homeai_signals"
+            },
+            "data_description": {
+              "detectors_external_enabled": "Obserwuj sygnały zgłaszane przez automatyzacje i integracje.",
+              "detectors_external_attributes": "Przyjmuj sygnały, które inne integracje publikują w atrybucie homeai_signals."
+            }
+          },
+          "bridges": {
+            "name": "Huby i mostki",
+            "data": {
+              "detectors_bridges_enabled": "Huby i mostki: obserwuj"
+            },
+            "data_description": {
+              "detectors_bridges_enabled": "Obserwuj huby i mostki (Zigbee2MQTT, huby, przez które łączą się inne urządzenia) i łącz urządzenia za nimi w jedną sprawę."
+            }
+          },
+          "custom": {
+            "name": "Własne reguły",
+            "data": {
+              "detectors_custom_enabled": "Własne reguły: obserwuj"
+            },
+            "data_description": {
+              "detectors_custom_enabled": "Uruchamiaj reguły dodane na stronie integracji HomeAI (Dodaj regułę)."
+            }
+          },
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "detectors_system_refresh": "Odświeżanie danych systemu"
+            },
+            "data_description": {
+              "detectors_system_refresh": "Jak często czytać kopie, log i ślady automatyzacji."
+            }
+          }
+        }
+      },
+      "situations": {
+        "title": "Sprawy",
+        "description": "Kiedy sprawy się otwierają i zamykają.",
+        "data": {
+          "situations_min_duration": "Czekaj przed ogłoszeniem",
+          "situations_close_after": "Czekaj przed zamknięciem",
+          "situations_dismiss_days": "„To nie problem” trwa"
+        },
+        "data_description": {
+          "situations_min_duration": "Jak długo nowa sprawa musi trwać, zanim ktoś się o niej dowie.",
+          "situations_close_after": "Jak długo sprawa musi ustąpić, zanim zostanie zamknięta.",
+          "situations_dismiss_days": "Ile dni odrzucona sprawa milczy."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "situations_min_duration_safety": "Czekaj przed ogłoszeniem: bezpieczeństwo",
+              "situations_min_duration_security": "Czekaj przed ogłoszeniem: zabezpieczenia",
+              "situations_min_duration_damage": "Czekaj przed ogłoszeniem: szkody"
+            },
+            "data_description": {
+              "situations_min_duration_safety": "Opóźnienie spraw bezpieczeństwa (zalanie, dym).",
+              "situations_min_duration_security": "Opóźnienie spraw zabezpieczeń.",
+              "situations_min_duration_damage": "Opóźnienie spraw grożących szkodą."
+            }
+          }
+        }
+      },
+      "triage": {
+        "title": "Ocena",
+        "description": "Jak poważna jest sprawa.",
+        "data": {
+          "triage_raise_when_away": "Podnoś, gdy nikogo nie ma",
+          "triage_calibration_enabled": "Ucz się z „to nie problem”"
+        },
+        "data_description": {
+          "triage_raise_when_away": "Sprawy bezpieczeństwa, zabezpieczeń i szkód są o stopień poważniejsze, gdy nikogo nie ma (najwyżej pilne; krytyczne jest tylko bezpieczeństwo).",
+          "triage_calibration_enabled": "Obniżaj wagę rodzajów spraw ciągle odrzucanych (nigdy bezpieczeństwa)."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "triage_severity_overrides": "Wagi na sztywno",
+              "triage_calibration_min_events": "Uczenie: minimum spraw",
+              "triage_calibration_dismiss_ratio": "Uczenie: udział odrzuconych"
+            },
+            "data_description": {
+              "triage_severity_overrides": "Stała waga dla rodzaju sprawy, np. updates: 1. Waga 4 (krytyczna) działa tylko dla spraw bezpieczeństwa; dla innych oznacza 3 (pilna).",
+              "triage_calibration_min_events": "Ile spraw danego rodzaju, zanim uczenie zadziała.",
+              "triage_calibration_dismiss_ratio": "Udział odrzuconych spraw, który obniża wagę."
+            }
+          }
+        }
+      },
+      "notify": {
+        "title": "Powiadomienia",
+        "description": "Kto, jak i kiedy się dowiaduje.",
+        "data": {
+          "notify_paused": "Wstrzymaj powiadomienia",
+          "notify_paused_allows_critical": "Krytyczne mimo wstrzymania",
+          "notify_targets": "Dodatkowe cele powiadomień",
+          "notify_discover_apps": "Wykrywaj telefony",
+          "notify_include_tablets": "Także tablety i komputery",
+          "notify_max_per_day": "Powiadomień na dobę",
+          "notify_critical_sound": "Krytyczne przebijają ciszę",
+          "notify_snooze_minutes": "Wycisz na",
+          "notify_announce_resolved": "Informuj o ustąpieniu",
+          "notify_tts_entity": "Silnik mowy",
+          "notify_tts_players": "Głośniki",
+          "notify_digest_enabled": "Podsumowanie dnia",
+          "notify_digest_times": "Pory podsumowania",
+          "notify_digest_to": "Odbiorcy podsumowania",
+          "notify_digest_max_items": "Pozycji w podsumowaniu",
+          "notify_ladder_4": "Eskalacja: waga 4",
+          "notify_ladder_3": "Eskalacja: waga 3",
+          "notify_ladder_2": "Eskalacja: waga 2"
+        },
+        "data_description": {
+          "notify_paused": "Zatrzymaj wszystkie powiadomienia poza krytycznymi (patrz niżej).",
+          "notify_paused_allows_critical": "Sprawy krytyczne są ogłaszane mimo wstrzymania.",
+          "notify_targets": "Encje albo usługi notify tej osoby, oprócz wykrytych telefonów.",
+          "notify_discover_apps": "Używaj urządzeń z aplikacją towarzyszącą tej osoby.",
+          "notify_include_tablets": "Wysyłaj też na tablety i komputery z aplikacją.",
+          "notify_max_per_day": "Najwięcej niekrytycznych powiadomień dla jednej osoby na dobę.",
+          "notify_critical_sound": "Sprawy krytyczne używają alertów krytycznych, słyszalnych nawet w trybie cichym.",
+          "notify_snooze_minutes": "Na jak długo „Wycisz” ucisza sprawę.",
+          "notify_announce_resolved": "Wyślij krótką wiadomość, gdy zgłoszona sprawa ustąpi.",
+          "notify_tts_entity": "Encja syntezy mowy do powiadomień głosowych.",
+          "notify_tts_players": "Odtwarzacze do powiadomień głosowych.",
+          "notify_digest_enabled": "Wysyłaj podsumowanie otwartych spraw o ustalonych porach.",
+          "notify_digest_times": "Godziny (GG:MM) podsumowania.",
+          "notify_digest_to": "Kto dostaje podsumowanie.",
+          "notify_digest_max_items": "Najwięcej spraw w podsumowaniu.",
+          "notify_ladder_4": "Kroki dla spraw krytycznych: po ilu minutach, do kogo, kanały, powtarzanie, krytyczne.",
+          "notify_ladder_3": "Kroki dla spraw pilnych: po ilu minutach, do kogo, kanały, powtarzanie, krytyczne.",
+          "notify_ladder_2": "Kroki dla spraw do uwagi: po ilu minutach, do kogo, kanały, powtarzanie, krytyczne."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "notify_open_path": "Otwieraj w panelu",
+              "notify_template_title": "Szablon tytułu powiadomienia",
+              "notify_template_message": "Szablon treści powiadomienia",
+              "notify_ladder_1": "Eskalacja: waga 1",
+              "notify_ladder_0": "Eskalacja: waga 0"
+            },
+            "data_description": {
+              "notify_open_path": "Ścieżka otwierana z powiadomienia.",
+              "notify_template_title": "Własny tytuł w składni szablonów Home Assistanta, np. {{ title }} ({{ severity }}). Zmienne: title, message, description, severity, category, kind, who, who_text, repair_failed, situation_id, entities. Puste albo z błędem: wbudowany tytuł.",
+              "notify_template_message": "Własna treść w składni szablonów Home Assistanta, z tymi samymi zmiennymi co tytuł. Puste albo z błędem: wbudowana treść.",
+              "notify_ladder_1": "Kroki dla spraw na dziś: po ilu minutach, do kogo, kanały, powtarzanie, krytyczne.",
+              "notify_ladder_0": "Kroki dla spraw do dziennika: po ilu minutach, do kogo, kanały, powtarzanie, krytyczne."
+            }
+          }
+        }
+      },
+      "policy": {
+        "title": "Polityka",
+        "description": "Co HomeAI może samo, co wymaga zgody, a co nigdy się nie dzieje.",
+        "data": {
+          "policy_slider": "Samodzielność",
+          "policy_autonomy_r1": "Akcje komfortu (R1)",
+          "policy_autonomy_r2": "Akcje urządzeń (R2)",
+          "policy_autonomy_r3": "Naprawy systemu (R3)",
+          "policy_autonomy_r4": "Konfiguracja (R4)",
+          "policy_person_r2": "Prośby domowników o urządzenia",
+          "policy_observation_days": "Okres obserwacji",
+          "policy_protective_actions": "Akcje ochronne",
+          "policy_approval_minutes": "Prośba o zgodę wygasa po"
+        },
+        "data_description": {
+          "policy_slider": "Jedno ustawienie nad całą polityką: tylko obserwuj, ostrożnie (proponuj akcje komfortu i urządzeń, naprawy działają), zrównoważenie (poziomy poniżej) albo śmiało (działaj przy komforcie i urządzeniach). „Nigdy” zostaje „nigdy”; konfiguracja nigdy nie jest automatyczna.",
+          "policy_autonomy_r1": "Co HomeAI może samo zrobić ze światłami, scenami, multimediami i komunikatami.",
+          "policy_autonomy_r2": "Co HomeAI może samo zrobić z AGD, roletami, ogrzewaniem i klimatyzacją.",
+          "policy_autonomy_r3": "Przeładowanie integracji, restart dodatków i ponowienie kopii, tylko z playbooków napraw.",
+          "policy_autonomy_r4": "Automatyzacje, skrypty, sceny, pomocnicy i pulpity. Nigdy bez zgody administratora.",
+          "policy_person_r2": "Gdy domownik prosi o akcję urządzenia (R2): wykonaj albo najpierw poproś o potwierdzenie.",
+          "policy_observation_days": "Dni po instalacji, przez które HomeAI tylko obserwuje: akcje komfortu, urządzeń i napraw systemu trafiają do dziennika, ale się nie wykonują. 0 — działa od razu.",
+          "policy_protective_actions": "Pozwól na akcje w bezpieczną stronę na encjach z etykietą „HomeAI: akcja ochronna” (np. zamknij zawór przy zalaniu), nawet dla urządzeń bezpieczeństwa.",
+          "policy_approval_minutes": "Jak długo prośba o zgodę czeka na odpowiedź."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "policy_repairs_per_day": "Naprawy systemu dziennie",
+              "policy_risk_override": "Klasa ryzyka",
+              "policy_risk_by_service": "Klasa ryzyka według akcji",
+              "policy_risk_by_label": "Klasa ryzyka według etykiety",
+              "policy_actor_homeai_r1": "Własne reguły HomeAI: komfort (R1)",
+              "policy_actor_homeai_r2": "Własne reguły HomeAI: urządzenia (R2)",
+              "policy_actor_homeai_r3": "Własne reguły HomeAI: system (R3)",
+              "policy_actor_homeai_r4": "Własne reguły HomeAI: konfiguracja (R4)",
+              "policy_actor_ai_r1": "AI: komfort (R1)",
+              "policy_actor_ai_r2": "AI: urządzenia (R2)",
+              "policy_actor_ai_r3": "AI: system (R3)",
+              "policy_actor_ai_r4": "AI: konfiguracja (R4)",
+              "policy_actor_repair_r1": "Naprawy: komfort (R1)",
+              "policy_actor_repair_r2": "Naprawy: urządzenia (R2)",
+              "policy_actor_repair_r3": "Naprawy: system (R3)",
+              "policy_actor_repair_r4": "Naprawy: konfiguracja (R4)",
+              "policy_actor_schedule_r1": "Plan: komfort (R1)",
+              "policy_actor_schedule_r2": "Plan: urządzenia (R2)",
+              "policy_actor_schedule_r3": "Plan: system (R3)",
+              "policy_actor_schedule_r4": "Plan: konfiguracja (R4)"
+            },
+            "data_description": {
+              "policy_repairs_per_day": "Najwięcej automatycznych napraw systemu (R3) na dzień; więcej wymaga administratora.",
+              "policy_risk_override": "Nadpisz klasę ryzyka akcji na tej encji, urządzeniu, obszarze albo piętrze.",
+              "policy_risk_by_service": "Własna klasa dla całej domeny albo jednej akcji, np. switch: R3, script.turn_on: R4. Wygrywa najbardziej szczegółowy klucz.",
+              "policy_risk_by_label": "Klasa dla wszystkiego z etykietą, według id etykiety, np. kids_room: R4. Przy kilku etykietach wygrywa najwyższa klasa; nadpisanie dla encji, urządzenia, obszaru lub piętra ma pierwszeństwo.",
+              "policy_actor_homeai_r1": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_homeai_r2": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_homeai_r3": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_homeai_r4": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_ai_r1": "Poziom dla: AI, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_ai_r2": "Poziom dla: AI, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_ai_r3": "Poziom dla: AI, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_ai_r4": "Poziom dla: AI, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_repair_r1": "Poziom dla: Naprawy, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_repair_r2": "Poziom dla: Naprawy, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_repair_r3": "Poziom dla: Naprawy, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_repair_r4": "Poziom dla: Naprawy, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_schedule_r1": "Poziom dla: Plan, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_schedule_r2": "Poziom dla: Plan, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_schedule_r3": "Poziom dla: Plan, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_schedule_r4": "Poziom dla: Plan, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa."
+            }
+          }
+        }
+      },
+      "executor": {
+        "title": "Akcje",
+        "description": "Jak akcje są wykonywane, sprawdzane i cofane.",
+        "data": {
+          "executor_undo": "Cofanie"
+        },
+        "data_description": {
+          "executor_undo": "Zapisuj stan komfortu i urządzeń przed akcją, żeby dało się ją cofnąć."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "executor_timeout": "Limit czasu akcji",
+              "executor_verify_seconds": "Sprawdzaj wynik przez",
+              "executor_undo_keep": "Historia cofania",
+              "executor_block_cloud_offline": "Urządzenia chmurowe bez internetu",
+              "executor_local_url": "Adres lokalny"
+            },
+            "data_description": {
+              "executor_timeout": "Jak długo może trwać jedno wywołanie usługi.",
+              "executor_verify_seconds": "Jak długo czekać na oczekiwany stan po akcji.",
+              "executor_undo_keep": "Ile ostatnich akcji można cofnąć.",
+              "executor_block_cloud_offline": "Gdy nie ma internetu, odmawiaj akcji na urządzeniach chmurowych zamiast czekać, aż się nie udadzą.",
+              "executor_local_url": "Adres, pod którym HomeAI łączy się z tym Home Assistantem przy zmianach konfiguracji. Puste: localhost na porcie HTTP."
+            }
+          }
+        }
+      },
+      "repair": {
+        "title": "Samonaprawa",
+        "description": "Jak HomeAI naprawia, zanim kogoś zaniepokoi.",
+        "data": {
+          "repair_enabled": "Samonaprawa",
+          "repair_quick_actions": "Proponowane akcje",
+          "repair_protective_enabled": "Akcje ochronne przy alarmach",
+          "repair_max_attempts": "Próby",
+          "repair_playbooks": "Używane scenariusze napraw",
+          "repair_never_reload": "Nigdy nie przeładowuj"
+        },
+        "data_description": {
+          "repair_enabled": "Próbuj playbooków napraw, zanim powiadomisz ludzi.",
+          "repair_quick_actions": "Wykonuj akcje proponowane przez detektory (np. zgaś światła w pustym domu), w granicach polityki.",
+          "repair_protective_enabled": "Przy zalaniu, gazie, dymie albo czadzie wykonaj od razu akcje ochronne (ludzie dostają powiadomienie równocześnie).",
+          "repair_max_attempts": "Ile razy próbować playbooka, zanim powiadomisz ludzi.",
+          "repair_playbooks": "Które naprawy HomeAI może spróbować samo, zanim kogoś powiadomi.",
+          "repair_never_reload": "Integracje, których HomeAI nigdy nie przeładowuje, według domeny (zha, mqtt) albo id wpisu. Ich awarie od razu trafiają do ludzi."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "repair_backoff_minutes": "Przerwa między próbami",
+              "repair_verify_minutes": "Czekaj na efekt",
+              "repair_reload_wait": "Przeładowanie: najpierw czekaj",
+              "repair_retry_wait": "Integracja ponawia: czekaj",
+              "repair_outage_wait": "Urządzenia jednej integracji milczą: czekaj",
+              "repair_backup_wait": "Kopia: czekaj przed ponowieniem",
+              "repair_action_wait": "Proponowana akcja: czekaj"
+            },
+            "data_description": {
+              "repair_backoff_minutes": "Minuty między próbami (mnożone przez numer próby).",
+              "repair_verify_minutes": "Po próbie, jak długo czekać, aż sprawa ustąpi.",
+              "repair_reload_wait": "Minuty przed przeładowaniem integracji, która nie wstała.",
+              "repair_retry_wait": "Minuty na samodzielne wstanie integracji, która ponawia start, zanim zostanie przeładowana.",
+              "repair_outage_wait": "Minuty przed przeładowaniem integracji, której wszystkie urządzenia zamilkły.",
+              "repair_backup_wait": "Minuty przed ponowieniem nieudanej kopii.",
+              "repair_action_wait": "Minuty przed wykonaniem proponowanej akcji."
+            }
+          }
+        }
+      },
+      "adapters": {
+        "title": "Huby i mostki",
+        "description": "Wiedza o hubach, mostkach i Zigbee2MQTT.",
+        "data": {
+          "adapters_auto_bridges": "Wykrywaj huby",
+          "adapters_bridge_entities": "Czujniki hubów",
+          "adapters_bridge_minutes": "Hub offline przez",
+          "adapters_bridge_reload": "Przeładuj integrację huba"
+        },
+        "data_description": {
+          "adapters_auto_bridges": "Traktuj czujniki łączności urządzeń, przez które łączą się inne, oraz mostek Zigbee2MQTT jako huby.",
+          "adapters_bridge_entities": "Dodatkowe encje wyłączone albo offline, gdy hub nie działa.",
+          "adapters_bridge_minutes": "Jak długo hub musi być offline, zanim to się liczy.",
+          "adapters_bridge_reload": "Naprawiaj hub offline przez przeładowanie jego integracji."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "adapters_bridge_severity": "Hub offline: waga",
+              "adapters_zigbee2mqtt_addon": "Dodatek Zigbee2MQTT"
+            },
+            "data_description": {
+              "adapters_bridge_severity": "Waga 0–3 huba offline (3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "adapters_zigbee2mqtt_addon": "Identyfikator dodatku Zigbee2MQTT (np. 45df7312_zigbee2mqtt) do restartu, gdy mostek jest offline. Puste: przeładowanie."
+            }
+          }
+        }
+      },
+      "schedule": {
+        "title": "Plan",
+        "description": "Plan domu i wyjątki obecności.",
+        "data": {
+          "schedule_catch_up_minutes": "Nadrabiaj pominięte wpisy",
+          "schedule_who_may_add": "Kto może dodawać do planu",
+          "schedule_default_skip_when_away": "Nowe wpisy pomijają, gdy nikogo nie ma",
+          "schedule_watch_hours": "„Powiedz mi, kiedy”: najdłużej",
+          "schedule_external_plans": "Plany z innych integracji"
+        },
+        "data_description": {
+          "schedule_catch_up_minutes": "Wykonaj wpisy planu pominięte, gdy Home Assistant nie działał, jeśli spóźnienie jest najwyżej takie.",
+          "schedule_who_may_add": "Wszyscy, domownicy (administratorzy i członkowie, bez gości) albo tylko administratorzy. Administratorzy mogą zawsze.",
+          "schedule_default_skip_when_away": "Nowe wpisy planu pomijają wykonanie, gdy nikogo nie ma w domu albo trwa urlop, chyba że wpis mówi inaczej.",
+          "schedule_watch_hours": "Jak długo HomeAI pilnuje prośby „powiedz mi, kiedy”, zanim zrezygnuje.",
+          "schedule_external_plans": "Pokazuj w kalendarzu planu i w panelu to, co planują inne integracje (atrybut homeai_plan na ich encjach). HomeAI nigdy ich nie wykonuje."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "schedule_event_minutes": "Długość wpisu w kalendarzu",
+              "schedule_presence_keep_days": "Przechowuj minione wyjątki",
+              "schedule_max_entries": "Rozmiar planu",
+              "schedule_watch_max": "„Powiedz mi, kiedy”: na osobę"
+            },
+            "data_description": {
+              "schedule_event_minutes": "Jak długo wpisy planu wyglądają w kalendarzu.",
+              "schedule_presence_keep_days": "Ile dni przechowywać wyjątki obecności po ich końcu.",
+              "schedule_max_entries": "Najwięcej wpisów, jakie może mieć plan.",
+              "schedule_watch_max": "Najwięcej próśb „powiedz mi, kiedy”, jakie jedna osoba może mieć naraz."
+            }
+          }
+        }
+      },
+      "heating": {
+        "title": "Ogrzewanie",
+        "description": "Termostaty, które mówią kontraktem harmonogramu HomeAI: nadpisania, które HomeAI ustawia samo z obecności, i zmiany harmonogramu tygodniowego, które proponuje.",
+        "data": {
+          "heating_enabled": "Ogrzewanie z HomeAI",
+          "heating_presence_overrides": "Nadpisania z obecności",
+          "heating_away_preset": "Preset na wyjazd",
+          "heating_guests_preset": "Preset na gości",
+          "heating_home_office_preset": "Preset na pracę z domu",
+          "heating_sick_preset": "Preset na chorobę",
+          "heating_nobody_home_minutes": "Nikogo w domu po",
+          "heating_nobody_home_preset": "Preset, gdy nikogo nie ma",
+          "heating_activity_action": "Gdy ktoś jest aktywny",
+          "heating_activity_preset": "Preset przy aktywności",
+          "heating_activity_power": "Aktywność: moc powyżej",
+          "heating_activity_minutes": "Aktywność: po",
+          "heating_activity_valve": "Aktywność: limit zaworu",
+          "heating_schedule_proposals": "Proponuj zmiany harmonogramu"
+        },
+        "data_description": {
+          "heating_enabled": "Używaj termostatów, które mówią kontraktem harmonogramu HomeAI (atrybut homeai_schedule): nadpisania z obecności i propozycje zmian harmonogramu. Wyłączone: HomeAI zdejmuje swoje nadpisania i nie rusza harmonogramów.",
+          "heating_presence_overrides": "Wyjazdy, goście, praca z domu, choroba i pusty dom zmieniają ogrzewanie na jakiś czas. HomeAI ustawia te nadpisania samo, jako działania na urządzeniach (R2), według poziomu autonomii; w okresie obserwacji tylko je zapisuje.",
+          "heating_away_preset": "Preset, gdy cały dom wyjechał według kalendarza obecności albo włączony jest tryb urlopu.",
+          "heating_guests_preset": "Preset w częściach wspólnych, gdy są goście (według kalendarza obecności).",
+          "heating_home_office_preset": "Preset w miejscu pracy osoby, gdy pracuje z domu.",
+          "heating_sick_preset": "Preset w całym domu, gdy ktoś choruje.",
+          "heating_nobody_home_minutes": "Gdy żadnego domownika nie ma tak długo, ogrzewanie przechodzi na preset poniżej, aż ktoś wróci. 0: wyłączone.",
+          "heating_nobody_home_preset": "Preset, gdy nikogo nie ma w domu.",
+          "heating_activity_action": "Co aktywna encja z etykietą „HomeAI: aktywność” robi z ogrzewaniem swojego pokoju: nic, nadpisanie presetem poniżej albo niższy limit zaworu (termostaty z encją limitu zaworu; pozostałe dostają nadpisanie).",
+          "heating_activity_preset": "Preset, gdy ktoś jest aktywny w pokoju.",
+          "heating_activity_power": "Czujnik mocy jest aktywny powyżej tylu watów.",
+          "heating_activity_minutes": "Encja musi być aktywna tak długo, zanim ogrzewanie zareaguje.",
+          "heating_activity_valve": "Limit zaworu, gdy ktoś jest aktywny (dla „niższy limit zaworu”); potem wraca poprzedni limit.",
+          "heating_schedule_proposals": "Gdy ludzie stale robią ręcznie to, co i tak zrobi następny blok harmonogramu (wcześniejsze grzanie, wcześniejszy sen), HomeAI proponuje przesunąć ten blok. Nowy harmonogram to konfiguracja (R4): zatwierdza go administrator."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "heating_lead_hours": "Wysyłaj nadpisania wcześniej",
+              "heating_rolling_hours": "Długość nadpisań bez końca",
+              "heating_activity_off_minutes": "Aktywność: koniec po",
+              "heating_valve_limit_entity": "Encja limitu zaworu",
+              "heating_proposal_max_shift": "Największe przesunięcie"
+            },
+            "data_description": {
+              "heating_lead_hours": "Ile przed wydarzeniem z kalendarza (goście, wyjazd) HomeAI wysyła swoje nadpisanie, żeby termostat zdążył nagrzać. 0: gdy wydarzenie się zaczyna.",
+              "heating_rolling_hours": "Nadpisania bez znanego końca (nikogo w domu, tryb urlopu, aktywność) sięgają tyle do przodu i są odnawiane, póki powód trwa, więc kończą się same, gdyby HomeAI stanęło.",
+              "heating_activity_off_minutes": "Reakcja kończy się, gdy encja jest nieaktywna tak długo.",
+              "heating_valve_limit_entity": "Encja number, która ogranicza zawór tego termostatu. Puste: number tego samego urządzenia z valve_limit w kluczu albo identyfikatorze.",
+              "heating_proposal_max_shift": "Jak długo przed blokiem ręczna zmiana wciąż liczy się jako jego uprzedzenie."
+            }
+          }
+        }
+      },
+      "ai": {
+        "title": "AI",
+        "description": "Poziomy AI, ocena, budżety.",
+        "data": {
+          "ai_enabled": "AI",
+          "ai_triage_enabled": "Ocena przez AI",
+          "ai_p2_confidence": "Badaj przy niepewności",
+          "ai_p2_min_severity": "Badaj od wagi",
+          "ai_narrate_digest": "Podsumowanie pisane przez AI",
+          "ai_chat_tier": "Poziom rozmowy",
+          "ai_chat_who": "Kto może rozmawiać z HomeAI",
+          "ai_chat_can": "Co mogą rozmowy",
+          "ai_chat_length": "Długość odpowiedzi",
+          "ai_budget_mode": "Gdy budżet się skończy",
+          "ai_budget_daily": "Budżet dzienny",
+          "ai_budget_monthly": "Budżet miesięczny",
+          "ai_budget_warn_percent": "Ostrzegaj przy",
+          "ai_arbiter_enabled": "Arbiter",
+          "ai_arbiter_disputes": "Rozstrzygaj spory",
+          "ai_arbiter_approvals": "Oceniaj ryzykowne prośby",
+          "ai_arbiter_failed_repairs": "Po nieudanych naprawach",
+          "ai_arbiter_can_approve": "Arbiter może zatwierdzać",
+          "ai_arbiter_per_day": "Decyzje arbitra dziennie"
+        },
+        "data_description": {
+          "ai_enabled": "Używaj poziomów AI dodanych jako podwpisy. HomeAI działa też bez nich.",
+          "ai_triage_enabled": "Pozwól codziennemu poziomowi (P1) sprawdzać ocenę nowych albo niejasnych spraw.",
+          "ai_p2_confidence": "Gdy P1 jest mniej pewny niż ta wartość, poziom badawczy (P2) patrzy jeszcze raz.",
+          "ai_p2_min_severity": "Sprawy co najmniej tak poważne sprawdza też P2 (5 = nigdy).",
+          "ai_narrate_digest": "Pozwól P1 przepisać podsumowanie w krótką wiadomość (nie przy minimalnej prywatności).",
+          "ai_chat_tier": "Który poziom rozmawia z ludźmi (drugi, gdy tego brakuje).",
+          "ai_chat_who": "Wszyscy, domownicy (administratorzy i członkowie) albo tylko administratorzy. Satelity głosowe bez użytkownika liczą się jako wszyscy.",
+          "ai_chat_can": "Tylko czytać, działać w granicach polityki albo także zmieniać konfigurację Home Assistanta (nadal tylko administratorzy, z potwierdzeniem).",
+          "ai_chat_length": "Jak długie są odpowiedzi HomeAI w rozmowach.",
+          "ai_budget_mode": "Tylko ostrzegaj albo wstrzymaj wywołania AI do końca okresu.",
+          "ai_budget_daily": "Szacowany koszt AI na dzień. 0: bez limitu.",
+          "ai_budget_monthly": "Szacowany koszt AI na miesiąc. 0: bez limitu.",
+          "ai_budget_warn_percent": "Ostrzegaj, gdy zużyto taką część budżetu.",
+          "ai_arbiter_enabled": "Pozwól poziomowi arbitra (P3) rozstrzygać trudne sprawy.",
+          "ai_arbiter_disputes": "Pytaj arbitra, gdy P1 i P2 się nie zgadzają.",
+          "ai_arbiter_approvals": "Pytaj arbitra o czekające akcje, które są ryzykowne albo pojawiają się, gdy nikogo nie ma.",
+          "ai_arbiter_failed_repairs": "Pytaj arbitra, gdy naprawy poważnej sprawy się nie udały.",
+          "ai_arbiter_can_approve": "Pozwól arbitrowi zatwierdzać albo odrzucać czekające akcje do napraw systemu (R3). Wyższe klasy zawsze wymagają administratora.",
+          "ai_arbiter_per_day": "Najwięcej decyzji arbitra na dzień."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "ai_triage_confidence": "Niejasne poniżej",
+              "ai_triage_new_kinds": "Sprawdzaj nowe rodzaje",
+              "ai_p2_max_steps": "Kroki badania",
+              "ai_chat_max_steps": "Kroki rozmowy",
+              "ai_chat_turns": "Pamięć rozmowy",
+              "ai_chat_shared_threads": "Wspólne rozmowy",
+              "ai_max_calls_per_hour": "Wywołania na godzinę",
+              "ai_timeout": "Limit czasu AI",
+              "ai_p3_timeout": "Limit czasu arbitra",
+              "ai_arbiter_min_confidence": "Arbiter: zatwierdzaj od",
+              "ai_arbiter_effort": "Wysiłek arbitra"
+            },
+            "data_description": {
+              "ai_triage_confidence": "Sygnały mniej pewne niż ta wartość sprawdza AI.",
+              "ai_triage_new_kinds": "Pozwól AI sprawdzić rodzaj sprawy, gdy zdarza się po raz pierwszy.",
+              "ai_p2_max_steps": "Najwięcej wywołań narzędzi, które P2 wykonuje przy badaniu jednej sprawy.",
+              "ai_chat_max_steps": "Najwięcej wywołań narzędzi w jednej odpowiedzi.",
+              "ai_chat_turns": "Ile ostatnich wymian pamięta rozmowa.",
+              "ai_chat_shared_threads": "Osoby mówiące w tej samej rozmowie (np. przy jednym satelicie głosowym) kontynuują jeden wątek. Akcje nadal wykonują się na koncie każdej z nich.",
+              "ai_max_calls_per_hour": "Najwięcej wywołań AI na poziom w ciągu godziny.",
+              "ai_timeout": "Jak długo P1 i P2 mogą odpowiadać.",
+              "ai_p3_timeout": "Jak długo może odpowiadać arbiter (P3); potrafi myśleć minutami.",
+              "ai_arbiter_min_confidence": "Arbiter zatwierdza tylko przy co najmniej takiej pewności.",
+              "ai_arbiter_effort": "Jak głęboko myśli arbiter (sprawy bezpieczeństwa i destrukcyjne zawsze na maksimum)."
+            }
+          }
+        }
+      },
+      "prompts": {
+        "title": "Prompty AI",
+        "description": "Własne instrukcje dla każdego zadania AI. Puste: wbudowany prompt (widoczny w diagnostyce).",
+        "data": {
+          "ai_prompt_triage": "Prompt: ocena",
+          "ai_prompt_investigate": "Prompt: dochodzenie",
+          "ai_prompt_chat": "Prompt: rozmowa",
+          "ai_prompt_arbiter": "Prompt: arbiter",
+          "ai_prompt_digest": "Prompt: podsumowanie"
+        },
+        "data_description": {
+          "ai_prompt_triage": "Własne instrukcje do oceny spraw. Puste: wbudowany prompt (widoczny w diagnostyce). Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze dodawana.",
+          "ai_prompt_investigate": "Własne instrukcje do badania poważnych spraw narzędziami. Puste: wbudowany prompt.",
+          "ai_prompt_chat": "Własne instrukcje do rozmów; {name} zamienia się w imię asystenta. Puste: wbudowany prompt.",
+          "ai_prompt_arbiter": "Własne instrukcje dla arbitra. Jego odpowiedzi zachowują stały format. Puste: wbudowany prompt.",
+          "ai_prompt_digest": "Własne instrukcje do pisania podsumowania. Puste: wbudowany prompt."
+        }
+      },
+      "learning": {
+        "title": "Uczenie",
+        "description": "Normy, anomalie, nawyki i przegląd tygodniowy.",
+        "data": {
+          "learning_enabled": "Uczenie",
+          "detectors_anomaly_enabled": "Anomalie: obserwuj",
+          "learning_anomaly_sigma": "Próg anomalii",
+          "learning_anomaly_minutes": "Nietypowe przez",
+          "learning_habits": "Nawyki",
+          "learning_undo_limit": "Zbyt często cofane po",
+          "learning_deny_quiet_days": "Nie pytaj ponownie przez",
+          "learning_review_weekday": "Przegląd tygodniowy w",
+          "learning_review_time": "Przegląd tygodniowy o",
+          "learning_review_push": "Wysyłaj przegląd na telefony",
+          "learning_review_ai": "Przegląd pisany przez AI"
+        },
+        "data_description": {
+          "learning_enabled": "Ucz się norm, zauważaj anomalie i nawyki, wysyłaj przegląd tygodniowy.",
+          "detectors_anomaly_enabled": "Zgłaszaj wartości daleko poza zwykłym zakresem dla tej godziny tygodnia.",
+          "learning_anomaly_sigma": "Ile odchyleń od normy uznać za nietypowe.",
+          "learning_anomaly_minutes": "Jak długo wartość musi być nietypowa, zanim zostanie zgłoszona.",
+          "learning_habits": "Zauważaj rzeczy robione ręcznie o tej samej porze i proponuj je do planu.",
+          "learning_undo_limit": "Po tylu cofnięciach automatyczna akcja wraca do „proponuj”.",
+          "learning_deny_quiet_days": "Ile dni HomeAI czeka, zanim znów zapyta o akcję, której ktoś odmówił.",
+          "learning_review_weekday": "Dzień przeglądu tygodniowego.",
+          "learning_review_time": "Godzina przeglądu tygodniowego.",
+          "learning_review_push": "Wysyłaj przegląd tygodniowy na telefony administratorów.",
+          "learning_review_ai": "Pozwól poziomowi AI przepisać przegląd tygodniowy."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Zaawansowane",
+            "data": {
+              "learning_nightly_time": "Nocne uczenie o",
+              "learning_baseline_weeks": "Normy z",
+              "learning_min_samples": "Minimum danych",
+              "learning_anomaly_severity": "Anomalia: waga",
+              "learning_habit_days": "Nawyki z",
+              "learning_habit_min_days": "Nawyk po",
+              "learning_habit_window": "Okno czasu nawyku",
+              "learning_raise_after": "Proponuj więcej samodzielności po"
+            },
+            "data_description": {
+              "learning_nightly_time": "Kiedy przeliczać normy i nawyki.",
+              "learning_baseline_weeks": "Ile minionych tygodni tworzy normę każdej godziny tygodnia.",
+              "learning_min_samples": "Ile wartości godzinowych potrzeba, zanim encja ma normę.",
+              "learning_anomaly_severity": "Waga 0–3 nietypowej wartości (3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "learning_habit_days": "Ile minionych dni przeszukiwać pod kątem nawyków.",
+              "learning_habit_min_days": "Przez ile dni coś musi się powtarzać, żeby stać się propozycją.",
+              "learning_habit_window": "Jak blisko w czasie muszą być powtarzane czynności.",
+              "learning_raise_after": "Liczba zgód bez odmowy, po której przegląd tygodniowy proponuje, by HomeAI działało samo."
+            }
+          }
+        }
+      },
+      "place": {
+        "title": "Ustawienia dla miejsca",
+        "description": "Wybierz, jakie miejsce dostanie własne wartości. Miejsca, które już je mają: {places}.",
+        "data": {
+          "scope": "Rodzaj miejsca"
+        }
+      },
+      "place_target": {
+        "title": "Ustawienia dla miejsca",
+        "description": "Wybierz {kind}.",
+        "data": {
+          "target": "Miejsce"
+        }
+      },
+      "place_settings": {
+        "title": "Ustawienia dla: {place}",
+        "description": "Widać tylko ustawienia, które mogą być tu inne. Wypełnione pole to własna wartość tego miejsca; puste pole oznacza wartość miejsca, w którym ono jest, albo całego domu, a wyczyszczenie pola usuwa własną wartość.",
+        "sections": {
+          "world": {
+            "name": "Model domu",
+            "data": {
+              "world_room_roles": "Rola pokoju"
+            },
+            "data_description": {
+              "world_room_roles": "Do czego służy pokój: sypialnia, łazienka, część wspólna, miejsce pracy (może mieć kilka). Ustaw dla pokoju; puste znaczy: z etykiet HomeAI, a bez nich z ikony i nazwy pokoju. Brak znaczy: bez roli."
+            }
+          },
+          "presence": {
+            "name": "Domownicy i sen",
+            "data": {
+              "presence_role": "Rola",
+              "presence_sleep_helper": "Pomocnik snu",
+              "presence_sleep_helper_state": "Stan pomocnika snu",
+              "presence_night_start": "Początek nocy (dni robocze)",
+              "presence_night_end": "Koniec nocy (dni robocze)",
+              "presence_weekend_night_start": "Początek nocy (weekend)",
+              "presence_weekend_night_end": "Koniec nocy (weekend)",
+              "presence_charging_entities": "Czujniki ładowania telefonu",
+              "presence_bed_entities": "Czujniki łóżka",
+              "presence_workplace_areas": "Miejsce pracy"
+            },
+            "data_description": {
+              "presence_role": "Administratorzy zatwierdzają ryzykowne akcje i zmiany konfiguracji, domownicy dostają powiadomienia, goście i osoby pominięte nie są mieszkańcami.",
+              "presence_sleep_helper": "Przełącznik albo pomocnik mówiący, że osoba śpi.",
+              "presence_sleep_helper_state": "Stan pomocnika snu oznaczający sen.",
+              "presence_night_start": "Zwykła pora snu w dni robocze.",
+              "presence_night_end": "Zwykła pora pobudki w dni robocze.",
+              "presence_weekend_night_start": "Zwykła pora snu w piątek i sobotę.",
+              "presence_weekend_night_end": "Zwykła pora pobudki w weekend.",
+              "presence_charging_entities": "Czujniki ładowania telefonu osoby; ładowanie w nocy sugeruje sen.",
+              "presence_bed_entities": "Czujniki zajętości łóżka osoby.",
+              "presence_workplace_areas": "Pokoje, w których ta osoba pracuje z domu. Bez nich: jedyny pokój z rolą miejsca pracy."
+            }
+          },
+          "detectors": {
+            "name": "Wykrywanie",
+            "data": {
+              "detectors_safety_severity_leak": "Zalanie: waga",
+              "detectors_safety_severity_smoke": "Dym: waga",
+              "detectors_safety_severity_gas": "Gaz: waga",
+              "detectors_safety_severity_carbon_monoxide": "Czad: waga",
+              "detectors_safety_severity_safety": "Alarm bezpieczeństwa: waga",
+              "detectors_safety_severity_tamper": "Sabotaż: waga",
+              "detectors_security_away_minutes": "Otwarte, gdy nikogo nie ma: czekaj",
+              "detectors_security_night_minutes": "Otwarte w nocy: czekaj",
+              "detectors_security_openings_at_night": "Okna w nocy",
+              "detectors_availability_minutes": "Brak łączności po",
+              "detectors_availability_severity": "Urządzenie bez łączności: waga",
+              "detectors_battery_threshold": "Próg baterii",
+              "detectors_battery_severity": "Słaba bateria: waga",
+              "detectors_battery_safety_severity": "Słaba bateria w czujniku bezpieczeństwa: waga",
+              "detectors_consumables_percent": "Próg materiałów",
+              "detectors_consumables_severity": "Materiał eksploatacyjny: waga",
+              "detectors_watering_min": "Próg wilgotności gleby",
+              "detectors_watering_severity": "Podlewanie roślin: waga",
+              "detectors_problems_severity": "Problem urządzenia: waga",
+              "detectors_problems_plant_severity": "Problem rośliny: waga",
+              "detectors_stale_hours": "Milczy po",
+              "detectors_stale_severity": "Milczący czujnik: waga",
+              "detectors_environment_minutes": "Poza progiem przez",
+              "detectors_divergence_degrees": "Dozwolona różnica",
+              "detectors_lights_away_minutes": "Światło świeci przez",
+              "detectors_window_heating_minutes": "Okno otwarte przez",
+              "detectors_window_heating_severity": "Okno otwarte przy grzaniu: waga",
+              "detectors_environment_temperature_min_enabled": "Niska temperatura: obserwuj",
+              "detectors_environment_temperature_min": "Niska temperatura: próg",
+              "detectors_environment_temperature_min_severity": "Niska temperatura: waga",
+              "detectors_environment_temperature_max_enabled": "Wysoka temperatura: obserwuj",
+              "detectors_environment_temperature_max": "Wysoka temperatura: próg",
+              "detectors_environment_temperature_max_severity": "Wysoka temperatura: waga",
+              "detectors_environment_humidity_max_enabled": "Wysoka wilgotność: obserwuj",
+              "detectors_environment_humidity_max": "Wysoka wilgotność: próg",
+              "detectors_environment_humidity_max_severity": "Wysoka wilgotność: waga",
+              "detectors_environment_humidity_min_enabled": "Niska wilgotność: obserwuj",
+              "detectors_environment_humidity_min": "Niska wilgotność: próg",
+              "detectors_environment_humidity_min_severity": "Niska wilgotność: waga",
+              "detectors_environment_co2_max_enabled": "Wysokie CO₂: obserwuj",
+              "detectors_environment_co2_max": "Wysokie CO₂: próg",
+              "detectors_environment_co2_max_severity": "Wysokie CO₂: waga",
+              "detectors_environment_pm25_max_enabled": "Wysokie PM2,5: obserwuj",
+              "detectors_environment_pm25_max": "Wysokie PM2,5: próg",
+              "detectors_environment_pm25_max_severity": "Wysokie PM2,5: waga"
+            },
+            "data_description": {
+              "detectors_safety_severity_leak": "Waga 0–4 dla: zalanie (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_smoke": "Waga 0–4 dla: dym (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_gas": "Waga 0–4 dla: gaz (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_carbon_monoxide": "Waga 0–4 dla: czad (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_safety": "Waga 0–4 dla: alarm bezpieczeństwa (0 tylko dziennik, 4 krytyczne).",
+              "detectors_safety_severity_tamper": "Waga 0–3 dla: sabotaż (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_security_away_minutes": "Jak długo drzwi, okno albo zamek muszą być otwarte, gdy nikogo nie ma.",
+              "detectors_security_night_minutes": "Jak długo coś musi być otwarte, gdy wszyscy w domu śpią.",
+              "detectors_security_openings_at_night": "Zgłaszaj też drzwi i okna (nie tylko zamki i bramy) otwarte w nocy.",
+              "detectors_availability_minutes": "Jak długo wszystkie encje urządzenia muszą być niedostępne.",
+              "detectors_availability_severity": "Waga 0–3 dla: urządzenie bez łączności (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_battery_threshold": "Zgłaszaj baterie na tym poziomie lub niżej.",
+              "detectors_battery_severity": "Waga 0–3 dla: słaba bateria (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_battery_safety_severity": "Waga 0–3 dla: słaba bateria w czujniku bezpieczeństwa (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_consumables_percent": "Zgłaszaj materiały, którym zostało tyle życia lub mniej.",
+              "detectors_consumables_severity": "Waga 0–3 dla: materiał eksploatacyjny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_watering_min": "Poniżej tej wilgotności gleby roślina potrzebuje wody.",
+              "detectors_watering_severity": "Waga 0–3 rośliny, która potrzebuje wody (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_problems_severity": "Waga 0–3 dla: problem urządzenia (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_problems_plant_severity": "Waga 0–3 dla: problem rośliny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_stale_hours": "Godziny bez raportu czujnika pomiarowego. 0 wyłącza.",
+              "detectors_stale_severity": "Waga 0–3 dla: milczący czujnik (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_minutes": "Jak długo wartość musi być poza progiem.",
+              "detectors_divergence_degrees": "Największa różnica między czujnikami temperatury w jednym pokoju.",
+              "detectors_lights_away_minutes": "Jak długo światło musi świecić, gdy nikogo nie ma.",
+              "detectors_window_heating_minutes": "Jak długo okno musi być otwarte przy grzaniu.",
+              "detectors_window_heating_severity": "Waga 0–3 dla: okno otwarte przy grzaniu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_temperature_min_enabled": "Zgłaszaj: niska temperatura w domu.",
+              "detectors_environment_temperature_min": "Próg dla: niska temperatura.",
+              "detectors_environment_temperature_min_severity": "Waga 0–3 dla: niska temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_temperature_max_enabled": "Zgłaszaj: wysoka temperatura w domu.",
+              "detectors_environment_temperature_max": "Próg dla: wysoka temperatura.",
+              "detectors_environment_temperature_max_severity": "Waga 0–3 dla: wysoka temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_humidity_max_enabled": "Zgłaszaj: wysoka wilgotność w domu.",
+              "detectors_environment_humidity_max": "Próg dla: wysoka wilgotność.",
+              "detectors_environment_humidity_max_severity": "Waga 0–3 dla: wysoka wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_humidity_min_enabled": "Zgłaszaj: niska wilgotność w domu.",
+              "detectors_environment_humidity_min": "Próg dla: niska wilgotność.",
+              "detectors_environment_humidity_min_severity": "Waga 0–3 dla: niska wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_co2_max_enabled": "Zgłaszaj: wysokie co₂ w domu.",
+              "detectors_environment_co2_max": "Próg dla: wysokie co₂.",
+              "detectors_environment_co2_max_severity": "Waga 0–3 dla: wysokie co₂ (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
+              "detectors_environment_pm25_max_enabled": "Zgłaszaj: wysokie pm2,5 w domu.",
+              "detectors_environment_pm25_max": "Próg dla: wysokie pm2,5.",
+              "detectors_environment_pm25_max_severity": "Waga 0–3 dla: wysokie pm2,5 (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "notify": {
+            "name": "Powiadomienia",
+            "data": {
+              "notify_targets": "Dodatkowe cele powiadomień",
+              "notify_discover_apps": "Wykrywaj telefony",
+              "notify_include_tablets": "Także tablety i komputery"
+            },
+            "data_description": {
+              "notify_targets": "Encje albo usługi notify tej osoby, oprócz wykrytych telefonów.",
+              "notify_discover_apps": "Używaj urządzeń z aplikacją towarzyszącą tej osoby.",
+              "notify_include_tablets": "Wysyłaj też na tablety i komputery z aplikacją."
+            }
+          },
+          "policy": {
+            "name": "Polityka",
+            "data": {
+              "policy_risk_override": "Klasa ryzyka"
+            },
+            "data_description": {
+              "policy_risk_override": "Nadpisz klasę ryzyka akcji na tej encji, urządzeniu, obszarze albo piętrze."
+            }
+          },
+          "adapters": {
+            "name": "Huby i mostki",
+            "data": {
+              "adapters_bridge_minutes": "Hub offline przez",
+              "adapters_bridge_severity": "Hub offline: waga"
+            },
+            "data_description": {
+              "adapters_bridge_minutes": "Jak długo hub musi być offline, zanim to się liczy.",
+              "adapters_bridge_severity": "Waga 0–3 huba offline (3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          },
+          "heating": {
+            "name": "Ogrzewanie",
+            "data": {
+              "heating_presence_overrides": "Nadpisania z obecności",
+              "heating_away_preset": "Preset na wyjazd",
+              "heating_guests_preset": "Preset na gości",
+              "heating_home_office_preset": "Preset na pracę z domu",
+              "heating_sick_preset": "Preset na chorobę",
+              "heating_nobody_home_preset": "Preset, gdy nikogo nie ma",
+              "heating_activity_preset": "Preset przy aktywności",
+              "heating_activity_power": "Aktywność: moc powyżej",
+              "heating_activity_valve": "Aktywność: limit zaworu",
+              "heating_valve_limit_entity": "Encja limitu zaworu"
+            },
+            "data_description": {
+              "heating_presence_overrides": "Wyjazdy, goście, praca z domu, choroba i pusty dom zmieniają ogrzewanie na jakiś czas. HomeAI ustawia te nadpisania samo, jako działania na urządzeniach (R2), według poziomu autonomii; w okresie obserwacji tylko je zapisuje.",
+              "heating_away_preset": "Preset, gdy cały dom wyjechał według kalendarza obecności albo włączony jest tryb urlopu.",
+              "heating_guests_preset": "Preset w częściach wspólnych, gdy są goście (według kalendarza obecności).",
+              "heating_home_office_preset": "Preset w miejscu pracy osoby, gdy pracuje z domu.",
+              "heating_sick_preset": "Preset w całym domu, gdy ktoś choruje.",
+              "heating_nobody_home_preset": "Preset, gdy nikogo nie ma w domu.",
+              "heating_activity_preset": "Preset, gdy ktoś jest aktywny w pokoju.",
+              "heating_activity_power": "Czujnik mocy jest aktywny powyżej tylu watów.",
+              "heating_activity_valve": "Limit zaworu, gdy ktoś jest aktywny (dla „niższy limit zaworu”); potem wraca poprzedni limit.",
+              "heating_valve_limit_entity": "Encja number, która ogranicza zawór tego termostatu. Puste: number tego samego urządzenia z valve_limit w kluczu albo identyfikatorze."
+            }
+          },
+          "learning": {
+            "name": "Uczenie",
+            "data": {
+              "learning_anomaly_minutes": "Nietypowe przez",
+              "learning_anomaly_severity": "Anomalia: waga"
+            },
+            "data_description": {
+              "learning_anomaly_minutes": "Jak długo wartość musi być nietypowa, zanim zostanie zgłoszona.",
+              "learning_anomaly_severity": "Waga 0–3 nietypowej wartości (3 pilne; krytyczne jest tylko bezpieczeństwo)."
+            }
+          }
+        }
+      },
+      "confirm": {
+        "title": "Potwierdź zmiany",
+        "description": "Te zmiany obniżają ochronę albo zmieniają coś ważnego ({place}):\n\n{changes}",
+        "menu_options": {
+          "apply": "Tak, zapisz zmiany",
+          "init": "Nie, wróć do menu"
+        }
+      },
+      "undo": {
+        "title": "Cofnij ostatnią zmianę",
+        "description": "Ostatnia zmiana:\n\n{change}\n\nZatwierdź, by ją cofnąć. Kolejne cofnięcie sięga o jedną zmianę dalej."
+      },
+      "reset": {
+        "title": "Przywróć domyślne w sekcji",
+        "description": "Wszystkie wartości wybranej sekcji wracają do domyślnych. Wartości dla miejsc zostają; zmianę można cofnąć.",
+        "data": {
+          "section": "Sekcja"
         }
       }
     },
+    "error": {
+      "invalid_setting": "Nie zapisano: {error}"
+    },
     "abort": {
-      "not_loaded": "HomeAI nie działa. Przeładuj integrację i spróbuj ponownie."
+      "not_loaded": "HomeAI nie działa. Przeładuj integrację i spróbuj ponownie.",
+      "nothing_to_undo": "Nie ma zmiany do cofnięcia."
     }
   },
   "selector": {
@@ -48,7 +1364,7 @@
     },
     "general_language": {
       "options": {
-        "auto": "Auto (język Home Assistanta)",
+        "auto": "Auto",
         "en": "English",
         "pl": "Polski"
       }
@@ -188,6 +1504,391 @@
         "below": "Spada poniżej",
         "changes": "Zmienia się"
       }
+    },
+    "place_scope": {
+      "options": {
+        "floor": "Piętro",
+        "area": "Obszar",
+        "device": "Urządzenie",
+        "entity": "Encja",
+        "person": "Osoba"
+      }
+    },
+    "override_bool": {
+      "options": {
+        "on": "Włączone",
+        "off": "Wyłączone"
+      }
+    },
+    "rule_condition": {
+      "options": {
+        "state": "Ma stan",
+        "not_state": "Nie ma stanu",
+        "above": "Jest powyżej",
+        "below": "Jest poniżej",
+        "unavailable": "Jest niedostępna"
+      }
+    },
+    "rule_when": {
+      "options": {
+        "always": "Zawsze",
+        "night": "Tylko w nocy",
+        "away": "Tylko gdy nikogo nie ma",
+        "home": "Tylko gdy ktoś jest w domu"
+      }
+    },
+    "rule_mode": {
+      "options": {
+        "each": "Każda encja osobno",
+        "all": "Tylko gdy spełniają wszystkie"
+      }
+    },
+    "general_panels": {
+      "options": {
+        "situations": "Sprawy i zgody",
+        "plan": "Plan domu i obecność",
+        "chat": "Rozmowa"
+      }
+    },
+    "world_scope": {
+      "options": {
+        "all": "Wszystkie encje",
+        "exposed": "Udostępnione asystentom",
+        "selected": "Wybrane pomieszczenia"
+      }
+    },
+    "world_room_roles": {
+      "options": {
+        "none": "Brak",
+        "bedroom": "Sypialnia",
+        "bathroom": "Łazienka",
+        "common": "Część wspólna",
+        "workplace": "Miejsce pracy"
+      }
+    },
+    "presence_role": {
+      "options": {
+        "admin": "Administrator",
+        "member": "Domownik",
+        "guest": "Gość",
+        "ignore": "Pomiń"
+      }
+    },
+    "presence_sleep_sources": {
+      "options": {
+        "helper": "Pomocnik",
+        "sensors": "Czujniki",
+        "ai": "Wniosek AI",
+        "hours": "Godziny nocy"
+      }
+    },
+    "notify_digest_to": {
+      "options": {
+        "none": "Nikt",
+        "all": "Wszyscy",
+        "home": "Osoby w domu",
+        "home_or_all": "Osoby w domu, a gdy nikogo — wszyscy",
+        "admins": "Administratorzy",
+        "awake_home": "Osoby w domu, które nie śpią"
+      }
+    },
+    "policy_slider": {
+      "options": {
+        "observe": "Tylko obserwuj",
+        "cautious": "Ostrożnie",
+        "balanced": "Zrównoważenie",
+        "bold": "Śmiało"
+      }
+    },
+    "policy_autonomy_r1": {
+      "options": {
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Zaproponuj i zapytaj",
+        "act_tell": "Działaj i powiedz",
+        "act": "Działaj"
+      }
+    },
+    "policy_autonomy_r2": {
+      "options": {
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Zaproponuj i zapytaj",
+        "act_tell": "Działaj i powiedz",
+        "act": "Działaj"
+      }
+    },
+    "policy_autonomy_r3": {
+      "options": {
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Zaproponuj i zapytaj",
+        "act_tell": "Działaj i powiedz",
+        "act": "Działaj"
+      }
+    },
+    "policy_autonomy_r4": {
+      "options": {
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Zaproponuj i zapytaj"
+      }
+    },
+    "policy_person_r2": {
+      "options": {
+        "act": "Wykonaj",
+        "confirm": "Poproś o potwierdzenie"
+      }
+    },
+    "policy_actor_homeai_r1": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_homeai_r2": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_homeai_r3": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_homeai_r4": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj"
+      }
+    },
+    "policy_actor_ai_r1": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_ai_r2": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_ai_r3": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_ai_r4": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj"
+      }
+    },
+    "policy_actor_repair_r1": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_repair_r2": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_repair_r3": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_repair_r4": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj"
+      }
+    },
+    "policy_actor_schedule_r1": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_schedule_r2": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_schedule_r3": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_schedule_r4": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj"
+      }
+    },
+    "repair_playbooks": {
+      "options": {
+        "reload_entry": "Przeładuj integrację",
+        "wait_then_reload": "Poczekaj na ponowienie integracji, potem przeładuj",
+        "reload_after_outage": "Przeładuj po powrocie internetu",
+        "retry_backup": "Ponów nieudaną kopię",
+        "restart_addon": "Uruchom ponownie dodatek",
+        "press_restart": "Uruchom ponownie hub jego przyciskiem restartu",
+        "action": "Sugerowane szybkie akcje"
+      }
+    },
+    "schedule_who_may_add": {
+      "options": {
+        "everyone": "Wszyscy",
+        "residents": "Domownicy",
+        "admins": "Administratorzy"
+      }
+    },
+    "heating_activity_action": {
+      "options": {
+        "off": "Nic",
+        "override": "Nadpisanie presetem",
+        "valve_limit": "Niższy limit zaworu"
+      }
+    },
+    "ai_chat_tier": {
+      "options": {
+        "p1": "P1 — codzienny mózg",
+        "p2": "P2 — badanie"
+      }
+    },
+    "ai_chat_who": {
+      "options": {
+        "everyone": "Wszyscy",
+        "residents": "Domownicy",
+        "admins": "Administratorzy"
+      }
+    },
+    "ai_chat_can": {
+      "options": {
+        "read": "Tylko czytać",
+        "act": "Działać",
+        "act_config": "Działać i zmieniać konfigurację"
+      }
+    },
+    "ai_chat_length": {
+      "options": {
+        "short": "Krótkie",
+        "normal": "Zwykłe",
+        "detailed": "Szczegółowe"
+      }
+    },
+    "ai_budget_mode": {
+      "options": {
+        "warn": "Tylko ostrzegaj",
+        "block": "Wstrzymaj AI"
+      }
+    },
+    "ai_arbiter_effort": {
+      "options": {
+        "medium": "Średni",
+        "high": "Wysoki",
+        "xhigh": "Bardzo wysoki",
+        "max": "Maksymalny"
+      }
+    },
+    "learning_review_weekday": {
+      "options": {
+        "0": "Poniedziałek",
+        "1": "Wtorek",
+        "2": "Środa",
+        "3": "Czwartek",
+        "4": "Piątek",
+        "5": "Sobota",
+        "6": "Niedziela"
+      }
+    },
+    "settings_section": {
+      "options": {
+        "general": "Ogólne",
+        "world": "Model domu",
+        "presence": "Domownicy i sen",
+        "privacy": "Prywatność",
+        "detectors": "Wykrywanie",
+        "situations": "Sprawy",
+        "triage": "Ocena",
+        "notify": "Powiadomienia",
+        "policy": "Polityka",
+        "executor": "Akcje",
+        "repair": "Samonaprawa",
+        "adapters": "Huby i mostki",
+        "schedule": "Plan",
+        "heating": "Ogrzewanie",
+        "ai": "AI",
+        "prompts": "Prompty AI",
+        "learning": "Uczenie"
+      }
     }
   },
   "exceptions": {
@@ -220,6 +1921,18 @@
     },
     "residents_only": {
       "message": "To mogą zrobić tylko domownicy."
+    },
+    "settings_invalid": {
+      "message": "Ustawienia nie zostały zaimportowane: {reason}."
+    },
+    "memory_residents_only": {
+      "message": "Tylko domownicy mogą zmieniać to, co pamięta HomeAI."
+    },
+    "memory_not_found": {
+      "message": "HomeAI już tego nie pamięta."
+    },
+    "memory_not_yours": {
+      "message": "Zmienić to może tylko administrator albo osoba, która to powiedziała."
     }
   },
   "entity": {
@@ -320,6 +2033,14 @@
     "number": {
       "ai_budget_monthly": {
         "name": "Budżet AI na miesiąc"
+      },
+      "ai_budget_daily": {
+        "name": "Budżet AI na dzień"
+      }
+    },
+    "todo": {
+      "memory": {
+        "name": "Pamięć"
       }
     }
   },
@@ -625,6 +2346,20 @@
           "description": "Jak długo pilnować; najwyżej tyle, ile w ustawieniu HomeAI."
         }
       }
+    },
+    "export_settings": {
+      "name": "Eksportuj ustawienia",
+      "description": "Zwraca ustawienia HomeAI różniące się od domyślnych (także dla miejsc), do zachowania albo zaimportowania gdzie indziej."
+    },
+    "import_settings": {
+      "name": "Importuj ustawienia",
+      "description": "Zastępuje wszystkie ustawienia HomeAI eksportem. Najpierw sprawdzane jest wszystko: nic się nie zmienia, gdy jedna wartość jest nieprawidłowa.",
+      "fields": {
+        "settings": {
+          "name": "Ustawienia",
+          "description": "Odpowiedź usługi Eksportuj ustawienia."
+        }
+      }
     }
   },
   "config_subentries": {
@@ -680,16 +2415,81 @@
         "cannot_connect": "Nie można połączyć się z dostawcą.",
         "unknown_model": "Dostawca nie zna tego modelu."
       }
+    },
+    "rule": {
+      "initiate_flow": {
+        "user": "Dodaj regułę",
+        "reconfigure": "Zmień regułę"
+      },
+      "entry_type": "Reguła",
+      "step": {
+        "rule": {
+          "title": "Reguła",
+          "description": "Gdy encja — albo każda encja z etykietą, w obszarze lub z domeny — spełnia warunek przez kilka minut, HomeAI otwiera sprawę.",
+          "data": {
+            "name": "Nazwa",
+            "enabled": "Włączona"
+          },
+          "sections": {
+            "target": {
+              "name": "Co obserwuje",
+              "description": "Encje albo wszystkie encje z etykietą, w obszarze lub z domeny (łącznie: wszystkie warunki naraz).",
+              "data": {
+                "entities": "Encje",
+                "label": "Etykieta",
+                "area": "Obszar",
+                "domain": "Domena"
+              }
+            },
+            "condition": {
+              "name": "Kiedy działa",
+              "data": {
+                "condition": "Warunek",
+                "value": "Stan lub liczba",
+                "minutes": "Przez co najmniej",
+                "when": "Aktywna",
+                "mode": "Encje"
+              },
+              "data_description": {
+                "value": "Stan do porównania (np. on, open) albo próg dla powyżej i poniżej."
+              }
+            },
+            "situation": {
+              "name": "Sprawa, którą otwiera",
+              "data": {
+                "severity": "Waga",
+                "category": "Kategoria",
+                "need": "Kto jest potrzebny",
+                "advice": "Porada"
+              },
+              "data_description": {
+                "severity": "0 informacja, 1 niska, 2 średnia, 3 wysoka, 4 krytyczna (tylko bezpieczeństwo).",
+                "advice": "Co zrobić; widać przy sprawie."
+              }
+            }
+          }
+        },
+        "preview": {
+          "title": "Sprawdź regułę",
+          "description": "**{name}** obejmuje encje ({count}): {covered}.\n\nSpełniają warunek teraz (bez czasu oczekiwania): {meeting}.\n\nZatwierdź, by zapisać regułę."
+        }
+      },
+      "error": {
+        "invalid_rule": "Reguła jest nieprawidłowa: {error}"
+      },
+      "abort": {
+        "reconfigure_successful": "Reguła została zmieniona."
+      }
     }
   },
   "issues": {
     "no_residents": {
       "title": "HomeAI nie zna domowników",
-      "description": "Żadna osoba nie ma roli administratora ani domownika, więc nikt nie dostaje powiadomień, a obecność jest nieznana. Ustaw role w panelu HomeAI (Ustawienia → Obecność) albo dodaj osoby w Home Assistancie."
+      "description": "Żadna osoba nie ma roli administratora ani domownika, więc nikt nie dostaje powiadomień, a obecność jest nieznana. Ustaw role w opcjach HomeAI (Konfiguruj → Ustawienia dla miejsca → Osoba) albo dodaj osoby w Home Assistancie."
     },
     "no_phones": {
       "title": "HomeAI nie ma jak powiadomić",
-      "description": "Żaden domownik nie ma telefonu z aplikacją Home Assistant ani celu powiadomień. Zainstaluj aplikację albo dodaj cele powiadomień osób w panelu HomeAI."
+      "description": "Żaden z domowników nie ma telefonu z aplikacją Home Assistant ani celu powiadomień. Zainstaluj aplikację Companion albo dodaj cele powiadomień dla osoby w opcjach HomeAI (Konfiguruj → Ustawienia dla miejsca → Osoba)."
     },
     "no_areas": {
       "title": "HomeAI nie zna pokoi",

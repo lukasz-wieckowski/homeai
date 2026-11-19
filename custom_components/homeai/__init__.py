@@ -1,8 +1,8 @@
 """HomeAI: home intelligence for Home Assistant.
 
 One config entry runs one `HomeAIRuntime`: world model, detection, situations, notifications, policy, actions,
-scheduler, memory and the optional AI tiers. Everything is configured from the UI (setup wizard, options,
-subentries for AI tiers and the settings panel).
+scheduler, memory and the optional AI tiers. Everything is configured from the UI: the setup wizard, the options
+(every setting, also per floor, area, device, entity or person) and subentries for AI tiers and custom rules.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from .const import (
     CONF_SYSTEM_USER,
     DOMAIN,
     LOGGER,
+    SUBENTRY_RULE,
 )
 from .platforms import PLATFORMS
 from .runtime import HomeAIRuntime
@@ -57,7 +58,9 @@ ENTRY_KEYS = (CONF_INITIAL_SETTINGS, CONF_INITIAL_APPLIED, CONF_SYSTEM_USER, CON
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """1.1 → 1.2. An entry HomeAI's wizard did not make (it has no wizard answers — e.g. one left by an earlier
     integration with the same domain) keeps only HomeAI's own keys, so foreign data such as an old API key does not
-    linger in it, and is flagged so Repairs offers to finish the setup."""
+    linger in it, and is flagged so Repairs offers to finish the setup.
+
+    1.2 → 1.3. Custom rules move from the `detectors.custom` setting to rule subentries."""
     if entry.version > 1:
         return False
     if entry.minor_version < 2:
@@ -66,6 +69,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data[CONF_NEEDS_SETUP] = True
             LOGGER.warning("HomeAI's config entry was not made by its setup wizard; finish the setup in Repairs")
         hass.config_entries.async_update_entry(entry, data=data, minor_version=2)
+    if entry.minor_version < 3:
+        from .signals.rules import async_move_legacy_rules
+
+        await async_move_legacy_rules(hass, entry)
+        hass.config_entries.async_update_entry(entry, minor_version=3)
     return True
 
 
@@ -92,14 +100,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeAIConfigEntry) -> bo
 
 
 def _subentries(entry: ConfigEntry) -> dict[str, Any]:
-    return {sid: (sub.subentry_type, dict(sub.data)) for sid, sub in entry.subentries.items()}
+    """The subentries a change of which needs a reload (AI tiers); rules are applied without one."""
+    return {
+        sid: (sub.subentry_type, dict(sub.data))
+        for sid, sub in entry.subentries.items()
+        if sub.subentry_type != SUBENTRY_RULE
+    }
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: HomeAIConfigEntry) -> None:
-    """Subentries (AI tiers) changed: reload so modules pick them up. Data written by HomeAI itself does not."""
+    """Subentries changed. AI tiers: reload so modules pick them up. Rules: the custom detector takes the new list
+    at once. Data written by HomeAI itself does not reload."""
     runtime = getattr(entry, "runtime_data", None)
     if runtime is None or getattr(runtime, "subentry_snapshot", None) != _subentries(entry):
         await hass.config_entries.async_reload(entry.entry_id)
+        return
+    from .signals.rules import rules_of
+
+    runtime.set_rules(rules_of(entry))
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:

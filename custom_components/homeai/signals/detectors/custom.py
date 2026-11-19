@@ -1,4 +1,4 @@
-"""Custom detectors: rules people set up in the panel, without code or YAML.
+"""Custom detectors: rules people add on the integration's page ("Add rule"), without code or YAML.
 
 A rule says: when an entity (or every entity with a label, in an area, of a domain) meets a condition for some
 minutes — optionally only at night, only when nobody is home or only when someone is — open a situation with a
@@ -8,6 +8,7 @@ situation per rule); with `mode: all` the rule fires only when all its entities 
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timedelta
 import re
 from typing import Any
@@ -166,11 +167,12 @@ def active_now(ctx: DetectionContext, rule: dict[str, Any]) -> bool:
 class CustomDetector(Detector):
     key = "custom"
 
-    def __init__(self) -> None:
+    def __init__(self, source: Callable[[], list[dict[str, Any]]] | None = None) -> None:
         self._since: dict[tuple[str, str], datetime] = {}  # (rule, entity) → the condition holds since
+        self.source = source or list  # the current rules (the runtime's, from the rule subentries)
 
     def rules(self, ctx: DetectionContext) -> list[dict[str, Any]]:
-        return [r for r in ctx.settings.get("detectors.custom") or [] if r.get("enabled")]
+        return [r for r in self.source() if r.get("enabled")]
 
     def watched_entities(self, ctx: DetectionContext) -> set[str]:
         return {e for rule in self.rules(ctx) for e in targets(ctx, rule)}

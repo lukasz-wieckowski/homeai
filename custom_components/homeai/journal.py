@@ -1,7 +1,10 @@
-"""Journal: what HomeAI noticed, decided and did, and why — readable by everyone in the panel and diagnostics.
+"""Journal: what HomeAI noticed, decided and did, and why.
 
 Every action, repair attempt, AI decision, notification and settings change leaves one entry. Entries are kept
-for `general.journal_retention_days` and stored in `.storage/homeai.journal`.
+for `general.journal_retention_days` in `.storage/homeai.journal` (diagnostics, the AI's context, cards). The ones
+that matter to people — situations opened and closed, actions, repairs, decisions, approvals, notifications,
+settings and the plan — also go to Home Assistant's logbook (Activity) under HomeAI's device, so Activity shows
+what HomeAI did and why. Internal entries (AI bookkeeping, system notes) stay in the journal only.
 """
 
 from __future__ import annotations
@@ -10,11 +13,12 @@ from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
 
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util, ulid as ulid_util
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, NAME
 from .settings import SettingsManager
 
 STORAGE_KEY = f"{DOMAIN}.journal"
@@ -22,6 +26,9 @@ STORAGE_VERSION = 1
 MAX_ENTRIES = 5000
 
 KINDS = ("situation", "action", "repair", "decision", "notification", "approval", "setting", "ai", "schedule", "system")
+LOGBOOK_KINDS = frozenset(KINDS) - {"ai", "system"}
+# The entity HomeAI's logbook entries belong to: the situations sensor, on HomeAI's device.
+ANCHOR = ("sensor", f"{DOMAIN}_situations")
 
 
 class Journal:
@@ -52,8 +59,11 @@ class Journal:
         situation_id: str | None = None,
         result: str | None = None,
         data: dict[str, Any] | None = None,
+        context: Context | None = None,
+        logbook: bool | None = None,
     ) -> dict[str, Any]:
-        """Record one event. `text` is already in the household's language."""
+        """Record one event. `text` is already in the household's language. `logbook`: also write it to the
+        logbook (default: by kind); `context`: the context of what it is about (an action's), for the logbook."""
         entry = {
             "id": ulid_util.ulid_now().lower(),
             "ts": dt_util.utcnow().isoformat(timespec="seconds"),
@@ -67,12 +77,22 @@ class Journal:
         self.entries.append(entry)
         del self.entries[:-MAX_ENTRIES]
         self._store.async_delay_save(lambda: {"entries": self.entries}, 5)
+        if entry["kind"] in LOGBOOK_KINDS if logbook is None else logbook:
+            self._log(text, context)
         for cb in list(self._listeners):
             try:
                 cb(entry)
             except Exception:
                 LOGGER.exception("Journal listener failed")
         return entry
+
+    def _log(self, text: str, context: Context | None) -> None:
+        if "logbook" not in self.hass.config.components:
+            return
+        from homeassistant.components.logbook import async_log_entry
+
+        anchor = er.async_get(self.hass).async_get_entity_id(ANCHOR[0], DOMAIN, ANCHOR[1])
+        async_log_entry(self.hass, NAME, text, DOMAIN, anchor, context)
 
     def prune(self) -> None:
         days = int(self.settings.get("general.journal_retention_days"))

@@ -251,7 +251,7 @@ async def test_custom_rule_counts_how_long_the_condition_holds(
         "minutes": 30,
         "severity": 2,
     }
-    rt = await setup_homeai(hass, {"detectors.custom": [rule]})
+    rt = await setup_homeai(hass, rules=[rule])
     hub = rt.module("signals")
     detector = next(d for d in hub.detectors if d.key == "custom")
     home.set("sensor.bedroom_temperature", "26")

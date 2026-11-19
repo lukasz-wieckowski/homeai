@@ -255,3 +255,11 @@ watch:
           max: 168
           step: 0.5
           unit_of_measurement: h
+export_settings:
+import_settings:
+  fields:
+    settings:
+      required: true
+      example: '{"version": 1, "global": {"general.language": "en"}, "overrides": {}}'
+      selector:
+        object:

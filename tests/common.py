@@ -10,6 +10,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.homeai.const import DOMAIN
+from custom_components.homeai.signals.detectors.custom import validate_rules
 
 FAST = {
     "general.startup_grace": 0,
@@ -29,8 +30,10 @@ async def setup_homeai(
     *,
     ready: bool = True,
     subentries: list[dict[str, Any]] | None = None,
+    rules: list[dict[str, Any]] | None = None,
 ) -> Any:
-    """Set up HomeAI; returns the runtime. `overrides` maps scope keys ("person:person.anna") to settings."""
+    """Set up HomeAI; returns the runtime. `overrides` maps scope keys ("person:person.anna") to settings;
+    `subentries` are AI tiers, `rules` custom rules (both stored as the entry's subentries)."""
     initial: dict[str, Any] = {**FAST, **(settings or {})}
     if overrides:
         initial["overrides"] = overrides
@@ -40,8 +43,16 @@ async def setup_homeai(
         domain=DOMAIN,
         data={"initial_settings": initial},
         subentries_data=[
-            ConfigSubentryData(data=sub, subentry_type="tier", title=f"{sub['tier']} {sub['model']}", unique_id=None)
-            for sub in subentries or []
+            *(
+                ConfigSubentryData(
+                    data=sub, subentry_type="tier", title=f"{sub['tier']} {sub['model']}", unique_id=None
+                )
+                for sub in subentries or []
+            ),
+            *(
+                ConfigSubentryData(data=rule, subentry_type="rule", title=rule["name"], unique_id=rule["id"])
+                for rule in validate_rules(rules or [])
+            ),
         ],
     )
     entry.add_to_hass(hass)

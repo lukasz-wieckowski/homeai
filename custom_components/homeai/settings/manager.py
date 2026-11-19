@@ -113,7 +113,13 @@ class SettingsManager:
     @staticmethod
     def _narrowed(setting: Setting, value: Any) -> tuple[Any] | None:
         """A whole number above a maximum that an upgrade lowered (e.g. severity 4 outside safety) becomes the
-        new maximum instead of being dropped."""
+        new maximum instead of being dropped; a list of choices keeps the choices that still exist (a panel that an
+        upgrade removed)."""
+        if setting.type is SettingType.MULTISELECT and isinstance(value, list):
+            try:
+                return (setting.validate([v for v in value if v in setting.options]),)
+            except SettingError:
+                return None
         if (
             setting.type is SettingType.INT
             and setting.max is not None
@@ -162,6 +168,10 @@ class SettingsManager:
     def overrides_of(self, key: str) -> dict[str, Any]:
         """All scoped overrides of one setting: scope key → value."""
         return {skey: values[key] for skey, values in self._overrides.items() if key in values}
+
+    def scoped_keys(self) -> list[str]:
+        """Scope keys (`area:kitchen`, `person:person.anna`…) that have values of their own."""
+        return list(self._overrides)
 
     def all_global(self) -> dict[str, Any]:
         return {s.key: self._global.get(s.key, s.default) for s in self.registry}
@@ -241,11 +251,9 @@ class SettingsManager:
                 count += 1
         return count
 
-    @callback
-    def undo_last(self, *, user: str | None = None, is_admin: bool = True) -> dict[str, Any] | None:
-        """Restore the value from before the most recent change that has not been undone yet. Undoing again goes
-        one change further back; imports and the undos themselves are skipped."""
-        last = next(
+    def last_undoable(self) -> dict[str, Any] | None:
+        """The change `undo_last` would undo, or None."""
+        return next(
             (
                 h
                 for h in reversed(self._history)
@@ -253,6 +261,12 @@ class SettingsManager:
             ),
             None,
         )
+
+    @callback
+    def undo_last(self, *, user: str | None = None, is_admin: bool = True) -> dict[str, Any] | None:
+        """Restore the value from before the most recent change that has not been undone yet. Undoing again goes
+        one change further back; imports and the undos themselves are skipped."""
+        last = self.last_undoable()
         if last is None:
             return None
         key, skey = last["key"], last["scope"]

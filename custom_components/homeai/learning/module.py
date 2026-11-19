@@ -1,7 +1,8 @@
 """The learning stage: norms and anomalies, habit proposals, feedback from people, and the weekly review.
 
-Learned things never act by themselves: habits become proposals a person approves; repeated undo of an
-automatic action turns that action back to “propose”; repeated refusals keep HomeAI from asking again for a while.
+Learned things never act by themselves: habits become proposals a person approves (approval requests of kind
+`habit` in the inbox); repeated undo of an automatic action turns that action back to “propose”; repeated refusals
+keep HomeAI from asking again for a while.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util, ulid as ulid_util
 
+from ..actions.approvals import Kind
 from ..const import DOMAIN, LOGGER
 from ..notify.recipients import targets_for
 from ..policy import ActionRequest
@@ -25,6 +27,7 @@ from .baselines import AnomalyDetector, Baselines
 from .habits import collect, find_habits
 
 STORAGE_KEY = f"{DOMAIN}.learning"
+KIND = "habit"  # approval requests about a habit HomeAI would add to the plan
 KEEP_REVIEWS = 8
 
 
@@ -69,6 +72,29 @@ class Learning:
             hub.add_detector(AnomalyDetector(self.baselines))
         self._schedule()
         self._unsubs.append(self.rt.settings.listen("learning", lambda _k: self._schedule()))
+        if (approvals := self.rt.module("approvals")) is not None:
+            self._unsubs.append(approvals.register_kind(KIND, Kind(self._approve_request, self._deny_request)))
+            for proposal in self.proposals.values():
+                if proposal["status"] == "pending":
+                    self._ask(proposal)
+            for item in approvals.pending():
+                if item.get("kind") == KIND and self.proposals.get(item["ref"], {}).get("status") != "pending":
+                    approvals.settle(KIND, item["ref"])
+
+    # ——— Approval requests ———
+    def _ask(self, proposal: dict[str, Any]) -> None:
+        if (approvals := self.rt.module("approvals")) is not None:
+            approvals.ask(KIND, proposal["id"], proposal["title"], self.rt.text("approvals|habit_reason"))
+
+    def _settle(self, proposal_id: str, status: str) -> None:
+        if (approvals := self.rt.module("approvals")) is not None:
+            approvals.settle(KIND, proposal_id, status)
+
+    async def _approve_request(self, item: dict[str, Any], user_id: str | None) -> bool:
+        return await self.approve(item["ref"], user_id) is not None
+
+    async def _deny_request(self, item: dict[str, Any], _user_id: str | None) -> bool:
+        return self.reject(item["ref"])
 
     async def async_unload(self) -> None:
         for unsub in self._unsubs + self._timers:
@@ -164,6 +190,7 @@ class Learning:
                 ),
             }
             self.proposals[proposal["id"]] = proposal
+            self._ask(proposal)
             new.append(proposal)
         if new:
             self.rt.journal.add("decision", self.rt.text("learning|habits_found", count=len(new)))
@@ -193,7 +220,9 @@ class Learning:
                 source="learning",
                 confidence=0.8,
                 author=user_id,
-            ).update(approved=True)
+                approved=True,
+            )
+        self._settle(proposal_id, "approved")
         self._save()
         return proposal
 
@@ -203,6 +232,7 @@ class Learning:
             return False
         proposal["status"] = "rejected"
         self.rejected.add(proposal["key"])
+        self._settle(proposal_id, "denied")
         self._save()
         return True
 

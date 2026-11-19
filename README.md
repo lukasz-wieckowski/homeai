@@ -19,9 +19,10 @@ model.</sub>
 - [Installation](#installation)
 - [First setup](#first-setup)
 - [Adding AI (optional)](#adding-ai-optional)
-- [User manual: the HomeAI panel](#user-manual-the-homeai-panel):
+- [User manual](#user-manual):
   [Situations](#situations) · [Approvals](#approvals) · [Chat](#chat) · [Plan](#plan) · [Presence](#presence) ·
-  [Learning](#learning) · [Rules](#rules) · [Journal](#journal) · [Settings](#settings) · [AI](#ai)
+  [Learning and memory](#learning-and-memory) · [Rules](#rules) · [Journal](#journal) · [Settings](#settings) ·
+  [AI](#ai)
 - [Dashboard cards](#dashboard-cards)
 - [Theming](#theming)
 - [On the phone](#on-the-phone)
@@ -44,7 +45,7 @@ model.</sub>
   errors, the internet connection, batteries, consumables, plants and their watering, silent sensors, indoor
   climate, disagreeing sensors, lights in an empty home, windows open while heating, hubs and bridges
   (Zigbee2MQTT and any hub other devices connect through), unusual values against learned norms, signals from
-  other integrations, and your own rules written in the panel.
+  other integrations, and your own rules added on the integration's page.
 - **Understands.** Signals become *situations*: related signals are grouped (a hub offline explains every device
   behind it, the internet down explains cloud devices), flickers are ignored, and each situation has a lifecycle
   (pending, open, clearing, resolved).
@@ -69,8 +70,10 @@ model.</sub>
   outside the policy.
 - **Learns.** Norms for each hour of the week, habits proposed for the plan (saved only after approval), memory of
   facts and preferences, feedback from undo and refusals, and a weekly review.
-- **Configurable from the UI.** Every threshold, delay, limit, channel and model is a field in the HomeAI panel:
-  300+ settings, many of them per floor, room, device, entity or person. See [docs/settings.md](docs/settings.md).
+- **Configurable from the UI, where Home Assistant keeps things.** Every threshold, delay, limit, channel and model
+  is a field in the integration's options (*Configure*): 300+ settings, many of them per floor, room, device, entity
+  or person. Rules and AI connections are the integration's entries, memory is a to-do list, the journal is in
+  Activity. See [docs/settings.md](docs/settings.md).
 
 ## Requirements
 
@@ -103,10 +106,12 @@ model.</sub>
 
 After the wizard:
 
-- Four panels appear in the sidebar: **HomeAI** (situations and approvals; notifications open here), **Home plan**
-  (the plan and presence), **Chat**, and **Manage HomeAI** (learning, the journal and, for administrators, rules, all
-  settings and the AI status). Setting *Which panels* chooses which of them HomeAI adds; each person can also hide
-  any of them in their own sidebar.
+- Three panels appear in the sidebar: **HomeAI** (situations and requests waiting for approval; notifications open
+  here), **Home plan** (the plan and presence) and **Chat**. Setting *Which panels* chooses which of them HomeAI
+  adds; each person can also hide any of them in their own sidebar.
+- Everything else is where Home Assistant keeps it. On **Settings → Devices & services → HomeAI**: **Configure** for
+  all settings, **Add rule** for your own detectors, **Add AI tier** for AI. The **Memory** to-do list holds what
+  HomeAI remembers, and **Activity** shows what HomeAI did and why.
 - For the first **14 days** (setting *Observation period*) HomeAI only *observes* the comfort, device and system
   repair actions it would take or propose on its own: the journal shows what it would have done, and nobody is asked
   to approve anything. Detecting situations, notifications and protective actions on labelled entities work from day
@@ -131,13 +136,16 @@ spending tokens.
 Each connection has a **priority** (several connections may serve one tier; lower is tried first, so a local model
 can come first with a cloud model as fallback), its own **privacy** level, optional prices and optional limits:
 **longest answer**, **timeout** and **daily budget**. A connection that spent its daily budget is skipped and the
-next one answers. Daily and monthly budgets for all of HomeAI are in the panel's settings (*AI*) and as
-`number.homeai_ai_budget_monthly`.
+next one answers. Daily and monthly budgets for all of HomeAI are in the options (*Configure → AI*) and the entities
+`number.homeai_ai_budget_daily` and `number.homeai_ai_budget_monthly`; the spend is
+`sensor.homeai_ai_cost_today` and `sensor.homeai_ai_cost_month` (each with its budget as an attribute).
 
-## User manual: the HomeAI panel
+## User manual
 
-Lists are one surface per group, with a row for each item: what, where and when. Tap a row to see why and what you
-can do; editors open as a sheet above the list (from the bottom on a phone).
+HomeAI's panels show what needs people: the inbox, the plan and the chat. Lists are one surface per group, with a
+row for each item: what, where and when. Tap a row to see why and what you can do; editors open as a sheet above the
+list (from the bottom on a phone). Managing HomeAI happens in Home Assistant's own places, described from
+[Learning and memory](#learning-and-memory) on.
 
 ### Situations
 
@@ -173,6 +181,10 @@ When an action is above what the requester or HomeAI may do alone, an approval r
 device actions (R1–R2) can be approved by any resident, system and configuration (R3+) only by administrators.
 The request says what will happen, who asked and when it expires. Approve or deny here or with the buttons on the
 phone notification. Destructive actions (R6) are never approved automatically.
+
+Two more kinds of requests wait here, without a notification and without expiring: **a fact HomeAI noticed**
+(*Remember: …*; approve to keep it in memory, deny to forget it — a fact about one person is asked of that person)
+and **a habit HomeAI found** (approve to add it to the plan, deny so it is not proposed again).
 
 In the screenshot Peter (a member) asked to set the thermostat to 24 °C; the administrator raised
 `climate.set_temperature` to R3 in *Risk class by action*, so Anna has to approve it.
@@ -230,77 +242,87 @@ pause) and who gets notifications. They are also published as `calendar.homeai_p
 automation can use them with a calendar trigger. You can create them from any calendar UI too: the title picks the
 kind (“Vacation Anna”, “Guests”).
 
-### Learning
+### Learning and memory
 
-![Learning](docs/images/en/08-learning.jpg)
-
-- **Proposals**: habits HomeAI noticed (for example the hallway light every weekday at 6:40). They become plan
-  entries only after you approve them.
-- **Memory**: facts and preferences HomeAI should know. Add them here or tell them in a conversation; AI uses them
-  when it answers and assesses situations. Remove anything at any time.
-- **Weekly review**: a short summary of the week in the panel and, if you want, as a notification (with AI, written
-  by P1).
+- **Habits** HomeAI noticed (for example the hallway light every weekday at 6:40) wait in the **HomeAI** panel as
+  requests; they become plan entries only after someone approves them.
+- **Memory** is the to-do list **Memory** (`todo.homeai_memory`, under *To-do lists*): every item is something HomeAI
+  knows about the home. Add an item to tell HomeAI a fact, edit it to correct it, delete it to make HomeAI forget it
+  (ticking an item off changes nothing). You can also tell facts in a conversation. Facts HomeAI noticed by itself
+  wait in the inbox until someone approves them. Facts about one person are kept out of the list, because every
+  Home Assistant user sees every list; they stay private to that person and administrators.
+- **Weekly review**: a short summary of the week as a persistent notification and, if you want, on administrators'
+  phones (with AI, written by P1). The *Learning* section of the options sets when.
 
 ### Rules
 
-![Rules](docs/images/en/09-rules.jpg)
-
-Your own detectors, without code. A rule opens a situation when its entities meet a condition for a while.
-
-![Rule editor](docs/images/en/10-rule-editor.jpg)
+Your own detectors, without code: **Settings → Devices & services → HomeAI → Add rule**. A rule opens a situation
+when its entities meet a condition for a while. Each rule is an entry on the integration's page: **⋮ → Reconfigure**
+changes it, **Delete** removes it, and the switch *On* in the rule pauses it. Rules apply at once, without
+restarting HomeAI.
 
 | Field | Meaning |
 |---|---|
-| Entities / Label id / Area / Domain | what the rule covers: a list of entities, or everything with a label, in an area or of a domain |
-| Condition | *is* / *is not* a state, *above* / *below* a number, *unavailable* |
+| Name, On | how the rule's situations are called; whether it runs |
+| What it watches: Entities / Label / Area / Domain | a list of entities, or everything with a label, in an area or of a domain (combined: all must match) |
+| When it fires: Condition, State or number | *is* / *is not* a state, *above* / *below* a number, *unavailable* |
 | For at least | minutes the condition must hold (0 = at once) |
-| Active | *always*, *at night*, *nobody home*, *someone home* |
-| Mode | *each entity* opens its own signal; *all together* only when every covered entity meets it |
-| Severity, Category, Who | how serious it is (0–4), what kind (safety, security, damage, energy…), who is needed |
+| Active | *always*, *only at night*, *only when nobody is home*, *only when someone is home* |
+| Entities | *each entity on its own* opens a signal per entity; *only when all of them meet it* fires once for all |
+| The situation it opens: Severity, Category, Who is needed | how serious it is (0–4), what kind (safety, security, damage, energy…), who is needed |
 | Advice | the text people see |
 
-**Preview** shows how many entities the rule covers and which of them meet it right now. A firing rule has a dot
-next to its name.
+Before saving, the last step shows how many entities the rule covers and which of them meet it right now. The
+setting *Custom rules: watch* (options → *Detection*) turns all rules off at once.
 
 ### Journal
 
-![Journal](docs/images/en/11-journal.jpg)
-
-Everything HomeAI did and why: assessments (including what AI said), actions and their results, repairs, approvals,
-plan changes, settings changes, and in the observation period what it *would have* done. Actions also appear in Home
-Assistant's logbook, run as the `HomeAI` user, and can be undone (`homeai.undo`).
+What HomeAI did and why is in Home Assistant's **Activity** (logbook), under HomeAI's device: situations opening and
+closing, actions and their results, repairs, AI and arbiter decisions, approvals, notifications, plan changes and
+settings changes. Filter Activity by the HomeAI device, or open the device and its activity. Actions run as the
+`HomeAI` user, so the state changes they caused show it too, and they can be undone (`homeai.undo`). HomeAI also
+keeps its own journal for its AI context and diagnostics, for *Journal retention* days; in the observation period it
+notes what it *would have* done there.
 
 ### Settings
 
-![Settings](docs/images/en/12-settings.jpg)
+**Settings → Devices & services → HomeAI → Configure.** The menu lists the sections (General, Home model, People and
+sleep, Privacy, Detection, Situations, Assessment, Notifications, Policy, Actions, Self-repair, Hubs and bridges,
+Plan, Heating, AI, AI prompts, Learning); each opens a form with a label and a description for every setting.
+Advanced settings are in the collapsed part *Advanced* at the bottom; *Detection* is split into collapsed parts by
+what it watches (batteries, safety sensors, security…). Settings read only at start (for example the tick interval
+or the panels) reload HomeAI when saved.
 
-Every setting has a label and a description; search finds them by words. *Show advanced* reveals the rest.
-
-- **Applies to**: choose *Whole home*, or a floor, room, device, entity or person. Only the settings that can be
-  overridden there are shown; *inherited* values come from the next level up (entity → device → room → floor →
-  whole home), and **↺** removes an override. Below, the kitchen has its own battery threshold of 25 %:
-
-![Settings for one room](docs/images/en/13-settings-room.jpg)
-
-- **History** lists every change (who, when, old → new); **Undo last change** reverts the latest one.
-- **Export** and **Import** move all settings between homes (import validates everything first: all or nothing).
-- **Reset section** restores the defaults of a whole section.
-- Changes that lower protection (turning off safety detectors, raising autonomy) ask for confirmation first.
+- **Settings for a place**: pick a floor, area, device, entity or person, then the place; the form shows only the
+  settings that can differ there. A filled field is the place's own value; an empty field inherits from the next
+  level up (entity → device → area → floor → whole home); clearing a field removes the place's own value. People's
+  roles, notification targets and sleep hours are set here per person.
+- **Undo the last change** shows the latest change (what, where, old → new) and reverts it; undoing again goes one
+  change further back.
+- **Reset a section to defaults** restores the defaults of a whole section (values for places stay).
+- Changes that lower protection (turning off safety detectors, raising autonomy, sending more to cloud AI) ask for
+  confirmation first.
+- **Export and import**: the services `homeai.export_settings` (returns the settings as response data) and
+  `homeai.import_settings` move all settings between homes; import validates everything first (all or nothing).
+  The settings are also part of the integration's diagnostics.
 
 **Policy** has the autonomy levels per risk class, the *actor × class matrix* (a separate level for HomeAI's own
-rules, AI, repairs and the plan), risk classes by action and by label, and the observation period:
-
-![Policy settings](docs/images/en/14-settings-policy.jpg)
+rules, AI, repairs and the plan), risk classes by action and by label, and the observation period. Every setting is
+listed in [docs/settings.md](docs/settings.md).
 
 ### AI
 
-![AI](docs/images/en/15-ai.jpg)
-
-Spend today and this month against the budgets, the tiers with their status, and the **prompts**: every mission
-(assessment, investigation, conversation, arbiter, digest) shows its built-in prompt; you can write your own and
-restore the built-in one at any time. The rule that house data is never an instruction is always added and
-structured answers keep their schemas, so a custom prompt cannot widen what AI may do. With *Keep AI requests* the
-last request to each tier is shown too.
+- **Tiers** are the integration's entries (**Add AI tier**, see [Adding AI](#adding-ai-optional)); each shows its
+  model on the integration's page and is changed with *Reconfigure*.
+- **Spend and budgets** are entities on HomeAI's device: `sensor.homeai_ai_cost_today` and
+  `sensor.homeai_ai_cost_month` (with the budget and today's calls as attributes), `number.homeai_ai_budget_daily`
+  and `number.homeai_ai_budget_monthly`. *Budget mode* (options → *AI*) decides whether a spent budget stops calls or
+  only warns.
+- **Prompts**: options → **AI prompts** has a field for every mission (assessment, investigation, conversation,
+  arbiter, digest); empty uses the built-in prompt. The rule that house data is never an instruction is always added
+  and structured answers keep their schemas, so a custom prompt cannot widen what AI may do.
+- **What was sent**: *Download diagnostics* on the integration includes the built-in and your own prompts and, with
+  *Keep AI requests* (options → *Privacy*), the last request to each tier.
 
 ## Dashboard cards
 
@@ -424,7 +446,7 @@ My home:
 | `--homeai-content-padding` | `--ha-content-gutter` | around the panel's content |
 | `--homeai-content-max-width` | 68em | width of the panel's content |
 | `--homeai-header-height` | `--header-height` | the panel's top bar |
-| `--homeai-reading-width` | 48em | width of views that are one column of text (situations, presence, chat, learning, journal, rules) |
+| `--homeai-reading-width` | 48em | width of views that are one column of text (situations, presence, chat) |
 | `--homeai-section-spacing` | `--ha-space-6` | between sections |
 | `--homeai-row-padding-x`, `--homeai-row-padding-y` | `--ha-space-4`, `--ha-space-3` | inside a list row |
 | `--homeai-row-hover-background` | `--homeai-text-color` at 4 % | a list row under the pointer |
@@ -440,9 +462,9 @@ passes its views' parts on, so `homeai-panel::part(card)` reaches the cards and 
 | `card`, `title`, `heading` | a card, its title, a heading between cards |
 | `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | a severity dot or badge (and the one for that severity) |
 | `button`, `button-primary`, `button-quiet` | every button, the main one (also a chosen option or weekday), a quiet one (cancel, remove, show more) |
-| `segmented`, `sheet`, `composer` | the settings sections' capsule, an editor (sheet), the chat composer |
+| `segmented`, `sheet`, `composer` | a choice of options in one capsule (what should happen, when), an editor (sheet), the chat composer |
 | `input` | fields, lists to choose from, checkboxes |
-| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | a list, a row, its title, its details line and its time, a day's heading in the plan and the journal |
+| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | a list, a row, its title, its details line and its time, a day's heading in the plan |
 | `pager` | the pages under a long list (previous, where you are, next) |
 | `empty`, `error` | the “nothing here” text, an error |
 | `log`, `message`, `message-user`, `message-assistant` | the chat: the conversation and its messages |
@@ -461,8 +483,8 @@ homeai-situations-card::part(card) { border-width: 0; }
   <img src="docs/images/en/20-phone-situations.jpg" alt="Situations on a phone" width="300">
 </p>
 
-- Notifications go to each person's Companion app (found automatically; more targets per person in *Settings →
-  Notifications*). They carry the buttons **Got it**, **I'll handle it** and **Snooze**; approval requests carry
+- Notifications go to each person's Companion app (found automatically; more targets per person in the options:
+  *Settings for a place → Person → Notifications*). They carry the buttons **Got it**, **I'll handle it** and **Snooze**; approval requests carry
   **Approve** and **Deny**.
 - Who gets what depends on the severity: critical (safety only) goes to everyone at once as a critical alert and
   repeats every 5 minutes (and may wake people), high
@@ -510,7 +532,8 @@ thermostat keeps its own weekly schedule; HomeAI never has a heating plan of its
   bedroom*, *HomeAI: bathroom*, *HomeAI: common space* and *HomeAI: workplace* (on the room or on a device in it),
   or from the room's icon and name. A person's workplace is their setting *Workplace* (section *People and sleep*).
 
-All presets and timings are in the HomeAI panel, section *Heating*.
+All presets and timings are in the options (*Configure → Heating*), presets also per room or thermostat
+(*Settings for a place*).
 
 ## Entities
 
@@ -522,9 +545,10 @@ All presets and timings are in the HomeAI panel, section *Heating*.
 | `calendar.homeai_plan`, `calendar.homeai_presence` | The plan and presence exceptions |
 | `select.homeai_autonomy` | One slider over the whole policy: only observe, cautious, balanced, bold (administrators only) |
 | `switch.homeai_ai`, `switch.homeai_vacation`, `switch.homeai_notifications_paused` | AI on or off, vacation mode, pause notifications (critical ones still go out by default) |
-| `number.homeai_ai_budget_monthly` | Monthly AI budget |
+| `number.homeai_ai_budget_daily`, `number.homeai_ai_budget_monthly` | AI budgets per day and per month |
+| `todo.homeai_memory` | What HomeAI remembers: add, edit or delete facts |
 | `sensor.homeai_next_plan_change` | When the plan does something next, and what |
-| `sensor.homeai_ai_cost_today`, `sensor.homeai_ai_cost_month` | Estimated AI spend |
+| `sensor.homeai_ai_cost_today`, `sensor.homeai_ai_cost_month` | Estimated AI spend; attributes: the budget and today's calls |
 | `conversation.homeai` | Talk to HomeAI from Assist and voice satellites |
 
 ## Services and automations
@@ -541,6 +565,7 @@ All presets and timings are in the HomeAI panel, section *Heating*.
 | `homeai.presence_add` / `presence_remove` | Edit presence exceptions |
 | `homeai.send_digest` | Send the digest now |
 | `homeai.run_mission` | Run a mission now (assessment, investigation, arbitration, digest, weekly review, learning); administrators and automations only |
+| `homeai.export_settings` / `import_settings` | Export the settings (response data) or replace them with an export; administrators and automations only |
 
 Examples:
 
@@ -656,27 +681,32 @@ Details: [docs/integrations.md](docs/integrations.md).
 (setting *Startup grace period*), and a new situation waits a minimum time per category (no wait for safety).
 
 **HomeAI does not do anything on its own.** The observation period (14 days by default) is on: the journal shows what
-it would have done. Shorten *Observation period* in *Settings → Policy*, or move the autonomy slider.
+it would have done. Shorten *Observation period* in the options (*Configure → Policy*), or move the autonomy slider.
 
-**Nobody gets notifications.** Install the Companion app and sign in with each person's account; check *Settings →
-Notifications* for that person (targets, *Discover phones*) and that notifications are not paused. Low severity goes
-only to the panel and the digest.
+**Nobody gets notifications.** Install the Companion app and sign in with each person's account; check the options
+(*Settings for a place → Person*, section *Notifications*: targets, *Discover phones*) and that notifications are not
+paused. Low severity goes only to the panel and the digest.
 
 **A false alarm.** Press **Not a problem**, put *HomeAI: ignore* on the entity, change the threshold for that entity
-or room in *Settings → Applies to*, or turn the detector off for it. Sensors inside appliances (freezer, fridge,
+or room in the options (*Settings for a place*), or turn the detector off for it. Sensors inside appliances (freezer, fridge,
 oven, aquarium) are recognised by their names and not treated as the room's temperature (setting *Appliance
 sensors*).
 
 **How much does AI cost?** Local models cost nothing. Cloud costs depend on the model and on how much happens at
-home: every call is priced and counted, the AI tab shows the spend, and the daily and monthly budgets stop calls
+home: every call is priced and counted, the AI cost sensors show the spend, and the daily and monthly budgets stop calls
 when reached (or only warn, if you choose).
 
 **Can HomeAI break my configuration?** Configuration changes (R4) are only proposed and need an administrator's
 approval; destructive actions (R6) are never autonomous; every autonomous action is logged and can be undone.
 
-**Where are the logs?** The HomeAI journal, Home Assistant's logbook (actions by the `HomeAI` user), *Settings →
-System → Logs* (`custom_components.homeai`), and *Download diagnostics* on the integration (keys and tokens
-redacted).
+**Where are the logs?** Home Assistant's Activity (HomeAI's journal and the actions of the `HomeAI` user),
+*Settings → System → Logs* (`custom_components.homeai`), and *Download diagnostics* on the integration (the journal,
+settings and prompts; keys and tokens redacted).
+
+**Where did the Manage HomeAI panel go?** Since 1.7 its parts are in Home Assistant: settings in **Configure**,
+rules as **Add rule** entries, learning and memory in the inbox and the **Memory** to-do list, the journal in
+**Activity**, AI as entities, *AI prompts* and diagnostics. Old links to `/homeai-manage` open the integration's page
+(or Activity for the journal). Rules made before 1.7 were moved to rule entries on the first start.
 
 ## Documentation
 

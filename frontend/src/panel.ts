@@ -6,41 +6,48 @@ import { PARTS, shared } from "./styles";
 import type { HomeAssistant } from "./types";
 import "./views/situations";
 import "./views/plan";
-import "./views/journal";
-import "./views/settings";
-import "./views/ai";
-import "./views/learning";
-import "./views/rules";
 import "./views/chat";
 import "./views/presence";
 
-// HomeAI adds up to four panels to the sidebar, all drawn by this element; `panel.config.view` says which one.
-// A panel with more than one tab shows them in its top bar.
-type View = "situations" | "plan" | "chat" | "manage";
-type Tab = "situations" | "plan" | "presence" | "chat" | "learning" | "journal" | "rules" | "settings" | "ai";
+// HomeAI adds up to three panels to the sidebar, all drawn by this element; `panel.config.view` says which one.
+// A panel with more than one tab shows them in its top bar. Settings, rules, memory and the journal live where
+// Home Assistant keeps them (the integration's options and subentries, a to-do list, Activity); the hidden
+// `redirect` view at the old management panel's address only sends old links there.
+type View = "situations" | "plan" | "chat" | "redirect";
+type Tab = "situations" | "plan" | "presence" | "chat";
 
-const TABS: Record<View, Tab[]> = {
+const TABS: Record<Exclude<View, "redirect">, Tab[]> = {
   situations: ["situations"],
   plan: ["plan", "presence"],
   chat: ["chat"],
-  manage: ["learning", "journal", "rules", "settings", "ai"],
 };
-const ADMIN_TABS: Tab[] = ["rules", "settings", "ai"];
 const ICONS: Record<Tab, string> = {
   situations: "mdi:home-heart",
   plan: "mdi:calendar-clock",
   presence: "mdi:account-clock-outline",
   chat: "mdi:message-text-outline",
-  learning: "mdi:school-outline",
-  journal: "mdi:notebook-outline",
-  rules: "mdi:format-list-checks",
-  settings: "mdi:tune-variant",
-  ai: "mdi:creation-outline",
 };
-// Paths of the other panels, for links from before the panels were split (`/homeai?tab=plan`).
-const PATHS: Record<View, string> = { situations: "/homeai", plan: "/homeai-plan", chat: "/homeai-chat", manage: "/homeai-manage" };
+// Paths of the panels, for links from before the panels were split (`/homeai?tab=plan`).
+const PATHS: Record<Exclude<View, "redirect">, string> = { situations: "/homeai", plan: "/homeai-plan", chat: "/homeai-chat" };
+const INTEGRATION = "/config/integrations/integration/homeai";
 // Views that read best as one column of text
-const READING: Tab[] = ["situations", "presence", "chat", "learning", "journal", "rules"];
+const READING: Tab[] = ["situations", "presence", "chat"];
+
+/** Where a link to a tab that is no longer in a panel goes (`?tab=settings`, `/homeai-manage?tab=journal`). */
+function movedTab(hass: HomeAssistant, tab: string | null): string {
+  if (tab === "journal") {
+    // the journal is in Activity, under HomeAI's device
+    const anchor = Object.values(hass.entities ?? {}).find((e) => e.platform === "homeai" && e.translation_key === "situations");
+    return `/logbook?entity_id=${encodeURIComponent(anchor?.entity_id ?? "sensor.homeai_situations")}`;
+  }
+  if (tab === "learning" || tab === "approvals" || !hass.user?.is_admin) return PATHS.situations; // requests wait in the inbox
+  return INTEGRATION; // settings, rules and AI: the integration's page (Configure, Add rule, Add AI tier)
+}
+
+function go(path: string): void {
+  history.replaceState(null, "", path);
+  window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: true } }));
+}
 
 @element("homeai-panel")
 export class HomeAIPanel extends LitElement {
@@ -87,27 +94,35 @@ export class HomeAIPanel extends LitElement {
     `,
   ];
 
-  private get view(): View {
+  private get view(): Exclude<View, "redirect"> {
     const view = this.panel?.config?.view;
-    return view && view in TABS ? view : "situations";
+    return view && view in TABS ? (view as Exclude<View, "redirect">) : "situations";
   }
 
   private tabs(): Tab[] {
-    return TABS[this.view].filter((tab) => this.hass?.user?.is_admin || !ADMIN_TABS.includes(tab));
+    return TABS[this.view];
   }
 
   protected firstUpdated(): void {
     const wanted = new URLSearchParams(location.search).get("tab");
+    if (this.panel?.config?.view === "redirect") {
+      go(movedTab(this.hass, wanted));
+      return;
+    }
     if (!wanted) return;
     if ((TABS[this.view] as string[]).includes(wanted)) {
       this.tab = wanted as Tab;
       return;
     }
+    if (!this.panel?.config?.view) return;
     // a link from before the panels were split (`/homeai?tab=plan`): open the panel that has this tab now
-    const home = (Object.keys(TABS) as View[]).find((v) => (TABS[v] as string[]).includes(wanted)) ?? (wanted === "approvals" ? "situations" : undefined);
-    if (!home || home === this.view || !this.panel?.config?.view) return;
-    history.replaceState(null, "", home === "situations" ? PATHS[home] : `${PATHS[home]}?tab=${wanted}`);
-    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: true } }));
+    const home = (Object.keys(TABS) as Exclude<View, "redirect">[]).find((v) => (TABS[v] as string[]).includes(wanted));
+    if (home) {
+      if (home !== this.view) go(home === "situations" ? PATHS[home] : `${PATHS[home]}?tab=${wanted}`);
+      return;
+    }
+    // a tab of the management panel from before 1.7: its contents moved into Home Assistant
+    go(movedTab(this.hass, wanted));
   }
 
   private select(tab: Tab): void {
@@ -122,17 +137,12 @@ export class HomeAIPanel extends LitElement {
       case "plan": return html`<homeai-plan exportparts=${PARTS} .hass=${this.hass}></homeai-plan>`;
       case "presence": return html`<homeai-presence exportparts=${PARTS} .hass=${this.hass}></homeai-presence>`;
       case "chat": return html`<homeai-chat exportparts=${PARTS} .hass=${this.hass} fill></homeai-chat>`;
-      case "learning": return html`<homeai-learning exportparts=${PARTS} .hass=${this.hass}></homeai-learning>`;
-      case "journal": return html`<homeai-journal exportparts=${PARTS} .hass=${this.hass}></homeai-journal>`;
-      case "rules": return html`<homeai-rules exportparts=${PARTS} .hass=${this.hass}></homeai-rules>`;
-      case "settings": return html`<homeai-settings exportparts=${PARTS} .hass=${this.hass}></homeai-settings>`;
-      case "ai": return html`<homeai-ai exportparts=${PARTS} .hass=${this.hass}></homeai-ai>`;
       default: return html`<homeai-situations exportparts=${PARTS} .hass=${this.hass}></homeai-situations>`;
     }
   }
 
   render() {
-    if (!this.hass) return html``;
+    if (!this.hass || this.panel?.config?.view === "redirect") return html``;
     const lang = this.hass.language;
     const tabs = this.tabs();
     const tab = this.tab && tabs.includes(this.tab) ? this.tab : tabs[0];

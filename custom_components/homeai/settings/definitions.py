@@ -1,4 +1,4 @@
-"""Declarations of every HomeAI setting, grouped by panel section.
+"""Declarations of every HomeAI setting, grouped by section (one page of the integration's options each).
 
 Rules (enforced by tests): every behaviour-changing value lives here; every key has an English and a Polish
 label and description in `i18n/`; defaults are valid. Modules read values through `SettingsManager.get`.
@@ -64,12 +64,6 @@ def validate_severity_map(value: Any) -> dict[str, int]:
             raise SettingError(f"{kind}: severity 0–4")
         out[kind] = sev
     return out
-
-
-def _custom_rules(value: Any) -> list[dict[str, Any]]:
-    from ..signals.detectors.custom import validate_rules
-
-    return validate_rules(value)
 
 
 _RISK_VALUE = re.compile(r"^[Rr][0-6]$")
@@ -187,7 +181,6 @@ def _detectors() -> list[Setting]:
     s = "detectors"
     out = [
         Setting("detectors.system_refresh", T.DURATION, 300, s, min=60, max=3600, unit="s", advanced=True),
-        Setting("detectors.custom", T.JSON, [], s, validator=_custom_rules),
     ]
     for key in (
         "safety",
@@ -574,10 +567,6 @@ def _ai() -> list[Setting]:
         Setting("ai.chat_can", T.SELECT, "act_config", s, options=("read", "act", "act_config"), confirm="change"),
         Setting("ai.chat_length", T.SELECT, "short", s, options=("short", "normal", "detailed")),
         Setting("ai.chat_shared_threads", T.BOOL, False, s, advanced=True),
-        *(
-            Setting(f"ai.prompt_{mission}", T.TEXT, "", s, max=8000, advanced=True)
-            for mission in ("triage", "investigate", "chat", "arbiter", "digest")
-        ),
         Setting("ai.budget_mode", T.SELECT, "block", s, options=("warn", "block"), confirm="change"),
         Setting("ai.budget_daily", T.FLOAT, 1.0, s, min=0, max=1000, step=0.1, unit="$"),
         Setting("ai.budget_monthly", T.FLOAT, 10.0, s, min=0, max=10000, step=1, unit="$"),
@@ -593,6 +582,14 @@ def _ai() -> list[Setting]:
         Setting("ai.arbiter_min_confidence", T.FLOAT, 0.8, s, min=0.5, max=1, step=0.05, advanced=True),
         Setting("ai.arbiter_effort", T.SELECT, "high", s, options=("medium", "high", "xhigh", "max"), advanced=True),
         Setting("ai.arbiter_per_day", T.INT, 10, s, min=1, max=200),
+    ]
+
+
+def _prompts() -> list[Setting]:
+    """Administrators' own instructions for each AI task; empty keeps the built-in prompt."""
+    return [
+        Setting(f"ai.prompt_{mission}", T.TEXT, "", "prompts", max=8000)
+        for mission in ("triage", "investigate", "chat", "arbiter", "digest")
     ]
 
 
@@ -637,12 +634,13 @@ SECTIONS = [
     _schedule,
     _heating,
     _ai,
+    _prompts,
     _learning,
 ]
 
 
 def build_registry() -> SettingsRegistry:
-    """All settings, in panel order."""
+    """All settings, in the order of the options pages."""
     registry = SettingsRegistry()
     for group in SECTIONS:
         registry.add(*group())

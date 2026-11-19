@@ -107,7 +107,7 @@ class Arbiter:
             self._spawn(f"s:{s.id}", self.decide_situation(s, "failed_repair"))
 
     def _on_approval(self, item: dict[str, Any]) -> None:
-        if item.get("status") != "pending" or item.get("arbiter") or not self.enabled("approvals"):
+        if item.get("status") != "pending" or item.get("arbiter") or item.get("kind") or not self.enabled("approvals"):
             return
         risk = int(item.get("risk", 0))
         nobody_home = not self.rt.presence.someone_home()
@@ -214,8 +214,8 @@ class Arbiter:
 
     async def decide_approval(self, item: dict[str, Any]) -> dict[str, Any] | None:
         """Review an action waiting for approval; approve it only within the arbiter's limits."""
-        if not self.enabled():
-            return None
+        if not self.enabled() or item.get("kind"):
+            return None  # a fact or a habit waits for a person
         privacy = self._privacy()
         request = item["request"]
         risk = int(item["risk"])

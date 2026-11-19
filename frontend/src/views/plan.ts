@@ -261,7 +261,7 @@ export class HomeAIPlan extends LitElement {
         </select></label>
       ${verbs.length > 1
         ? html`<div class="field"><span class="label">${t(lang, "plan_do")}</span>
-            <div class="segmented" role="group" aria-label=${t(lang, "plan_do")}>
+            <div part="segmented" class="segmented" role="group" aria-label=${t(lang, "plan_do")}>
               ${verbs.map((v) => html`<button part=${v.key === d.verb ? "button button-primary" : "button"} class=${v.key === d.verb ? "primary" : ""}
                 aria-pressed=${v.key === d.verb ? "true" : "false"} @click=${() => this.pickVerb(v.key)}>${t(lang, `verb_${v.key}`)}</button>`)}
             </div></div>`
@@ -284,7 +284,7 @@ export class HomeAIPlan extends LitElement {
     const names = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(lang, { weekday: "short" }));
     const field = (label: string, content: unknown) => html`<label class="field"><span class="label">${label}</span>${content}</label>`;
     const choice = <T extends string>(options: readonly T[], current: string, label: (x: T) => string, pick: (x: T) => void) =>
-      html`<div class="segmented" role="group">${options.map((x) => html`<button part=${x === current ? "button button-primary" : "button"} class=${x === current ? "primary" : ""}
+      html`<div part="segmented" class="segmented" role="group">${options.map((x) => html`<button part=${x === current ? "button button-primary" : "button"} class=${x === current ? "primary" : ""}
         aria-pressed=${x === current ? "true" : "false"} @click=${() => pick(x)}>${label(x)}</button>`)}</div>`;
     return html`<dialog part="sheet" class="card sheet" aria-labelledby="sheet-title" @close=${this.close}>
       <div class="sheet-head"><h2 id="sheet-title" part="title" class="title">${t(lang, d.id ? "plan_change" : "plan_new")}</h2></div>

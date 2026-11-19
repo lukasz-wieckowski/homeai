@@ -19,9 +19,10 @@ API OpenAI.</sub>
 - [Instalacja](#instalacja)
 - [Pierwsza konfiguracja](#pierwsza-konfiguracja)
 - [Dodanie AI (opcjonalnie)](#dodanie-ai-opcjonalnie)
-- [Instrukcja: panel HomeAI](#instrukcja-panel-homeai):
+- [Instrukcja](#instrukcja):
   [Sprawy](#sprawy) · [Zgody](#zgody) · [Rozmowa](#rozmowa) · [Plan](#plan) · [Obecność](#obecność) ·
-  [Uczenie](#uczenie) · [Reguły](#reguły) · [Dziennik](#dziennik) · [Ustawienia](#ustawienia) · [AI](#ai)
+  [Uczenie i pamięć](#uczenie-i-pamięć) · [Reguły](#reguły) · [Dziennik](#dziennik) · [Ustawienia](#ustawienia) ·
+  [AI](#ai)
 - [Karty na pulpit](#karty-na-pulpit)
 - [Motywy](#motywy)
 - [Na telefonie](#na-telefonie)
@@ -44,7 +45,7 @@ API OpenAI.</sub>
   wstały, kopii zapasowych, aktualizacji, błędów w logu, internetu, baterii, materiałów eksploatacyjnych, roślin i
   ich podlewania, milczących czujników, klimatu w pomieszczeniach, rozbieżnych czujników, świateł w pustym domu,
   okien otwartych przy grzaniu, hubów i mostków (Zigbee2MQTT i każdy hub, przez który łączą się inne urządzenia),
-  nietypowych wartości względem wyuczonych norm, sygnałów z innych integracji oraz Twoich własnych reguł z panelu.
+  nietypowych wartości względem wyuczonych norm, sygnałów z innych integracji oraz Twoich własnych reguł dodanych na stronie integracji.
 - **Rozumie.** Sygnały składają się w *sprawy*: powiązane sygnały są łączone (hub offline tłumaczy wszystkie
   urządzenia za nim, brak internetu tłumaczy urządzenia chmurowe), chwilowe skoki są pomijane, a każda sprawa ma
   cykl życia (oczekuje, otwarta, wygasa, rozwiązana).
@@ -71,9 +72,10 @@ API OpenAI.</sub>
   działa poza polityką.
 - **Uczy się.** Normy dla każdej godziny tygodnia, nawyki proponowane do planu (zapisywane dopiero po akceptacji),
   pamięć faktów i preferencji, wnioski z cofnięć i odmów, przegląd tygodniowy.
-- **Konfigurowalne z interfejsu.** Każdy próg, opóźnienie, limit, kanał i model to pole w panelu HomeAI: ponad 300
-  ustawień, wiele z nich osobno dla piętra, pomieszczenia, urządzenia, encji albo osoby. Zobacz
-  [docs/settings.md](docs/settings.md).
+- **Konfigurowalne z interfejsu, tam gdzie Home Assistant trzyma rzeczy.** Każdy próg, opóźnienie, limit, kanał i
+  model to pole w opcjach integracji (*Konfiguruj*): ponad 300 ustawień, wiele z nich osobno dla piętra,
+  pomieszczenia, urządzenia, encji albo osoby. Reguły i połączenia z AI to wpisy integracji, pamięć to lista zadań,
+  dziennik jest w Aktywności. Zobacz [docs/settings.md](docs/settings.md).
 
 ## Wymagania
 
@@ -106,10 +108,12 @@ API OpenAI.</sub>
 
 Po kreatorze:
 
-- W pasku bocznym pojawiają się cztery panele: **HomeAI** (sprawy i zgody; tu otwierają się powiadomienia), **Plan
-  domu** (plan i obecność), **Rozmowa** i **Zarządzanie HomeAI** (uczenie, dziennik, a dla administratorów reguły,
-  wszystkie ustawienia i stan AI). Ustawienie *Które panele* wybiera, które z nich HomeAI dodaje; każdy może też
-  ukryć dowolny w swoim pasku.
+- W pasku bocznym pojawiają się trzy panele: **HomeAI** (sprawy i prośby o zgodę; tu otwierają się powiadomienia),
+  **Plan domu** (plan i obecność) i **Rozmowa**. Ustawienie *Które panele* wybiera, które z nich HomeAI dodaje; każdy
+  może też ukryć dowolny w swoim pasku.
+- Wszystko inne jest tam, gdzie Home Assistant trzyma takie rzeczy. W **Ustawienia → Urządzenia oraz usługi →
+  HomeAI**: **Konfiguruj** to wszystkie ustawienia, **Dodaj regułę** to własne wykrywanie, **Dodaj poziom AI** to AI.
+  Lista zadań **Pamięć** trzyma to, co HomeAI pamięta, a **Aktywność** pokazuje, co HomeAI zrobiło i dlaczego.
 - Przez pierwsze **14 dni** (ustawienie *Okres obserwacji*) HomeAI tylko *obserwuje* akcje komfortu, urządzeń
   i napraw systemu, które wykonałoby albo zaproponowało samo: dziennik pokazuje, co by zrobiło, i nikt nie dostaje
   próśb o zgodę. Wykrywanie spraw, powiadomienia i akcje ochronne na oznaczonych encjach działają od pierwszego dnia.
@@ -133,13 +137,16 @@ wydawania tokenów.
 Każde połączenie ma **priorytet** (kilka połączeń może obsługiwać jeden poziom; niższy jest próbowany pierwszy, więc
 model lokalny może być pierwszy, a chmurowy zapasowy), własny poziom **prywatności**, opcjonalne ceny i opcjonalne
 limity: **najdłuższa odpowiedź**, **limit czasu** i **budżet dzienny**. Połączenie, które wyczerpało budżet
-dzienny, jest pomijane i odpowiada następne. Budżety dzienny i miesięczny dla całego HomeAI są w ustawieniach panelu
-(*AI*) i jako `number.homeai_ai_budget_monthly`.
+dzienny, jest pomijane i odpowiada następne. Budżety dzienny i miesięczny dla całego HomeAI są w opcjach (*Konfiguruj →
+AI*) i w encjach `number.homeai_ai_budget_daily` i `number.homeai_ai_budget_monthly`; wydatki to
+`sensor.homeai_ai_cost_today` i `sensor.homeai_ai_cost_month` (każdy z budżetem w atrybucie).
 
-## Instrukcja: panel HomeAI
+## Instrukcja
 
-Listy to jedna powierzchnia na grupę, z wierszem na każdą pozycję: co, gdzie i kiedy. Dotknij wiersza, żeby zobaczyć
-dlaczego i co możesz zrobić; edytory otwierają się jako arkusz nad listą (na telefonie od dołu).
+Panele HomeAI pokazują to, co wymaga ludzi: skrzynkę spraw, plan i rozmowę. Listy to jedna powierzchnia na grupę,
+z wierszem na każdą pozycję: co, gdzie i kiedy. Dotknij wiersza, żeby zobaczyć dlaczego i co możesz zrobić; edytory
+otwierają się jako arkusz nad listą (na telefonie od dołu). Zarządzanie HomeAI odbywa się w miejscach samego Home
+Assistanta, opisanych od [Uczenia i pamięci](#uczenie-i-pamięć).
 
 ### Sprawy
 
@@ -175,6 +182,11 @@ Gdy akcja przekracza to, co proszący albo HomeAI może zrobić sam, powstaje pr
 urządzeń (R1–R2) może zatwierdzić każdy domownik, systemowe i konfiguracyjne (R3+) tylko administrator. Prośba mówi,
 co się stanie, kto prosi i kiedy wygasa. Zatwierdzasz albo odmawiasz tutaj albo przyciskami w powiadomieniu na
 telefonie. Akcje nieodwracalne (R6) nigdy nie są zatwierdzane automatycznie.
+
+Czekają tu też dwa inne rodzaje próśb, bez powiadomienia i bez wygasania: **fakt, który HomeAI zauważyło**
+(*Zapamiętać: …*; zatwierdź, żeby trafił do pamięci, odrzuć, żeby HomeAI zapomniało — o fakt dotyczący jednej osoby
+pytana jest ta osoba) i **nawyk, który HomeAI znalazło** (zatwierdź, żeby dodać go do planu, odrzuć, żeby nie był
+proponowany znowu).
 
 Na zrzucie Piotr (domownik) poprosił o 24 °C na termostacie; administratorka podniosła `climate.set_temperature` do
 R3 w ustawieniu *Klasa ryzyka według akcji*, więc Anna musi to zatwierdzić.
@@ -232,80 +244,88 @@ nie ma* czekają) i kogo powiadamia. Są też publikowane jako `calendar.homeai_
 dowolna automatyzacja może z nich korzystać przez wyzwalacz kalendarza. Możesz je tworzyć w dowolnym kalendarzu:
 tytuł wybiera rodzaj („Urlop Anna”, „Goście”).
 
-### Uczenie
+### Uczenie i pamięć
 
-![Uczenie](docs/images/pl/08-learning.jpg)
-
-- **Propozycje**: nawyki, które HomeAI zauważyło (np. światło w przedpokoju w dni robocze o 6:40). Stają się wpisami
-  planu dopiero po Twojej akceptacji.
-- **Pamięć**: fakty i preferencje, które HomeAI powinno znać. Dodaj je tutaj albo powiedz w rozmowie; AI korzysta z
-  nich przy odpowiedziach i ocenie spraw. Wszystko można w każdej chwili usunąć.
-- **Przegląd tygodniowy**: krótkie podsumowanie tygodnia w panelu i, jeśli chcesz, jako powiadomienie (z AI pisze je
-  P1).
+- **Nawyki**, które HomeAI zauważyło (np. światło w przedpokoju w dni robocze o 6:40), czekają w panelu **HomeAI**
+  jako prośby; wpisami planu stają się dopiero po czyjejś zgodzie.
+- **Pamięć** to lista zadań **Pamięć** (`todo.homeai_memory`, w *Listach zadań*): każda pozycja to coś, co HomeAI wie
+  o domu. Dodaj pozycję, żeby powiedzieć HomeAI fakt, zmień ją, żeby go poprawić, usuń, żeby HomeAI zapomniało
+  (odhaczenie pozycji niczego nie zmienia). Fakty możesz też mówić w rozmowie. Fakty, które HomeAI zauważyło samo,
+  czekają w skrzynce, aż ktoś je zatwierdzi. Faktów o jednej osobie nie ma na liście, bo każdy użytkownik Home
+  Assistanta widzi każdą listę; zostają prywatne dla tej osoby i administratorów.
+- **Przegląd tygodniowy**: krótkie podsumowanie tygodnia jako powiadomienie w Home Assistancie i, jeśli chcesz, na
+  telefonach administratorów (z AI pisze je P1). Sekcja *Uczenie* w opcjach ustala, kiedy.
 
 ### Reguły
 
-![Reguły](docs/images/pl/09-rules.jpg)
-
-Własne wykrywanie, bez kodu. Reguła otwiera sprawę, gdy jej encje spełniają warunek przez pewien czas.
-
-![Edytor reguły](docs/images/pl/10-rule-editor.jpg)
+Własne wykrywanie, bez kodu: **Ustawienia → Urządzenia oraz usługi → HomeAI → Dodaj regułę**. Reguła otwiera sprawę,
+gdy jej encje spełniają warunek przez pewien czas. Każda reguła to wpis na stronie integracji: **⋮ → Ponownie
+skonfiguruj** ją zmienia, **Usuń** ją usuwa, a przełącznik *Włączona* w regule ją wstrzymuje. Reguły działają od
+razu, bez restartu HomeAI.
 
 | Pole | Znaczenie |
 |---|---|
-| Encje / Id etykiety / Obszar / Domena | czego dotyczy reguła: lista encji albo wszystko z etykietą, w obszarze albo z domeny |
-| Warunek | *jest* / *nie jest* w stanie, *powyżej* / *poniżej* liczby, *niedostępna* |
+| Nazwa, Włączona | jak nazywają się sprawy reguły; czy działa |
+| Co obserwuje: Encje / Etykieta / Obszar / Domena | lista encji albo wszystko z etykietą, w obszarze albo z domeny (łącznie: wszystkie warunki naraz) |
+| Kiedy działa: Warunek, Stan lub liczba | *ma stan* / *nie ma stanu*, *jest powyżej* / *poniżej* liczby, *jest niedostępna* |
 | Przez co najmniej | ile minut warunek musi trwać (0 = od razu) |
-| Aktywna | *zawsze*, *w nocy*, *nikogo w domu*, *ktoś w domu* |
-| Tryb | *każda encja* otwiera własny sygnał; *wszystkie naraz* tylko wtedy, gdy spełniają go wszystkie objęte encje |
-| Waga, Kategoria, Kto | jak poważna jest sprawa (0–4), jakiego rodzaju (bezpieczeństwo, ochrona, szkody, energia…), kto jest potrzebny |
-| Rada | tekst, który widzą ludzie |
+| Aktywna | *zawsze*, *tylko w nocy*, *tylko gdy nikogo nie ma*, *tylko gdy ktoś jest w domu* |
+| Encje | *każda encja osobno* otwiera sygnał dla każdej encji; *tylko gdy spełniają wszystkie* raz dla wszystkich |
+| Sprawa, którą otwiera: Waga, Kategoria, Kto jest potrzebny | jak poważna jest sprawa (0–4), jakiego rodzaju (bezpieczeństwo, ochrona, szkody, energia…), kto jest potrzebny |
+| Porada | tekst, który widzą ludzie |
 
-**Podgląd** pokazuje, ile encji obejmuje reguła i które z nich spełniają ją w tej chwili. Działająca reguła ma kropkę
-przy nazwie.
+Przed zapisaniem ostatni krok pokazuje, ile encji obejmuje reguła i które z nich spełniają ją w tej chwili.
+Ustawienie *Własne reguły: obserwuj* (opcje → *Wykrywanie*) wyłącza wszystkie reguły naraz.
 
 ### Dziennik
 
-![Dziennik](docs/images/pl/11-journal.jpg)
-
-Wszystko, co HomeAI zrobiło, i dlaczego: oceny (także to, co powiedziało AI), akcje i ich wyniki, naprawy, zgody,
-zmiany planu i ustawień, a w okresie obserwacji to, co *by zrobiło*. Akcje widać też w dzienniku zdarzeń Home
-Assistanta jako akcje użytkownika `HomeAI`; można je cofnąć (`homeai.undo`).
+To, co HomeAI zrobiło, i dlaczego, jest w **Aktywności** (dzienniku zdarzeń) Home Assistanta, przy urządzeniu
+HomeAI: otwarcie i zamknięcie spraw, akcje i ich wyniki, naprawy, decyzje AI i arbitra, zgody, powiadomienia, zmiany
+planu i ustawień. Odfiltruj Aktywność po urządzeniu HomeAI albo otwórz urządzenie i jego aktywność. Akcje działają
+jako użytkownik `HomeAI`, więc zmiany stanów, które wywołały, też to pokazują; można je cofnąć (`homeai.undo`). HomeAI
+prowadzi też własny dziennik dla kontekstu AI i diagnostyki, przez czas z ustawienia *Jak długo trzymać dziennik*;
+w okresie obserwacji zapisuje w nim, co *by zrobiło*.
 
 ### Ustawienia
 
-![Ustawienia](docs/images/pl/12-settings.jpg)
+**Ustawienia → Urządzenia oraz usługi → HomeAI → Konfiguruj.** Menu wymienia sekcje (Ogólne, Model domu, Domownicy i
+sen, Prywatność, Wykrywanie, Sprawy, Ocena, Powiadomienia, Polityka, Akcje, Samonaprawa, Huby i mostki, Plan,
+Ogrzewanie, AI, Prompty AI, Uczenie); każda otwiera formularz z nazwą i opisem każdego ustawienia. Zaawansowane
+ustawienia są w zwiniętej części *Zaawansowane* na dole; *Wykrywanie* jest podzielone na zwinięte części według tego,
+co obserwuje (baterie, czujniki bezpieczeństwa, zabezpieczenia…). Ustawienia czytane tylko przy starcie (np. odstęp
+cyklu albo panele) po zapisaniu przeładowują HomeAI.
 
-Każde ustawienie ma nazwę i opis; wyszukiwarka znajduje je po słowach. *Pokaż zaawansowane* odsłania resztę.
-
-- **Dotyczy**: wybierz *Cały dom* albo piętro, pomieszczenie, urządzenie, encję lub osobę. Widać tylko ustawienia,
-  które można tam nadpisać; wartości *dziedziczone* pochodzą z poziomu wyżej (encja → urządzenie → pomieszczenie →
-  piętro → cały dom), a **↺** usuwa nadpisanie. Niżej kuchnia ma własny próg baterii 25%:
-
-![Ustawienia jednego pomieszczenia](docs/images/pl/13-settings-room.jpg)
-
-- **Historia** pokazuje każdą zmianę (kto, kiedy, stara → nowa wartość); **Cofnij ostatnią zmianę** odwraca
-  ostatnią.
-- **Eksport** i **Import** przenoszą wszystkie ustawienia między domami (import najpierw sprawdza wszystko:
-  wszystko albo nic).
-- **Przywróć sekcję** przywraca domyślne wartości całej sekcji.
-- Zmiany, które obniżają ochronę (wyłączenie wykrywania bezpieczeństwa, podniesienie autonomii), wymagają
-  potwierdzenia.
+- **Ustawienia dla miejsca**: wybierz piętro, obszar, urządzenie, encję albo osobę, a potem miejsce; formularz
+  pokazuje tylko ustawienia, które mogą tam być inne. Wypełnione pole to własna wartość miejsca; puste dziedziczy
+  z poziomu wyżej (encja → urządzenie → obszar → piętro → cały dom); wyczyszczenie pola usuwa własną wartość
+  miejsca. Tu ustawia się role osób, cele powiadomień i godziny snu.
+- **Cofnij ostatnią zmianę** pokazuje ostatnią zmianę (co, gdzie, stara → nowa wartość) i ją odwraca; kolejne
+  cofnięcie sięga o jedną zmianę dalej.
+- **Przywróć domyślne w sekcji** przywraca domyślne wartości całej sekcji (wartości dla miejsc zostają).
+- Zmiany, które obniżają ochronę (wyłączenie wykrywania bezpieczeństwa, podniesienie autonomii, wysyłanie więcej do
+  AI w chmurze), wymagają potwierdzenia.
+- **Eksport i import**: usługi `homeai.export_settings` (zwraca ustawienia jako dane odpowiedzi) i
+  `homeai.import_settings` przenoszą wszystkie ustawienia między domami; import najpierw sprawdza wszystko
+  (wszystko albo nic). Ustawienia są też w diagnostyce integracji.
 
 **Polityka** zawiera poziomy autonomii dla klas ryzyka, *macierz wykonawca × klasa* (osobny poziom dla własnych reguł
-HomeAI, AI, napraw i planu), klasy ryzyka według akcji i etykiety oraz okres obserwacji:
-
-![Ustawienia polityki](docs/images/pl/14-settings-policy.jpg)
+HomeAI, AI, napraw i planu), klasy ryzyka według akcji i etykiety oraz okres obserwacji. Wszystkie ustawienia są
+w [docs/settings.md](docs/settings.md).
 
 ### AI
 
-![AI](docs/images/pl/15-ai.jpg)
-
-Wydatki dziś i w tym miesiącu na tle budżetów, poziomy z ich stanem oraz **prompty**: każda misja (ocena,
-dochodzenie, rozmowa, arbiter, podsumowanie) pokazuje swój wbudowany prompt; możesz napisać własny i w każdej chwili
-przywrócić wbudowany. Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze dodawana, a odpowiedzi
-strukturalne zachowują swoje schematy, więc własny prompt nie poszerzy tego, co AI może zrobić. Z włączonym
-*Zapisuj zapytania AI* widać też ostatnie zapytanie do każdego poziomu.
+- **Poziomy** to wpisy integracji (**Dodaj poziom AI**, zob. [Dodanie AI](#dodanie-ai-opcjonalnie)); każdy pokazuje
+  swój model na stronie integracji i zmienia się go przez *Ponownie skonfiguruj*.
+- **Wydatki i budżety** to encje urządzenia HomeAI: `sensor.homeai_ai_cost_today` i `sensor.homeai_ai_cost_month`
+  (z budżetem i dzisiejszą liczbą wywołań w atrybutach), `number.homeai_ai_budget_daily` i
+  `number.homeai_ai_budget_monthly`. *Tryb budżetu* (opcje → *AI*) decyduje, czy wyczerpany budżet wstrzymuje
+  wywołania, czy tylko ostrzega.
+- **Prompty**: opcje → **Prompty AI** mają pole dla każdej misji (ocena, dochodzenie, rozmowa, arbiter,
+  podsumowanie); puste oznacza wbudowany prompt. Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze
+  dodawana, a odpowiedzi strukturalne zachowują swoje schematy, więc własny prompt nie poszerzy tego, co AI może
+  zrobić.
+- **Co zostało wysłane**: *Pobierz diagnostykę* na stronie integracji zawiera wbudowane i Twoje prompty oraz, przy
+  włączonym *Zapisuj zapytania AI* (opcje → *Prywatność*), ostatnie zapytanie do każdego poziomu.
 
 ## Karty na pulpit
 
@@ -429,7 +449,7 @@ Mój dom:
 | `--homeai-content-padding` | `--ha-content-gutter` | margines treści panelu |
 | `--homeai-content-max-width` | 68em | szerokość treści panelu |
 | `--homeai-header-height` | `--header-height` | górny pasek panelu |
-| `--homeai-reading-width` | 48em | szerokość widoków, które są jedną kolumną tekstu (sprawy, obecność, rozmowa, uczenie, dziennik, reguły) |
+| `--homeai-reading-width` | 48em | szerokość widoków, które są jedną kolumną tekstu (sprawy, obecność, rozmowa) |
 | `--homeai-section-spacing` | `--ha-space-6` | między sekcjami |
 | `--homeai-row-padding-x`, `--homeai-row-padding-y` | `--ha-space-4`, `--ha-space-3` | wnętrze wiersza listy |
 | `--homeai-row-hover-background` | `--homeai-text-color` w 4 % | wiersz listy pod kursorem |
@@ -445,9 +465,9 @@ części swoich widoków, więc `homeai-panel::part(card)` sięga kart i list w 
 | `card`, `title`, `heading` | karta, jej tytuł, nagłówek między kartami |
 | `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | kropka albo znaczek wagi (i ten dla danej wagi) |
 | `button`, `button-primary`, `button-quiet` | każdy przycisk, przycisk główny (także wybrana opcja albo dzień tygodnia), cichy (anuluj, usuń, pokaż więcej) |
-| `segmented`, `sheet`, `composer` | kapsuła sekcji ustawień, edytor (arkusz), pole rozmowy |
+| `segmented`, `sheet`, `composer` | wybór jednej z opcji w kapsule (co ma się stać, kiedy), edytor (arkusz), pole rozmowy |
 | `input` | pola, listy wyboru, pola wyboru |
-| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | lista, wiersz, jego tytuł, linia szczegółów i godzina, nagłówek dnia w planie i dzienniku |
+| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | lista, wiersz, jego tytuł, linia szczegółów i godzina, nagłówek dnia w planie |
 | `pager` | strony pod długą listą (poprzednie, gdzie jesteś, następne) |
 | `empty`, `error` | napis „nic tu nie ma”, błąd |
 | `log`, `message`, `message-user`, `message-assistant` | rozmowa: przebieg i wiadomości |
@@ -466,8 +486,8 @@ homeai-situations-card::part(card) { border-width: 0; }
   <img src="docs/images/pl/20-phone-situations.jpg" alt="Sprawy na telefonie" width="300">
 </p>
 
-- Powiadomienia trafiają do aplikacji Companion każdej osoby (znajdowanej automatycznie; dodatkowe cele dla osoby w
-  *Ustawienia → Powiadomienia*). Mają przyciski **Wiem**, **Zajmę się** i **Wycisz**; prośby o zgodę mają **Zgoda**
+- Powiadomienia trafiają do aplikacji Companion każdej osoby (znajdowanej automatycznie; dodatkowe cele dla osoby
+  w opcjach: *Ustawienia dla miejsca → Osoba → Powiadomienia*). Mają przyciski **Wiem**, **Zajmę się** i **Wycisz**; prośby o zgodę mają **Zgoda**
   i **Odmowa**.
 - Kto dostaje co, zależy od wagi: krytyczne (tylko bezpieczeństwo) trafiają od razu do wszystkich alertem
   krytycznym i powtarzają się co 5 minut (mogą budzić), wysokie do
@@ -516,7 +536,8 @@ Heat Zones. Termostat ma własny harmonogram tygodniowy; HomeAI nigdy nie ma wł
   *HomeAI: bathroom*, *HomeAI: common space* i *HomeAI: workplace* (na pokoju albo na urządzeniu w nim), albo z ikony
   i nazwy pokoju. Miejsce pracy osoby to ustawienie *Miejsce pracy* tej osoby (sekcja *Domownicy i sen*).
 
-Wszystkie presety i czasy są w panelu HomeAI, w sekcji *Ogrzewanie*.
+Wszystkie presety i czasy są w opcjach (*Konfiguruj → Ogrzewanie*), presety także dla pomieszczenia albo termostatu
+(*Ustawienia dla miejsca*).
 
 ## Encje
 
@@ -528,9 +549,10 @@ Wszystkie presety i czasy są w panelu HomeAI, w sekcji *Ogrzewanie*.
 | `calendar.homeai_plan`, `calendar.homeai_presence` | Plan i wyjątki obecności |
 | `select.homeai_autonomy` | Jeden suwak nad całą polityką: tylko obserwuj, ostrożnie, zrównoważenie, śmiało (tylko administratorzy) |
 | `switch.homeai_ai`, `switch.homeai_vacation`, `switch.homeai_notifications_paused` | AI włączone/wyłączone, tryb urlopu, pauza powiadomień (krytyczne domyślnie nadal wychodzą) |
-| `number.homeai_ai_budget_monthly` | Miesięczny budżet AI |
+| `number.homeai_ai_budget_daily`, `number.homeai_ai_budget_monthly` | Budżety AI na dzień i na miesiąc |
+| `todo.homeai_memory` | Co HomeAI pamięta: dodawaj, zmieniaj i usuwaj fakty |
 | `sensor.homeai_next_plan_change` | Kiedy i co plan zrobi najbliżej |
-| `sensor.homeai_ai_cost_today`, `sensor.homeai_ai_cost_month` | Szacowane koszty AI |
+| `sensor.homeai_ai_cost_today`, `sensor.homeai_ai_cost_month` | Szacowane koszty AI; atrybuty: budżet i dzisiejsze wywołania |
 | `conversation.homeai` | Rozmowa z HomeAI z Assist i satelitów głosowych |
 
 ## Usługi i automatyzacje
@@ -547,6 +569,7 @@ Wszystkie presety i czasy są w panelu HomeAI, w sekcji *Ogrzewanie*.
 | `homeai.presence_add` / `presence_remove` | Edycja wyjątków obecności |
 | `homeai.send_digest` | Wysyła podsumowanie teraz |
 | `homeai.run_mission` | Uruchamia misję teraz (ocena, dochodzenie, arbitraż, podsumowanie, przegląd tygodniowy, uczenie); tylko administratorzy i automatyzacje |
+| `homeai.export_settings` / `import_settings` | Eksportuje ustawienia (dane odpowiedzi) albo zastępuje je eksportem; tylko administratorzy i automatyzacje |
 
 Przykłady:
 
@@ -665,28 +688,34 @@ Szczegóły: [docs/integrations.md](docs/integrations.md) (po angielsku).
 czekania).
 
 **HomeAI nic nie robi samo.** Trwa okres obserwacji (domyślnie 14 dni): dziennik pokazuje, co by zrobiło. Skróć
-*Okres obserwacji* w *Ustawienia → Polityka* albo przesuń suwak autonomii.
+*Okres obserwacji* w opcjach (*Konfiguruj → Polityka*) albo przesuń suwak autonomii.
 
 **Nikt nie dostaje powiadomień.** Zainstaluj aplikację Companion i zaloguj się na konto każdej osoby; sprawdź
-*Ustawienia → Powiadomienia* dla tej osoby (cele, *Wykrywaj telefony*) i czy powiadomienia nie są wstrzymane.
+opcje (*Ustawienia dla miejsca → Osoba*, sekcja *Powiadomienia*: cele, *Wykrywaj telefony*) i czy powiadomienia nie
+są wstrzymane.
 Niska waga trafia tylko do panelu i podsumowania.
 
 **Fałszywy alarm.** Naciśnij **To nie problem**, nadaj encji etykietę *HomeAI: ignore*, zmień próg dla tej encji
-albo pomieszczenia w *Ustawienia → Dotyczy* albo wyłącz dla niej dane wykrywanie. Czujniki wewnątrz urządzeń
+albo pomieszczenia w opcjach (*Ustawienia dla miejsca*) albo wyłącz dla niej dane wykrywanie. Czujniki wewnątrz urządzeń
 (zamrażarka, lodówka, piekarnik, akwarium) są rozpoznawane po nazwie i nie są traktowane jak temperatura
 pomieszczenia (ustawienie *Czujniki w urządzeniach*).
 
 **Ile kosztuje AI?** Modele lokalne nic nie kosztują. Koszt w chmurze zależy od modelu i tego, ile dzieje się w domu:
-każde wywołanie jest wyceniane i liczone, zakładka AI pokazuje wydatki, a budżety dzienny i miesięczny wstrzymują
+każde wywołanie jest wyceniane i liczone, czujniki kosztów AI pokazują wydatki, a budżety dzienny i miesięczny wstrzymują
 wywołania po ich osiągnięciu (albo tylko ostrzegają, jeśli tak wybierzesz).
 
 **Czy HomeAI może zepsuć mi konfigurację?** Zmiany konfiguracji (R4) są tylko proponowane i wymagają zgody
 administratora; akcje nieodwracalne (R6) nigdy nie są autonomiczne; każda akcja autonomiczna jest zapisywana i można
 ją cofnąć.
 
-**Gdzie są logi?** Dziennik HomeAI, dziennik zdarzeń Home Assistanta (akcje użytkownika `HomeAI`), *Ustawienia →
-System → Logi* (`custom_components.homeai`) i *Pobierz diagnostykę* na stronie integracji (klucze i tokeny
-ukryte).
+**Gdzie są logi?** Aktywność Home Assistanta (dziennik HomeAI i akcje użytkownika `HomeAI`), *Ustawienia → System →
+Logi* (`custom_components.homeai`) i *Pobierz diagnostykę* na stronie integracji (dziennik, ustawienia i prompty;
+klucze i tokeny ukryte).
+
+**Gdzie jest panel Zarządzanie HomeAI?** Od 1.7 jego części są w Home Assistancie: ustawienia w **Konfiguruj**,
+reguły jako wpisy **Dodaj regułę**, uczenie i pamięć w skrzynce i liście zadań **Pamięć**, dziennik w **Aktywności**,
+AI jako encje, *Prompty AI* i diagnostyka. Stare linki do `/homeai-manage` otwierają stronę integracji (albo
+Aktywność dla dziennika). Reguły sprzed 1.7 zostały przeniesione do wpisów reguł przy pierwszym starcie.
 
 ## Dokumentacja
 

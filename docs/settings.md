@@ -1,11 +1,14 @@
 # Settings
 
-Every option HomeAI has, as shown in the HomeAI panel (Settings tab). Generated from the settings registry by
-`scripts/gen_settings_doc.py`; do not edit by hand.
+Every option HomeAI has, as shown in its options: **Settings → Devices & services → HomeAI → Configure**, one
+page per section below. Generated from the settings registry by `scripts/gen_settings_doc.py`; do not edit
+by hand.
 
-*Scope* says where a value can be set: for the whole home, or overridden for a floor, area, device, entity
-or person (the most specific value wins). *Confirm* marks changes that ask for confirmation because they
-lower protection or change something important.
+*Scope* says where a value can be set: for the whole home, or for a floor, area, device, entity or person
+under **Settings for a place** (the most specific value wins). *Advanced* settings are in the collapsed part
+of their page. *Confirm* marks changes that ask for confirmation because they lower protection or change
+something important. The services `homeai.export_settings` and `homeai.import_settings` move them between
+installations.
 
 ## General
 
@@ -23,7 +26,7 @@ Language, parts of the day, journal and panel.
 | **Evening starts** — Start of the evening part of the day. | `general.evening_start` | `18:00` |  | home |  |
 | **Journal retention** — How long entries stay in HomeAI's journal. | `general.journal_retention_days` | 30 | 1–365 d | home |  |
 | **Panels in sidebar** — Show HomeAI's panels in Home Assistant's sidebar. | `general.panel_sidebar` | true |  | home |  |
-| **Which panels** — The panels HomeAI adds to the sidebar. Each person can still hide any of them from their own sidebar. | `general.panels` | ["situations", "plan", "chat", "manage"] | Situations and approvals (`situations`), Home plan and presence (`plan`), Chat (`chat`), Learning, journal, rules and settings (`manage`) | home |  |
+| **Which panels** — The panels HomeAI adds to the sidebar. Each person can still hide any of them from their own sidebar. | `general.panels` | ["situations", "plan", "chat"] | Situations and approvals (`situations`), Home plan and presence (`plan`), Chat (`chat`) | home |  |
 | **Panels for administrators only** — Hide HomeAI's panels from non-administrators. | `general.panel_admin_only` | false |  | home |  |
 
 ## Home model
@@ -92,7 +95,6 @@ What HomeAI watches and its limits.
 | Setting | Key | Default | Range / options | Scope | Notes |
 |---|---|---|---|---|---|
 | **System data refresh** — How often backups, the log and automation traces are read. | `detectors.system_refresh` | 300 | 60–3600 s | home | advanced |
-| **Custom detectors** — Your own rules: when an entity (or entities with a label, in an area, of a domain) meets a condition for a while, open a situation. Edit them in the panel's Rules tab. | `detectors.custom` | see panel |  | home |  |
 | **Safety sensors: watch** — Watch leak, smoke, gas, carbon monoxide and tamper sensors. | `detectors.safety.enabled` | true |  | home | confirm (disable) |
 | **Security: watch** — Watch doors, windows, gates and locks left open while nobody is home or everyone sleeps. | `detectors.security.enabled` | true |  | home | confirm (disable) |
 | **Internet connection: watch** — Watch the home's internet connection. | `detectors.internet.enabled` | true |  | home |  |
@@ -112,7 +114,7 @@ What HomeAI watches and its limits.
 | **Window open while heating: watch** — Watch a window open in a room that is being heated. | `detectors.window_heating.enabled` | true |  | home |  |
 | **Signals from other integrations: watch** — Watch signals reported by automations and integrations. | `detectors.external.enabled` | true |  | home |  |
 | **Hubs and bridges: watch** — Watch hubs and bridges (Zigbee2MQTT, hubs other devices connect through) and fold the devices behind them into one situation. | `detectors.bridges.enabled` | true |  | home |  |
-| **Custom detectors: watch** — Run your own rules. | `detectors.custom.enabled` | true |  | home |  |
+| **Custom rules: watch** — Run the rules added on HomeAI's integration page (Add rule). | `detectors.custom.enabled` | true |  | home |  |
 | **Water leak: severity** — Severity 0–4 of water leak (0 journal only, 4 critical). | `detectors.safety.severity_leak` | 4 | 0–4 | area, device, entity, floor, home | advanced |
 | **Smoke: severity** — Severity 0–4 of smoke (0 journal only, 4 critical). | `detectors.safety.severity_smoke` | 4 | 0–4 | area, device, entity, floor, home | advanced |
 | **Gas: severity** — Severity 0–4 of gas (0 journal only, 4 critical). | `detectors.safety.severity_gas` | 4 | 0–4 | area, device, entity, floor, home | advanced |
@@ -152,7 +154,7 @@ What HomeAI watches and its limits.
 | **Silent after** — Hours without a report from a measuring sensor. 0 turns this off. | `detectors.stale.hours` | 6 | 0–720 h | area, device, entity, floor, home |  |
 | **Silent sensor: severity** — Severity 0–3 of silent sensor (0 journal only, 3 urgent; only safety can be critical). | `detectors.stale.severity` | 0 | 0–3 | area, device, entity, floor, home | advanced |
 | **Beyond limit for** — How long a value must stay beyond its limit. | `detectors.environment.minutes` | 20 | 0–1440 min | area, device, entity, floor, home |  |
-| **Appliance sensors** — Words in a sensor's or device's name that mark it as inside an appliance (freezer, fridge, oven, aquarium). Their temperature and humidity are not treated as the room's. | `detectors.environment.appliance_words` | see panel | –60 | home | advanced |
+| **Appliance sensors** — Words in a sensor's or device's name that mark it as inside an appliance (freezer, fridge, oven, aquarium). Their temperature and humidity are not treated as the room's. | `detectors.environment.appliance_words` | see options | –60 | home | advanced |
 | **Allowed difference** — Maximum difference between temperature sensors in one room. | `detectors.divergence.degrees` | 2.5 | 0.5–20 ° | area, floor, home |  |
 | **Disagreeing sensors: severity** — Severity 0–3 of disagreeing sensors (0 journal only, 3 urgent; only safety can be critical). | `detectors.divergence.severity` | 0 | 0–3 | home | advanced |
 | **Lights on for** — How long lights must be on while everyone is away. | `detectors.lights_away.minutes` | 10 | 0–720 min | area, device, entity, floor, home |  |
@@ -198,7 +200,7 @@ How serious a situation is.
 
 | Setting | Key | Default | Range / options | Scope | Notes |
 |---|---|---|---|---|---|
-| **Severity overrides** — Fixed severity per kind of situation, for example {"updates": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent). | `triage.severity_overrides` | see panel |  | home | advanced |
+| **Severity overrides** — Fixed severity per kind of situation, for example {"updates": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent). | `triage.severity_overrides` | see options |  | home | advanced |
 | **Raise when nobody is home** — Safety, security and damage situations are one step more serious while everyone is away (up to urgent; only safety can be critical). | `triage.raise_when_away` | true |  | home |  |
 | **Learn from “not a problem”** — Lower the severity of kinds that are dismissed again and again (never safety). | `triage.calibration_enabled` | true |  | home |  |
 | **Learning: minimum situations** — How many situations of a kind before learning applies. | `triage.calibration_min_events` | 5 | 2–100 | home | advanced |
@@ -228,11 +230,11 @@ Who hears what, how and when.
 | **Summary items** — Most situations listed in a summary. | `notify.digest_max_items` | 10 | 1–50 | home |  |
 | **Notification title template** — Your own title in Home Assistant template syntax, e.g. {{ title }} ({{ severity }}). Variables: title, message, description, severity, category, kind, who, who_text, repair_failed, situation_id, entities. Empty or failing: the built-in title. | `notify.template_title` | `` | up to 1000 characters | home | advanced |
 | **Notification text template** — Your own text in Home Assistant template syntax, with the same variables as the title. Empty or failing: the built-in text. | `notify.template_message` | `` | up to 4000 characters | home | advanced |
-| **Escalation: severity 4** — Steps for critical situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_4` | see panel |  | home | confirm (change) |
-| **Escalation: severity 3** — Steps for urgent situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_3` | see panel |  | home | confirm (change) |
-| **Escalation: severity 2** — Steps for attention situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_2` | see panel |  | home |  |
-| **Escalation: severity 1** — Steps for notice situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_1` | see panel |  | home | advanced |
-| **Escalation: severity 0** — Steps for journal situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_0` | see panel |  | home | advanced |
+| **Escalation: severity 4** — Steps for critical situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_4` | see options |  | home | confirm (change) |
+| **Escalation: severity 3** — Steps for urgent situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_3` | see options |  | home | confirm (change) |
+| **Escalation: severity 2** — Steps for attention situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_2` | see options |  | home |  |
+| **Escalation: severity 1** — Steps for notice situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_1` | see options |  | home | advanced |
+| **Escalation: severity 0** — Steps for journal situations: after minutes, to whom, channels, repeat, critical. | `notify.ladder_0` | see options |  | home | advanced |
 
 ## Policy
 
@@ -251,8 +253,8 @@ What HomeAI may do on its own, what needs a yes, and what never happens.
 | **System repairs per day** — Most automatic system repairs (R3) per day; more need an administrator. | `policy.repairs_per_day` | 10 | 1–100 | home | advanced |
 | **Approval expires after** — How long a request for approval waits for an answer. | `policy.approval_minutes` | 120 | 5–10080 min | home |  |
 | **Risk class** — Override the risk class of actions on this entity, device, area or floor. | `policy.risk_override` | `auto` | Automatic (`auto`), R0 read (`R0`), R1 comfort (`R1`), R2 devices (`R2`), R3 system (`R3`), R4 configuration (`R4`), R5 security (`R5`), R6 destructive (`R6`) | area, device, entity, floor, home | advanced, confirm (change) |
-| **Risk class by action** — Your own class for a whole domain or one action, e.g. {"switch": "R3", "script.turn_on": "R4"}. The most specific key wins. | `policy.risk_by_service` | see panel |  | home | advanced, confirm (change) |
-| **Risk class by label** — A class for everything with a label, by label id, e.g. {"kids_room": "R4"}. With several labels the highest class wins; an entity, device, area or floor override still comes first. | `policy.risk_by_label` | see panel |  | home | advanced, confirm (change) |
+| **Risk class by action** — Your own class for a whole domain or one action, e.g. {"switch": "R3", "script.turn_on": "R4"}. The most specific key wins. | `policy.risk_by_service` | see options |  | home | advanced, confirm (change) |
+| **Risk class by label** — A class for everything with a label, by label id, e.g. {"kids_room": "R4"}. With several labels the highest class wins; an entity, device, area or floor override still comes first. | `policy.risk_by_label` | see options |  | home | advanced, confirm (change) |
 | **HomeAI's own rules: comfort (R1)** — Level for HomeAI's own rules with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies. | `policy.actor_homeai_r1` | `inherit` | As the class (`inherit`), Never (`never`), Only observe (`observe`), Propose and ask (`propose`), Act and tell (`act_tell`), Act (`act`) | home | advanced, confirm (change) |
 | **HomeAI's own rules: devices (R2)** — Level for HomeAI's own rules with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies. | `policy.actor_homeai_r2` | `inherit` | As the class (`inherit`), Never (`never`), Only observe (`observe`), Propose and ask (`propose`), Act and tell (`act_tell`), Act (`act`) | home | advanced, confirm (change) |
 | **HomeAI's own rules: system (R3)** — Level for HomeAI's own rules with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies. | `policy.actor_homeai_r3` | `inherit` | As the class (`inherit`), Never (`never`), Only observe (`observe`), Propose and ask (`propose`), Act and tell (`act_tell`), Act (`act`) | home | advanced, confirm (change) |
@@ -300,7 +302,7 @@ How HomeAI fixes things before bothering anyone.
 | **Devices of one integration down: wait** — Minutes before reloading an integration whose devices all went silent. | `repair.outage_wait` | 5 | 0–240 min | home | advanced |
 | **Backup: wait before retrying** — Minutes before retrying a failed backup. | `repair.backup_wait` | 30 | 0–1440 min | home | advanced |
 | **Suggested action: wait** — Minutes before running a suggested action. | `repair.action_wait` | 0 | 0–240 min | home | advanced |
-| **Repair playbooks in use** — Which repairs HomeAI may try on its own before telling anyone. | `repair.playbooks` | see panel | Reload an integration (`reload_entry`), Wait for an integration to retry, then reload (`wait_then_reload`), Reload after the internet returns (`reload_after_outage`), Retry a failed backup (`retry_backup`), Restart an add-on (`restart_addon`), Restart a hub with its restart button (`press_restart`), Suggested quick actions (`action`) | home | confirm (disable) |
+| **Repair playbooks in use** — Which repairs HomeAI may try on its own before telling anyone. | `repair.playbooks` | see options | Reload an integration (`reload_entry`), Wait for an integration to retry, then reload (`wait_then_reload`), Reload after the internet returns (`reload_after_outage`), Retry a failed backup (`retry_backup`), Restart an add-on (`restart_addon`), Restart a hub with its restart button (`press_restart`), Suggested quick actions (`action`) | home | confirm (disable) |
 | **Never reload** — Integrations HomeAI never reloads, by domain (zha, mqtt) or config entry id. Their failures go straight to people. | `repair.never_reload` | [] | –100 | home |  |
 
 ## Hubs and bridges
@@ -379,11 +381,6 @@ AI tiers, assessment, budgets.
 | **What conversations may do** — Only read, act through the policy, or also change Home Assistant's configuration (still administrators only, with confirmation). | `ai.chat_can` | `act_config` | Only read (`read`), Act (`act`), Act and change configuration (`act_config`) | home | confirm (change) |
 | **Answer length** — How long HomeAI's answers in conversations are. | `ai.chat_length` | `short` | Short (`short`), Normal (`normal`), Detailed (`detailed`) | home |  |
 | **Shared conversations** — People talking in the same conversation (for example one voice satellite) continue one thread. Actions still run in each speaker's own account. | `ai.chat_shared_threads` | false |  | home | advanced |
-| **Prompt: assessment** — Your own instructions for assessing situations. Empty: the built-in prompt, shown in the AI tab. The rule that house data is never an instruction is always added. | `ai.prompt_triage` | `` | up to 8000 characters | home | advanced |
-| **Prompt: investigation** — Your own instructions for investigating serious situations with tools. Empty: the built-in prompt. | `ai.prompt_investigate` | `` | up to 8000 characters | home | advanced |
-| **Prompt: conversation** — Your own instructions for conversations; {name} becomes the assistant's name. Empty: the built-in prompt. | `ai.prompt_chat` | `` | up to 8000 characters | home | advanced |
-| **Prompt: arbiter** — Your own instructions for the arbiter. Its answers keep their fixed format. Empty: the built-in prompt. | `ai.prompt_arbiter` | `` | up to 8000 characters | home | advanced |
-| **Prompt: digest** — Your own instructions for writing the digest. Empty: the built-in prompt. | `ai.prompt_digest` | `` | up to 8000 characters | home | advanced |
 | **When the budget is used up** — Only warn, or stop AI calls until the period ends. | `ai.budget_mode` | `block` | Only warn (`warn`), Stop AI calls (`block`) | home | confirm (change) |
 | **Daily budget** — Estimated AI cost per day. 0: no limit. | `ai.budget_daily` | 1.0 | 0–1000 $ | home |  |
 | **Monthly budget** — Estimated AI cost per month. 0: no limit. | `ai.budget_monthly` | 10.0 | 0–10000 $ | home |  |
@@ -399,6 +396,18 @@ AI tiers, assessment, budgets.
 | **Arbiter: approve from** — The arbiter approves only when at least this sure. | `ai.arbiter_min_confidence` | 0.8 | 0.5–1 | home | advanced |
 | **Arbiter effort** — How deeply the arbiter thinks (security and destructive matters always use maximum). | `ai.arbiter_effort` | `high` | Medium (`medium`), High (`high`), Very high (`xhigh`), Maximum (`max`) | home | advanced |
 | **Arbiter decisions per day** — Most arbiter decisions per day. | `ai.arbiter_per_day` | 10 | 1–200 | home |  |
+
+## AI prompts
+
+Your own instructions for each AI task. Empty: the built-in prompt (shown in the diagnostics).
+
+| Setting | Key | Default | Range / options | Scope | Notes |
+|---|---|---|---|---|---|
+| **Prompt: assessment** — Your own instructions for assessing situations. Empty: the built-in prompt (shown in the diagnostics). The rule that house data is never an instruction is always added. | `ai.prompt_triage` | `` | up to 8000 characters | home |  |
+| **Prompt: investigation** — Your own instructions for investigating serious situations with tools. Empty: the built-in prompt. | `ai.prompt_investigate` | `` | up to 8000 characters | home |  |
+| **Prompt: conversation** — Your own instructions for conversations; {name} becomes the assistant's name. Empty: the built-in prompt. | `ai.prompt_chat` | `` | up to 8000 characters | home |  |
+| **Prompt: arbiter** — Your own instructions for the arbiter. Its answers keep their fixed format. Empty: the built-in prompt. | `ai.prompt_arbiter` | `` | up to 8000 characters | home |  |
+| **Prompt: digest** — Your own instructions for writing the digest. Empty: the built-in prompt. | `ai.prompt_digest` | `` | up to 8000 characters | home |  |
 
 ## Learning
 

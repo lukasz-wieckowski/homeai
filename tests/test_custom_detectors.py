@@ -1,4 +1,4 @@
-"""Custom detectors: rules without code, validated, evaluated and editable over WebSocket."""
+"""Custom detectors: rules without code, validated, evaluated, added and changed as the integration's subentries."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ async def test_rule_opens_a_situation_after_its_time(hass: HomeAssistant, freeze
     home.entity(
         "sensor.freezer", "-18", area="Kitchen", attrs={"unit_of_measurement": "°C", "friendly_name": "Freezer"}
     )
-    rt = await setup_homeai(hass, {"detectors.custom": [FREEZER]})
+    rt = await setup_homeai(hass, rules=[FREEZER])
     hub = rt.module("signals")
     home.set("sensor.freezer", "-5")
     assert not [s for s in hub.evaluate().values() if s and s.kind == "custom"]
@@ -73,7 +73,7 @@ async def test_label_targets_and_all_mode(hass: HomeAssistant, freezer: FrozenDa
         "category": "maintenance",
     }
     every = {**each, "id": "all_dry", "name": "All plants dry", "mode": "all"}
-    rt = await setup_homeai(hass, {"detectors.custom": [each, every]})
+    rt = await setup_homeai(hass, rules=[each, every])
     found = [s for s in rt.module("signals").evaluate().values() if s and s.kind == "custom"]
     assert [s.entities for s in found] == [("sensor.fern",)]
     home.set("sensor.cactus", "5")
@@ -92,7 +92,7 @@ async def test_only_when_away(hass: HomeAssistant) -> None:
         "severity": 1,
         "category": "energy",
     }
-    rt = await setup_homeai(hass, {"detectors.custom": [rule]})
+    rt = await setup_homeai(hass, rules=[rule])
     home.set("switch.coffee", "on")
     hub = rt.module("signals")
     hub.evaluate()
@@ -105,19 +105,113 @@ async def test_only_when_away(hass: HomeAssistant) -> None:
 async def test_rules_websocket(hass: HomeAssistant, hass_ws_client) -> None:
     home = standard_home(hass)
     home.entity("sensor.freezer", "-5", area="Kitchen")
-    rt = await setup_homeai(hass)
+    await setup_homeai(hass, rules=[FREEZER])
     client = await hass_ws_client(hass)
     await client.send_json_auto_id({"type": "homeai/rules/preview", "rule": FREEZER})
     msg = await client.receive_json()
     assert msg["result"]["covered"][0]["entity_id"] == "sensor.freezer" and msg["result"]["meeting"] == [
         "sensor.freezer"
     ]
-    await client.send_json_auto_id({"type": "homeai/rules/save", "rules": [FREEZER]})
-    msg = await client.receive_json()
-    assert msg["success"] and rt.settings.get("detectors.custom")[0]["id"] == "freezer"
-    await client.send_json_auto_id({"type": "homeai/rules/save", "rules": [{**FREEZER, "severity": 9}]})
+    await client.send_json_auto_id({"type": "homeai/rules/preview", "rule": {**FREEZER, "severity": 9}})
     msg = await client.receive_json()
     assert not msg["success"] and msg["error"]["code"] == "invalid_format"
     await client.send_json_auto_id({"type": "homeai/rules/list"})
     msg = await client.receive_json()
-    assert msg["result"]["rules"][0]["firing"] is False
+    assert msg["result"]["rules"][0]["id"] == "freezer" and msg["result"]["rules"][0]["firing"] is False
+
+
+FORM = {
+    "name": "Freezer too warm",
+    "enabled": True,
+    "target": {"entities": ["sensor.freezer"]},
+    "condition": {"condition": "above", "value": "-10", "minutes": 15, "when": "always", "mode": "each"},
+    "situation": {"severity": 3, "category": "damage", "need": "member", "advice": "Check the door."},
+}
+
+
+async def test_rule_is_added_and_changed_as_a_subentry(hass: HomeAssistant) -> None:
+    """Add rule on the integration page: a form, then a preview of what it covers; saving applies it without a
+    reload. Reconfigure changes it and keeps its id."""
+    from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
+    from homeassistant.data_entry_flow import FlowResultType
+
+    home = standard_home(hass)
+    home.entity("sensor.freezer", "-5", area="Kitchen", attrs={"friendly_name": "Freezer"})
+    rt = await setup_homeai(hass)
+    entry = rt.entry
+    flows = hass.config_entries.subentries
+    result = await flows.async_init((entry.entry_id, "rule"), context={"source": SOURCE_USER})
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "rule"
+    bad = {**FORM, "condition": {**FORM["condition"], "value": "warm"}}
+    result = await flows.async_configure(result["flow_id"], bad)
+    assert result["step_id"] == "rule" and result["errors"] == {"base": "invalid_rule"}
+    assert "number" in result["description_placeholders"]["error"]
+    result = await flows.async_configure(result["flow_id"], FORM)
+    assert result["step_id"] == "preview"
+    preview = result["description_placeholders"]
+    assert preview["count"] == "1" and preview["covered"] == "Freezer" and preview["meeting"] == "Freezer"
+    result = await flows.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.runtime_data is rt  # applied without a reload
+    [rule] = rt.rules
+    assert rule["id"] == "freezer_too_warm" and rule["condition"] == {"type": "above", "value": -10.0}
+    assert rule["severity"] == 3 and rule["advice"] == "Check the door."
+    assert "sensor.freezer" in rt.module("signals")._watch
+
+    [sub] = [s for s in entry.subentries.values() if s.subentry_type == "rule"]
+    result = await flows.async_init(
+        (entry.entry_id, "rule"), context={"source": SOURCE_RECONFIGURE, "subentry_id": sub.subentry_id}
+    )
+    assert result["step_id"] == "rule"
+    result = await flows.async_configure(
+        result["flow_id"], {**FORM, "name": "Freezer warm", "situation": {**FORM["situation"], "severity": 2}}
+    )
+    result = await flows.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.ABORT and result["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    assert entry.runtime_data is rt
+    assert rt.rules[0]["id"] == "freezer_too_warm" and rt.rules[0]["severity"] == 2
+    assert entry.subentries[sub.subentry_id].title == "Freezer warm"
+
+    hass.config_entries.async_remove_subentry(entry, sub.subentry_id)
+    await hass.async_block_till_done()
+    assert entry.runtime_data is rt and rt.rules == []
+
+
+async def test_rules_from_the_old_setting_become_subentries(hass: HomeAssistant, hass_storage) -> None:
+    """Before 1.7 the rules were the setting `detectors.custom`: the entry's migration moves each valid rule to a
+    subentry once and drops the setting; other settings stay."""
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.homeai.const import DOMAIN
+
+    from .common import FAST
+
+    hass_storage["homeai.settings"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": "homeai.settings",
+        "data": {
+            "global": {"detectors.custom": [FREEZER, {"id": "Not valid"}], "general.language": "pl"},
+            "overrides": {},
+            "history": [],
+        },
+    }
+    standard_home(hass)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"initial_settings": dict(FAST), "initial_settings_applied": True},
+        version=1,
+        minor_version=2,
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.minor_version == 3
+    [sub] = [s for s in entry.subentries.values() if s.subentry_type == "rule"]
+    assert sub.unique_id == "freezer" and sub.title == "Freezer too warm" and sub.data["minutes"] == 15
+    rt = entry.runtime_data
+    assert [r["id"] for r in rt.rules] == ["freezer"]
+    assert rt.settings.get("general.language") == "pl"
+    assert "detectors.custom" not in hass_storage["homeai.settings"]["data"]["global"]

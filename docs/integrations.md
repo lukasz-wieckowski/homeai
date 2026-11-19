@@ -36,7 +36,7 @@ The same lifecycle is available as `event.homeai_situation` and `event.homeai_no
 ## Publish your plans
 
 **Entity attribute** `homeai_plan`: any entity may expose a list of `{start, title, end?}` (ISO times; up to 50).
-HomeAI shows these in `calendar.homeai_plan` and in the panel's plan next to its own entries, so people see
+HomeAI shows these in `calendar.homeai_plan` and in the Home plan panel next to its own entries, so people see
 everything the house will do in one place. HomeAI never runs them; your integration does. Setting *Plans from
 other integrations* turns this off.
 

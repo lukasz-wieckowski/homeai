@@ -2,7 +2,7 @@
 
 Every action goes through the same steps: validate, decide by policy, pick the right context (the person who
 asked, or the HomeAI user), snapshot for undo (R1–R2), call with a timeout, verify the expected state, write
-the HomeAI journal and Home Assistant's logbook ("HomeAI: …"), and fire `homeai_action`.
+the HomeAI journal (which writes what was done to Home Assistant's logbook), and fire `homeai_action`.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from homeassistant.helpers.target import TargetSelection, async_extract_referenc
 from homeassistant.util import dt as dt_util, ulid as ulid_util
 
 from .. import i18n
-from ..const import DOMAIN, EVENT_ACTION, LOGGER
+from ..const import EVENT_ACTION, LOGGER
 from ..policy import ActionRequest, Decision, Risk, Verdict
 
 # service → states that mean it worked (only where the meaning is unambiguous)
@@ -464,18 +464,10 @@ class Executor:
             situation_id=request.situation_id,
             result=result.status,
             data={"risk": result.risk, "action_id": result.action_id, "reason": request.reason},
+            context=ctx,
+            # what was done or tried; what HomeAI only would have done or was not allowed to stays in the journal
+            logbook=result.status in ("done", "unverified", "failed"),
         )
-        if result.status in ("done", "unverified", "failed") and "logbook" in self.hass.config.components:
-            from homeassistant.components.logbook import async_log_entry
-
-            async_log_entry(
-                self.hass,
-                "HomeAI",
-                text,
-                DOMAIN,
-                request.entity_ids[0] if request.entity_ids else None,
-                ctx,
-            )
         self.hass.bus.async_fire(
             EVENT_ACTION,
             {

@@ -8,6 +8,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse, callback
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers.service import async_register_admin_service
 import voluptuous as vol
 
 from ..const import DOMAIN
@@ -19,6 +20,7 @@ class ServiceDef:
     handler: Callable[[Any, ServiceCall], Awaitable[ServiceResponse | None]]
     schema: vol.Schema
     response: SupportsResponse = SupportsResponse.NONE
+    admin: bool = False  # only administrators (and automations) may call it
 
 
 SERVICES: list[ServiceDef] = []
@@ -41,4 +43,9 @@ def async_register_services(hass: HomeAssistant) -> None:
 
             return handle
 
-        hass.services.async_register(DOMAIN, svc.name, make(svc), schema=svc.schema, supports_response=svc.response)
+        if svc.admin:
+            async_register_admin_service(
+                hass, DOMAIN, svc.name, make(svc), schema=svc.schema, supports_response=svc.response
+            )
+        else:
+            hass.services.async_register(DOMAIN, svc.name, make(svc), schema=svc.schema, supports_response=svc.response)

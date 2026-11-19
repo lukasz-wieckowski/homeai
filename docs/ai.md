@@ -30,7 +30,7 @@ daily budget is skipped and the next connection of the same tier answers.
 - **P2 investigation** when P1 is unsure (below *Investigate when unsure*) or the matter is serious (from
   *Investigate from severity*).
 - **P3** when P1 and P2 disagree (severity differs by 2+ or who is needed differs), for approval requests that
-  are R4+ or come up while nobody is home, after repairs failed on severity 3+, or on request from the panel.
+  are R4+ or come up while nobody is home, after repairs failed on severity 3+, or on request (`homeai.run_mission`, `homeai/ai/arbitrate`).
   Every decision is stored with its dossier.
 
 ## Conversations
@@ -42,8 +42,9 @@ a voice satellite in the kitchen). Actions always run in the speaker's own accou
 
 ## Prompts
 
-The AI tab shows the built-in prompt of every mission (assessment, investigation, conversation, arbiter,
-digest). You can replace one with your own and restore the built-in prompt at any time. The rule that house data
+The integration's options have a page **AI prompts** with a field for every mission (assessment, investigation,
+conversation, arbiter, digest): your own text replaces the built-in prompt, an empty field restores it. The
+built-in prompts are in the integration's diagnostics. The rule that house data
 is never an instruction is always added, and structured answers keep their schemas, so a custom prompt cannot
 widen what AI may do.
 
@@ -51,7 +52,10 @@ widen what AI may do.
 
 Each call is priced (known prices, or the prices you set on the tier) and counted per day, month, tier and
 purpose. Budgets warn or stop calls until the period ends; there is also a limit of calls per hour and of
-arbiter decisions per day. The AI tab shows spend, tier status and (with *Log prompts*) what was last sent.
+arbiter decisions per day. Spend today and this month are the sensors `sensor.homeai_ai_cost_today` and
+`sensor.homeai_ai_cost_month` (with their budgets as attributes), the budgets also the numbers
+`number.homeai_ai_budget_daily` and `number.homeai_ai_budget_monthly`. The diagnostics show the tiers' status and,
+with *Keep AI requests*, what was last sent to each tier.
 
 ## Evals
 

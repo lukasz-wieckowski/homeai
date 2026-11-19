@@ -80,6 +80,8 @@ class SignalHub:
         self.hass = runtime.hass
         self.detectors: list[Detector] = default_detectors()
         self.external: ExternalDetector = next(d for d in self.detectors if isinstance(d, ExternalDetector))
+        custom: CustomDetector = next(d for d in self.detectors if isinstance(d, CustomDetector))
+        custom.source = lambda: list(runtime.rules)
         self.signals: dict[str, Signal] = {}
         self._by_detector: dict[str, set[str]] = {}
         self._watch: dict[str, set[str]] = {}  # entity_id → detector keys
@@ -173,6 +175,13 @@ class SignalHub:
         if keys:
             self._pending |= keys
             self._schedule_quick()
+
+    @callback
+    def rules_changed(self) -> None:
+        """Custom rules were added, changed or removed: watch their entities and evaluate them soon."""
+        self._rebuild_watch()
+        self._pending.add(CustomDetector.key)
+        self._schedule_quick()
 
     @callback
     def schedule_all(self) -> None:

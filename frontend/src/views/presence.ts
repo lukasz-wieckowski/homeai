@@ -82,50 +82,72 @@ export class HomeAIPresence extends LitElement {
     if (!confirm(t(this.hass.language, "remove_confirm"))) return;
     try {
       await this.hass.callWS({ type: "homeai/presence/delete", exception_id: id });
-      this.error = "";
+      this.close();
     } catch (err: any) {
       this.error = err?.message ?? String(err);
     }
     await this.load();
   }
 
+  private close(): void {
+    this.draft = undefined;
+    this.error = "";
+  }
+
+  protected updated(): void {
+    const dialog = this.renderRoot.querySelector("dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+  }
+
   private form() {
     const lang = this.hass.language;
     const d = this.draft!;
     const set = (patch: Partial<Draft>) => (this.draft = { ...d, ...patch });
-    const field = (label: string, content: unknown) => html`<label class="row field"><span class="label">${label}</span>${content}</label>`;
-    return html`<div part="card sheet" class="card sheet" role="dialog">
-      ${field(t(lang, "presence_kind"), html`<select part="input" @change=${(e: Event) => set({ kind: (e.target as HTMLSelectElement).value })}>
-        ${KINDS.map((k) => html`<option value=${k} ?selected=${k === d.kind}>${t(lang, `presence_${k}`)}</option>`)}</select>`)}
-      ${field(t(lang, "presence_person"), html`<select part="input" @change=${(e: Event) => set({ person: (e.target as HTMLSelectElement).value })}>
-        <option value="" ?selected=${!d.person}>${t(lang, "presence_everyone")}</option>
-        ${(this.world?.persons ?? []).map((p) => html`<option value=${p.id} ?selected=${p.id === d.person}>${p.name}</option>`)}</select>`)}
-      ${field(t(lang, "presence_from"), html`<input part="input" type="date" .value=${d.start} @change=${(e: Event) => set({ start: (e.target as HTMLInputElement).value })} />`)}
-      ${field(t(lang, "presence_to"), html`<input part="input" type="date" .value=${d.end} @change=${(e: Event) => set({ end: (e.target as HTMLInputElement).value })} />`)}
-      ${field(t(lang, "presence_note"), html`<input part="input" class="grow" maxlength="300" .value=${d.note} @input=${(e: Event) => set({ note: (e.target as HTMLInputElement).value })} />`)}
-      ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
-      <div class="row actions">
-        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
-        <button part="button" @click=${() => { this.draft = undefined; this.error = ""; }}>${t(lang, "cancel")}</button>
+    const field = (label: string, content: unknown) => html`<label class="field"><span class="label">${label}</span>${content}</label>`;
+    return html`<dialog part="sheet" class="card sheet" aria-labelledby="sheet-title" @close=${this.close}>
+      <div class="sheet-head"><h2 id="sheet-title" part="title" class="title">${t(lang, d.id ? "presence_change" : "presence_new")}</h2></div>
+      <div class="sheet-body fields">
+        <div class="pair">
+          ${field(t(lang, "presence_kind"), html`<select part="input" @change=${(e: Event) => set({ kind: (e.target as HTMLSelectElement).value })}>
+            ${KINDS.map((k) => html`<option value=${k} ?selected=${k === d.kind}>${t(lang, `presence_${k}`)}</option>`)}</select>`)}
+          ${field(t(lang, "presence_person"), html`<select part="input" @change=${(e: Event) => set({ person: (e.target as HTMLSelectElement).value })}>
+            <option value="" ?selected=${!d.person}>${t(lang, "presence_everyone")}</option>
+            ${(this.world?.persons ?? []).map((p) => html`<option value=${p.id} ?selected=${p.id === d.person}>${p.name}</option>`)}</select>`)}
+        </div>
+        <div class="pair">
+          ${field(t(lang, "presence_from"), html`<input part="input" type="date" .value=${d.start} @change=${(e: Event) => set({ start: (e.target as HTMLInputElement).value })} />`)}
+          ${field(t(lang, "presence_to"), html`<input part="input" type="date" .value=${d.end} @change=${(e: Event) => set({ end: (e.target as HTMLInputElement).value })} />`)}
+        </div>
+        ${field(t(lang, "presence_note"), html`<input part="input" maxlength="300" .value=${d.note} @input=${(e: Event) => set({ note: (e.target as HTMLInputElement).value })} />`)}
+        ${this.error ? html`<div part="error" class="error">${this.error}</div>` : nothing}
       </div>
-    </div>`;
+      <div class="sheet-foot">
+        ${d.id ? html`<button part="button button-quiet" class="quiet danger" @click=${() => this.removeItem(d.id!)}>${t(lang, "remove")}</button>` : nothing}
+        <span class="grow"></span>
+        <button part="button" @click=${this.close}>${t(lang, "cancel")}</button>
+        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
+      </div>
+    </dialog>`;
   }
 
   render() {
     const lang = this.hass.language;
+    const tz = this.hass.config?.time_zone;
     return html`
-      <div class="row toolbar-row">
-        <span class="muted grow">${t(lang, "presence_hint")}</span>
-        ${this.draft ? nothing : html`<button part="button button-primary" class="primary" @click=${() => (this.draft = { kind: "away", person: "", start: day(this.hass.config?.time_zone), end: day(this.hass.config?.time_zone, 1), note: "" })}>${t(lang, "presence_add")}</button>`}
-      </div>
-      ${this.draft ? this.form() : this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
-      ${this.items.length
-        ? html`<div part="card" class="card"><ul part="list" class="plain">${this.items.map(
-            (i) => html`<li class="row"><span class="grow">${t(lang, `presence_${i.kind}`)} · ${this.personName(i.person)}<br />
-              <span class="muted">${span(i.start, i.end, lang, this.hass.config?.time_zone)}${i.note ? ` · ${i.note}` : ""}</span></span>
-              <button part="button" @click=${() => (this.draft = { id: i.id, kind: i.kind, person: i.person ?? "", start: localDay(i.start, this.hass.config?.time_zone), end: localDay(i.end, this.hass.config?.time_zone, true), note: i.note })}>${t(lang, "edit")}</button>
-              <button part="button" @click=${() => this.removeItem(i.id)}>${t(lang, "remove")}</button></li>`,
-          )}</ul></div>`
-        : html`<div part="empty" class="empty">${t(lang, "presence_none")}</div>`}`;
+      ${this.draft ? this.form() : nothing}
+      <section class="section">
+        <div class="section-head"><h2 part="heading" class="heading">${t(lang, "presence")}</h2>
+          <button part="button button-primary" class="primary" @click=${() => (this.draft = { kind: "away", person: "", start: day(tz), end: day(tz, 1), note: "" })}>${t(lang, "presence_add")}</button></div>
+        <p class="hint">${t(lang, "presence_hint")}</p>
+        ${!this.draft && this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
+        ${this.items.length
+          ? html`<ul part="card list" class="list">${this.items.map((i) => html`<li part="row">
+              <button class="item-main plain" @click=${() => (this.draft = { id: i.id, kind: i.kind, person: i.person ?? "", start: localDay(i.start, tz), end: localDay(i.end, tz, true), note: i.note })}>
+                <span class="item-text"><span part="row-title" class="item-title">${t(lang, `presence_${i.kind}`)} · ${this.personName(i.person)}</span>
+                  <span part="row-meta" class="item-meta">${span(i.start, i.end, lang, tz)}${i.note ? ` · ${i.note}` : ""}</span></span>
+                <span class="chevron">›</span>
+              </button></li>`)}</ul>`
+          : html`<div part="empty" class="empty">${t(lang, "presence_none")}</div>`}
+      </section>`;
   }
 }

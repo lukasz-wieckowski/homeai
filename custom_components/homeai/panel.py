@@ -1,4 +1,9 @@
-"""The HomeAI panel in the sidebar and the Lovelace cards (one module served by the integration)."""
+"""HomeAI's panels in the sidebar and the Lovelace cards (one module served by the integration).
+
+One web component draws every panel; `config.view` says which: the inbox (situations and approvals, at the
+integration's own path, where notifications open), the home's plan with presence, the chat, and managing HomeAI
+(learning, journal, rules, settings, AI). `general.panels` chooses which of them appear in the sidebar.
+"""
 
 from __future__ import annotations
 
@@ -7,10 +12,16 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import LOGGER, NAME, PANEL_URL, STATIC_URL, VERSION
+from . import i18n
+from .const import LOGGER, PANEL_ICONS, PANEL_PATHS, PANELS, STATIC_URL, VERSION
 
 FILE = "homeai-panel.js"
 DATA_STATIC = "homeai_static_registered"
+
+
+def panel_title(rt: Any, lang: str, view: str) -> str:
+    name = str(rt.settings.get("general.assistant_name") or "HomeAI")
+    return i18n.text(lang, f"panels|{view}", name=name)
 
 
 async def async_setup_panel(hass: HomeAssistant, rt: Any) -> None:
@@ -35,19 +46,24 @@ async def async_setup_panel(hass: HomeAssistant, rt: Any) -> None:
         return
     from homeassistant.components import panel_custom
 
-    try:
-        await panel_custom.async_register_panel(
-            hass,
-            frontend_url_path=PANEL_URL,
-            webcomponent_name="homeai-panel",
-            sidebar_title=NAME,
-            sidebar_icon="mdi:home-heart",
-            module_url=module_url,
-            require_admin=bool(rt.settings.get("general.panel_admin_only")),
-            config={},
-        )
-    except ValueError:
-        LOGGER.debug("HomeAI panel already registered")
+    lang = i18n.resolve_language(hass, str(rt.settings.get("general.language")))
+    wanted = set(rt.settings.get("general.panels") or ())
+    for view in PANELS:
+        if view not in wanted:
+            continue
+        try:
+            await panel_custom.async_register_panel(
+                hass,
+                frontend_url_path=PANEL_PATHS[view],
+                webcomponent_name="homeai-panel",
+                sidebar_title=panel_title(rt, lang, view),
+                sidebar_icon=PANEL_ICONS[view],
+                module_url=module_url,
+                require_admin=bool(rt.settings.get("general.panel_admin_only")),
+                config={"view": view},
+            )
+        except ValueError:
+            LOGGER.debug("HomeAI panel %s already registered", view)
 
 
 def async_remove_panel(hass: HomeAssistant) -> None:
@@ -55,4 +71,5 @@ def async_remove_panel(hass: HomeAssistant) -> None:
         return
     from homeassistant.components.frontend import async_remove_panel
 
-    async_remove_panel(hass, PANEL_URL, warn_if_unknown=False)
+    for url in PANEL_PATHS.values():
+        async_remove_panel(hass, url, warn_if_unknown=False)

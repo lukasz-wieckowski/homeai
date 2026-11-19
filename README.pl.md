@@ -106,8 +106,10 @@ API OpenAI.</sub>
 
 Po kreatorze:
 
-- W pasku bocznym pojawia się panel **HomeAI**: sprawy, zgody, rozmowa, plan, obecność, uczenie, reguły, dziennik,
-  wszystkie ustawienia i stan AI.
+- W pasku bocznym pojawiają się cztery panele: **HomeAI** (sprawy i zgody; tu otwierają się powiadomienia), **Plan
+  domu** (plan i obecność), **Rozmowa** i **Zarządzanie HomeAI** (uczenie, dziennik, a dla administratorów reguły,
+  wszystkie ustawienia i stan AI). Ustawienie *Które panele* wybiera, które z nich HomeAI dodaje; każdy może też
+  ukryć dowolny w swoim pasku.
 - Przez pierwsze **14 dni** (ustawienie *Okres obserwacji*) HomeAI tylko *obserwuje* akcje komfortu, urządzeń
   i napraw systemu, które wykonałoby albo zaproponowało samo: dziennik pokazuje, co by zrobiło, i nikt nie dostaje
   próśb o zgodę. Wykrywanie spraw, powiadomienia i akcje ochronne na oznaczonych encjach działają od pierwszego dnia.
@@ -136,11 +138,15 @@ dzienny, jest pomijane i odpowiada następne. Budżety dzienny i miesięczny dla
 
 ## Instrukcja: panel HomeAI
 
+Listy to jedna powierzchnia na grupę, z wierszem na każdą pozycję: co, gdzie i kiedy. Dotknij wiersza, żeby zobaczyć
+dlaczego i co możesz zrobić; edytory otwierają się jako arkusz nad listą (na telefonie od dołu).
+
 ### Sprawy
 
 ![Sprawy](docs/images/pl/02-situations.jpg)
 
-Wszystko, co wymaga uwagi, od najpoważniejszych. Każda sprawa pokazuje:
+Panel **HomeAI**: najpierw zgody, które czekają na Ciebie, potem wszystko, co wymaga uwagi, od najpoważniejszych,
+i to, co jest tylko do wiadomości. Każda sprawa pokazuje:
 
 - **wagę**: 0 informacja (tylko dziennik), 1 niska (wystarczy podsumowanie), 2 średnia (ktoś dzisiaj), 3 wysoka
   (ktoś teraz), 4 krytyczna (tylko bezpieczeństwo, zagrożenie dla ludzi: zalanie, dym, gaz, czad; budzi domowników). Inne sprawy,
@@ -162,6 +168,8 @@ Sprawa rozwiązuje się sama, gdy jej sygnały znikną; ostatnio rozwiązane są
 ### Zgody
 
 ![Zgody](docs/images/pl/03-approvals.jpg)
+
+Prośby, które czekają na Ciebie, są na górze panelu **HomeAI**; ostatnie decyzje na jego dole.
 
 Gdy akcja przekracza to, co proszący albo HomeAI może zrobić sam, powstaje prośba o zgodę: akcje komfortu i
 urządzeń (R1–R2) może zatwierdzić każdy domownik, systemowe i konfiguracyjne (R3+) tylko administrator. Prośba mówi,
@@ -421,21 +429,28 @@ Mój dom:
 | `--homeai-content-padding` | `--ha-content-gutter` | margines treści panelu |
 | `--homeai-content-max-width` | 68em | szerokość treści panelu |
 | `--homeai-header-height` | `--header-height` | górny pasek panelu |
+| `--homeai-reading-width` | 48em | szerokość widoków, które są jedną kolumną tekstu (sprawy, obecność, rozmowa, uczenie, dziennik, reguły) |
+| `--homeai-section-spacing` | `--ha-space-6` | między sekcjami |
+| `--homeai-row-padding-x`, `--homeai-row-padding-y` | `--ha-space-4`, `--ha-space-3` | wnętrze wiersza listy |
+| `--homeai-row-hover-background` | `--homeai-text-color` w 4 % | wiersz listy pod kursorem |
+| `--homeai-dot-size` | 0.625em | kropka wagi na początku wiersza |
+| `--homeai-scrim-color` | `--primary-text-color` w 32 % | tło za otwartym arkuszem |
 
 Części do `::part()` ze strony, na której jest element (card-mod, moduł frontendu z własnym CSS; same pliki motywów
-Home Assistanta ustawiają tylko zmienne). Panel przekazuje dalej części swoich zakładek, więc
-`homeai-panel::part(card)` sięga kart w każdej zakładce:
+Home Assistanta ustawiają tylko zmienne). Każdy panel HomeAI to ten sam element, `homeai-panel`, i przekazuje dalej
+części swoich widoków, więc `homeai-panel::part(card)` sięga kart i list w każdym panelu i zakładce:
 
 | Część | Co |
 |---|---|
 | `card`, `title`, `heading` | karta, jej tytuł, nagłówek między kartami |
-| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | znaczek wagi (i ten dla danej wagi) |
-| `button`, `button-primary` | każdy przycisk, przycisk główny |
+| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | kropka albo znaczek wagi (i ten dla danej wagi) |
+| `button`, `button-primary`, `button-quiet` | każdy przycisk, przycisk główny (także wybrana opcja albo dzień tygodnia), cichy (anuluj, usuń, pokaż więcej) |
 | `segmented`, `sheet`, `composer` | kapsuła sekcji ustawień, edytor (arkusz), pole rozmowy |
 | `input` | pola, listy wyboru, pola wyboru |
-| `list`, `empty`, `error` | lista w karcie, napis „nic tu nie ma”, błąd |
+| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | lista, wiersz, jego tytuł, linia szczegółów i godzina, nagłówek dnia w planie i dzienniku |
+| `empty`, `error` | napis „nic tu nie ma”, błąd |
 | `log`, `message`, `message-user`, `message-assistant` | rozmowa: przebieg i wiadomości |
-| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | tylko panel: górny pasek, tytuł, zakładki, treść |
+| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `tab-icon`, `tab-label`, `content` | tylko panel: górny pasek, tytuł, zakładki (ikona zakładki pokazuje się na telefonie, gdy jest ich dużo), treść |
 
 ```css
 homeai-panel::part(sheet) { backdrop-filter: blur(32px) saturate(2); }

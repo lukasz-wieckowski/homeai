@@ -3,6 +3,37 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0]
+
+HomeAI's screens are split into panels and read as lists instead of a stack of cards.
+
+### Changed
+- **Four panels in the sidebar** instead of one with ten tabs: **HomeAI** (situations and approvals, at `/homeai`,
+  where notifications open), **Home plan** (`/homeai-plan`: the plan and presence), **Chat** (`/homeai-chat`) and
+  **Manage HomeAI** (`/homeai-manage`: learning, the journal and, for administrators, rules, settings and AI). The new
+  setting *Which panels* (`general.panels`) chooses which of them HomeAI adds. Old links with `?tab=` open the
+  panel that has that tab now.
+- **Approvals are part of the inbox.** Requests waiting for you are at the top of the HomeAI panel, then situations
+  that need attention, then those only for your information; recently resolved situations and recent decisions are
+  folded at the bottom.
+- **Lists, not a card per item.** A group is one surface with a row per item: a severity dot, what, where and when.
+  A row opens to show why and the buttons; the inbox no longer shows four buttons under every situation.
+  Notifications that open `?situation=<id>` open that row.
+- **The plan by day.** What comes next is grouped under Today, Tomorrow and the following days, with the time in its
+  own column; a row of the plan's own entries opens to skip it this time or edit the entry. On a wide screen the
+  timeline and the entries sit side by side. The journal is grouped by day the same way.
+- **Editors are sheets.** Adding or changing a plan entry, a presence exception or a rule opens a modal sheet above
+  the list (from the bottom on a phone) with the fields one under another; removing is in the sheet. Weekdays are
+  toggles.
+- **Settings**: sections are a list beside the settings on a wide screen and a dropdown on a phone; undo, history,
+  export and import moved under the list.
+- The chat panel fills the page and keeps the composer at the bottom.
+- The situations and plan cards for dashboards use the same rows.
+- New variables (`--homeai-reading-width`, `--homeai-section-spacing`, `--homeai-row-padding-x`,
+  `--homeai-row-padding-y`, `--homeai-row-hover-background`, `--homeai-dot-size`, `--homeai-scrim-color`) and parts
+  (`row`, `row-title`, `row-meta`, `time`, `day`, `button-quiet`, `tab-icon`, `tab-label`) are listed in the README,
+  section *Theming*. A chosen weekday is `button-primary`, like a chosen option.
+
 ## [1.5.0]
 
 The panel and the cards look like Liquid Glass by default, still made only from Home Assistant's variables, so a

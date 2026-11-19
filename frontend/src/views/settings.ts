@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "lit";
+import { LitElement, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { live } from "lit/directives/live.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -28,7 +28,32 @@ export class HomeAISettings extends LitElement {
   @state() private scopeValues: Record<string, unknown> = {};
   @state() private history?: Change[];
 
-  static styles = shared;
+  static styles = [
+    shared,
+    css`
+      :host { container-type: inline-size; }
+      .tools { display: grid; gap: var(--_space); margin-bottom: var(--_section-spacing); }
+      .tools input[type="search"] { width: 100%; }
+      .layout { display: grid; gap: var(--_section-spacing); }
+      .nav { display: none; }
+      .nav button { display: block; width: 100%; text-align: start; }
+      @container (min-width: 52em) {
+        .layout { grid-template-columns: 14em minmax(0, 1fr); align-items: start; }
+        .nav { display: grid; gap: var(--_space-s); position: sticky; top: calc(var(--header-height) + var(--_space-l)); }
+        .picker { display: none; }
+      }
+      .setting { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; column-gap: var(--_space-l);
+        row-gap: var(--_space); padding: var(--_row-y) var(--_row-x); }
+      .setting .control { justify-self: end; max-width: 18em; }
+      .setting .control textarea, .setting .control select[multiple] { width: 18em; max-width: 100%; }
+      @container (max-width: 34em) {
+        .setting { grid-template-columns: minmax(0, 1fr) auto; }
+        .setting .control { grid-column: 1 / -1; justify-self: stretch; max-width: none; }
+        .setting .control > * { width: 100%; }
+      }
+      .footer { display: flex; flex-wrap: wrap; gap: var(--_space); margin-top: var(--_section-spacing); }
+    `,
+  ];
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -195,30 +220,31 @@ export class HomeAISettings extends LitElement {
   private scopeBar() {
     const lang = this.hass.language;
     const targets = this.targets();
-    return html`<div class="row toolbar-row">
-      <span class="muted">${t(lang, "scope")}</span>
-      <select part="input" @change=${(e: Event) => {
+    return html`<div class="pair">
+      <label class="field"><span class="label">${t(lang, "scope")}</span><select part="input" @change=${(e: Event) => {
         this.scopeType = (e.target as HTMLSelectElement).value as ScopeType;
         this.scopeRef = "";
         this.loadScope();
-      }}>${SCOPES.map((s) => html`<option value=${s} ?selected=${s === this.scopeType}>${t(lang, `scope_${s}`)}</option>`)}</select>
-      ${this.scopeType === "global" ? nothing : html`<select part="input" class="grow" @change=${(e: Event) => {
+      }}>${SCOPES.map((x) => html`<option value=${x} ?selected=${x === this.scopeType}>${t(lang, `scope_${x}`)}</option>`)}</select></label>
+      ${this.scopeType === "global" ? nothing : html`<label class="field"><span class="label">\u00a0</span><select part="input" @change=${(e: Event) => {
         this.scopeRef = (e.target as HTMLSelectElement).value;
         this.loadScope();
-      }}><option value="">—</option>${targets.map((x) => html`<option value=${x.id} ?selected=${x.id === this.scopeRef}>${x.name}</option>`)}</select>`}
+      }}><option value="">—</option>${targets.map((x) => html`<option value=${x.id} ?selected=${x.id === this.scopeRef}>${x.name}</option>`)}</select></label>`}
     </div>`;
   }
 
   private historyCard() {
     const lang = this.hass.language;
-    const labels = new Map((this.schema?.settings ?? []).map((s) => [s.key, s.label]));
+    const labels = new Map((this.schema?.settings ?? []).map((x) => [x.key, x.label]));
     const show = (v: unknown) => (v === null || v === undefined ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v));
-    return html`<div part="card" class="card"><div part="title" class="title">${t(lang, "history")}</div><ul part="list" class="plain">
-      ${(this.history ?? []).map((c) => html`<li><div class="row"><span class="muted">${when(c.ts, lang)}</span>
-        <span class="grow">${labels.get(c.key) ?? c.key}${c.scope !== "global" ? html` <span class="muted">(${c.scope})</span>` : nothing}</span>
-        <span class="muted">${c.user ?? ""}</span></div>
-        <div class="muted">${c.key === "import" ? t(lang, "import") : c.reset ? `${show(c.old)} → ${t(lang, "default")}` : `${show(c.old)} → ${show(c.new)}`}</div></li>`)}
-    </ul></div>`;
+    return html`<section class="section">
+      <div class="section-head"><h2 part="heading" class="heading">${t(lang, "history")}</h2>
+        <button part="button button-quiet" class="quiet" @click=${this.toggleHistory}>${t(lang, "close")}</button></div>
+      <ul part="card list" class="list">${(this.history ?? []).map((c) => html`<li part="row"><div class="item-main plain">
+        <span class="item-text"><span part="row-title" class="item-title">${labels.get(c.key) ?? c.key}${c.scope !== "global" ? html` <span class="muted">(${c.scope})</span>` : nothing}</span>
+          <span part="row-meta" class="item-meta">${c.key === "import" ? t(lang, "import") : c.reset ? `${show(c.old)} → ${t(lang, "default")}` : `${show(c.old)} → ${show(c.new)}`}${c.user ? ` · ${c.user}` : ""}</span></span>
+        <span part="time" class="item-aside">${when(c.ts, lang)}</span></div></li>`)}</ul>
+    </section>`;
   }
 
   render() {
@@ -227,45 +253,58 @@ export class HomeAISettings extends LitElement {
     if (!this.schema) return nothing;
     const q = this.filter.toLowerCase();
     const scoped = this.skey !== "global";
+    // a section that does not exist (any more) falls back to the first one
+    const section = this.schema.sections.find((x) => x.id === this.section) ?? this.schema.sections[0];
+    const current = section?.id ?? this.section;
     const items = this.schema.settings.filter(
-      (s) =>
-        (q ? `${s.label} ${s.description} ${s.key}`.toLowerCase().includes(q) : s.section === this.section) &&
-        (this.advanced || !s.advanced || q) &&
-        (this.scopeType === "global" || s.scopes.includes(this.scopeType)),
+      (x) =>
+        (q ? `${x.label} ${x.description} ${x.key}`.toLowerCase().includes(q) : x.section === current) &&
+        (this.advanced || !x.advanced || q) &&
+        (this.scopeType === "global" || x.scopes.includes(this.scopeType)),
     );
-    const section = this.schema.sections.find((s) => s.id === this.section);
+
     return html`
-      <div class="row toolbar-row">
-        <input part="input" class="grow" type="search" placeholder=${t(lang, "search")} .value=${this.filter} @input=${(e: Event) => (this.filter = (e.target as HTMLInputElement).value)} />
-        <label class="row"><input part="input" type="checkbox" .checked=${this.advanced} @change=${(e: Event) => (this.advanced = (e.target as HTMLInputElement).checked)} />${t(lang, "advanced")}</label>
-        <button part="button" @click=${this.undo}>${t(lang, "undo")}</button>
-        <button part="button" @click=${this.toggleHistory}>${t(lang, "history")}</button>
-        <button part="button" @click=${this.exportSettings}>${t(lang, "export")}</button>
-        <span><button part="button" @click=${(e: Event) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLInputElement).click()}>${t(lang, "import")}</button><input part="input" type="file" accept="application/json,.json" hidden @change=${this.importSettings} /></span>
+      <div class="tools">
+        <input part="input" type="search" placeholder=${t(lang, "search")} aria-label=${t(lang, "search")} .value=${this.filter} @input=${(e: Event) => (this.filter = (e.target as HTMLInputElement).value)} />
+        ${this.scopeBar()}
+        <label class="check"><input part="input" type="checkbox" .checked=${this.advanced} @change=${(e: Event) => (this.advanced = (e.target as HTMLInputElement).checked)} />${t(lang, "advanced")}</label>
       </div>
-      ${this.scopeBar()}
       ${this.history ? this.historyCard() : nothing}
-      ${q ? nothing : html`<div class="toolbar-row"><div part="segmented" class="segmented glass">
-        ${this.schema.sections.map((s) => html`<button part=${s.id === this.section ? "button button-primary" : "button"} class=${s.id === this.section ? "primary" : ""} @click=${() => (this.section = s.id)}>${s.label}</button>`)}
-      </div></div>
-      ${section ? html`<div class="row"><p class="muted grow">${section.description}</p>
-        ${scoped ? nothing : html`<button part="button" @click=${this.resetSection}>${t(lang, "reset_section")}</button>`}</div>` : nothing}`}
       ${this.message ? html`<div part="card" class="card muted">${this.message}</div>` : nothing}
-      ${this.scopeType !== "global" && !this.scopeRef ? html`<div part="empty" class="empty">${t(lang, "scope_pick")}</div>` : html`<div part="card" class="card">
-        ${items.length ? nothing : html`<div class="muted">${t(lang, "scope_none")}</div>`}
-        ${repeat(items, (item) => `${this.skey}|${item.key}`, (item) => {
-          const here = scoped && item.key in this.scopeValues;
-          const value = here ? this.scopeValues[item.key] : item.value;
-          const count = Object.keys(item.overrides || {}).length;
-          return html`<div class="row setting">
-            <div class="grow"><div>${item.label}</div><div class="muted">${item.description}</div>
-              ${here ? html`<div class="muted"><b>${t(lang, "overridden")}</b></div>`
-                : scoped ? html`<div class="muted">${t(lang, "inherited")}</div>`
-                : count ? html`<div class="muted">${count} × ${t(lang, "overridden")}</div>` : nothing}</div>
-            <div>${this.input(item, value)}</div>
-            ${(scoped ? here : item.source !== "default") ? html`<button part="button" title=${t(lang, "reset")} @click=${() => this.reset(item)}>↺</button>` : nothing}
-          </div>`;
-        })}
-      </div>`}`;
+      <div class="layout">
+        ${q ? html`<div></div>` : html`<nav part="segmented" class="nav glass segmented" aria-label=${t(lang, "section")}>
+          ${this.schema.sections.map((x) => html`<button part=${x.id === current ? "button button-primary" : "button"} class=${x.id === current ? "primary" : ""}
+            aria-current=${x.id === current ? "true" : "false"} @click=${() => (this.section = x.id)}>${x.label}</button>`)}
+        </nav>`}
+        <section>
+          ${q ? nothing : html`<label class="field picker section"><span class="label">${t(lang, "section")}</span>
+            <select part="input" @change=${(e: Event) => (this.section = (e.target as HTMLSelectElement).value)}>
+              ${this.schema.sections.map((x) => html`<option value=${x.id} ?selected=${x.id === current}>${x.label}</option>`)}</select></label>`}
+          ${q || !section ? nothing : html`<div class="section-head"><h2 part="heading" class="heading">${section.label}</h2>
+            ${scoped ? nothing : html`<button part="button button-quiet" class="quiet" @click=${this.resetSection}>${t(lang, "reset_section")}</button>`}</div>
+            <p class="hint">${section.description}</p>`}
+          ${this.scopeType !== "global" && !this.scopeRef ? html`<div part="empty" class="empty">${t(lang, "scope_pick")}</div>` : html`<ul part="card list" class="list">
+            ${items.length ? nothing : html`<li class="empty">${t(lang, "scope_none")}</li>`}
+            ${repeat(items, (item) => `${this.skey}|${item.key}`, (item) => {
+              const here = scoped && item.key in this.scopeValues;
+              const value = here ? this.scopeValues[item.key] : item.value;
+              const count = Object.keys(item.overrides || {}).length;
+              const note = here ? t(lang, "overridden") : scoped ? t(lang, "inherited") : count ? `${count} × ${t(lang, "overridden")}` : "";
+              return html`<li part="row" class="setting">
+                <span class="item-text"><span part="row-title" class="item-title">${item.label}</span>
+                  <span part="row-meta" class="item-meta wrap">${item.description}${note ? html` · <b>${note}</b>` : nothing}</span></span>
+                ${(scoped ? here : item.source !== "default") ? html`<button part="button button-quiet" class="quiet" title=${t(lang, "reset")} aria-label=${`${t(lang, "reset")}: ${item.label}`} @click=${() => this.reset(item)}>↺</button>` : html`<span></span>`}
+                <span class="control">${this.input(item, value)}</span>
+              </li>`;
+            })}
+          </ul>`}
+          <div class="footer">
+            <button part="button button-quiet" class="quiet" @click=${this.undo}>${t(lang, "undo")}</button>
+            <button part="button button-quiet" class="quiet" @click=${this.toggleHistory}>${t(lang, "history")}</button>
+            <button part="button button-quiet" class="quiet" @click=${this.exportSettings}>${t(lang, "export")}</button>
+            <span><button part="button button-quiet" class="quiet" @click=${(e: Event) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLInputElement).click()}>${t(lang, "import")}</button><input part="input" type="file" accept="application/json,.json" hidden @change=${this.importSettings} /></span>
+          </div>
+        </section>
+      </div>`;
   }
 }

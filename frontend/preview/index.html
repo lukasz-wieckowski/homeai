@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HomeAI preview</title>
-    <!-- Serve the repository root (e.g. `python3 -m http.server`) and open /frontend/preview/?theme=dark&tab=chat.
+    <!-- Serve the repository root (e.g. `python3 -m http.server`) and open /frontend/preview/?theme=dark&view=chat.
          Builds are read from custom_components/homeai/frontend, so run `npm run build` first. -->
     <link rel="stylesheet" href="themes.css" />
     <style>
@@ -40,6 +40,7 @@
         const next = new URLSearchParams(location.search);
         next.set(key, value);
         const on = (params.get(key) || (key === "theme" ? "light" : key === "lang" ? "en" : "situations")) === value;
+        if (key === "view") next.delete("tab");
         return `<a class="${on ? "on" : ""}" href="?${next}">${value}</a>`;
       };
       document.getElementById("bar").innerHTML = [
@@ -47,10 +48,13 @@
         "·",
         ...["en", "pl"].map((v) => link("lang", v)),
         "·",
-        ...["situations", "approvals", "chat", "plan", "presence", "learning", "rules", "journal", "settings", "ai"].map((v) => link("tab", v)),
+        ...["situations", "plan", "chat", "manage"].map((v) => link("view", v)),
       ].join(" ");
 
       const panel = document.querySelector("homeai-panel");
+      const view = params.get("view") || "situations";
+      const titles = { situations: "HomeAI", plan: "Home plan", chat: "Chat", manage: "Manage HomeAI" };
+      panel.panel = { title: titles[view], config: { view } };
       panel.hass = hass;
       for (const [tag, config] of [
         ["homeai-situations-card", { type: "custom:homeai-situations-card", title: "Open situations" }],

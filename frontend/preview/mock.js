@@ -61,6 +61,9 @@ const fixtures = {
     occurrences: [
       { at: iso(90), entry_id: "e1", title: "Balcony lights off" },
       { at: iso(300), entry_id: "x", title: "Heating: comfort in the living room", external: true, source: "climate.living" },
+      { at: iso(1530), entry_id: "e1", title: "Balcony lights off" },
+      { at: iso(1700), entry_id: "e2", title: "Water the plants" },
+      { at: iso(2970), entry_id: "e1", title: "Balcony lights off" },
     ],
   },
   "homeai/watches/list": { items: [{ id: "w1", what: "Washing machine finishes", message: "Hang the laundry", expires: iso(180), person: "person.anna" }] },

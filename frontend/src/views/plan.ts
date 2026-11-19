@@ -1,7 +1,7 @@
-import { LitElement, html, nothing } from "lit";
+import { LitElement, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
-import { inZone, t, when } from "../i18n";
+import { clock, dayLabel, homeDay, inZone, t, when } from "../i18n";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -84,8 +84,18 @@ export class HomeAIPlan extends LitElement {
   @state() private draft?: Draft;
   @state() private error = "";
   @state() private all = false;
+  @state() private expanded: string | null = null;
 
-  static styles = shared;
+  static styles = [
+    shared,
+    css`
+      /* a wide screen: what comes next on the left, what is set up on the right */
+      :host { container-type: inline-size; }
+      @container (min-width: 56em) {
+        .columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: var(--_section-spacing); align-items: start; }
+      }
+    `,
+  ];
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -111,12 +121,14 @@ export class HomeAIPlan extends LitElement {
   private async removeEntry(id: string): Promise<void> {
     if (!confirm(t(this.hass.language, "remove_confirm"))) return;
     await this.hass.callWS({ type: "homeai/plan/delete", entry_id: id });
+    this.close();
     await this.load();
   }
 
   private async skip(o: Occurrence): Promise<void> {
     const date = inZone(o.at, this.hass.config?.time_zone).date; // the home's day, whatever zone the browser is in
     await this.hass.callService("homeai", "plan_skip", { entry_id: o.entry_id, date });
+    this.expanded = null;
     await this.load();
   }
 
@@ -175,74 +187,150 @@ export class HomeAIPlan extends LitElement {
     }
   }
 
+  private close(): void {
+    this.draft = undefined;
+    this.error = "";
+  }
+
+  protected updated(): void {
+    const dialog = this.renderRoot.querySelector("dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+  }
+
   private form() {
     const lang = this.hass.language;
     const d = this.draft!;
     const w = d.when;
     const names = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(lang, { weekday: "short" }));
-    const field = (label: string, content: unknown) => html`<label class="row field"><span class="label">${label}</span>${content}</label>`;
-    return html`<div part="card sheet" class="card sheet" role="dialog">
-      ${field(t(lang, "plan_type"), html`<select part="input" @change=${(e: Event) => this.set({ type: (e.target as HTMLSelectElement).value as Draft["type"] })}>
-        <option value="action" ?selected=${d.type === "action"}>${t(lang, "plan_action")}</option>
-        <option value="reminder" ?selected=${d.type === "reminder"}>${t(lang, "plan_reminder")}</option></select>`)}
-      ${field(t(lang, "rule_name"), html`<input part="input" class="grow" .value=${d.title} @input=${(e: Event) => this.set({ title: (e.target as HTMLInputElement).value })} />`)}
-      ${d.type === "reminder"
-        ? html`${field(t(lang, "plan_reminder_text"), html`<input part="input" class="grow" .value=${d.reminder} @input=${(e: Event) => this.set({ reminder: (e.target as HTMLInputElement).value })} />`)}
-          ${field(t(lang, "plan_to"), html`<select part="input" @change=${(e: Event) => this.set({ to: (e.target as HTMLSelectElement).value })}>
-            ${TO.map((x) => html`<option value=${x} ?selected=${x === d.to}>${t(lang, `plan_to_${x}`)}</option>`)}</select>`)}`
-        : html`${field(t(lang, "plan_service"), html`<input part="input" class="grow" list="homeai-services" .value=${d.service} @input=${(e: Event) => this.set({ service: (e.target as HTMLInputElement).value })} />
-            <datalist id="homeai-services">${SERVICES.map((s) => html`<option value=${s}></option>`)}</datalist>`)}
-          ${field(t(lang, "rule_entities"), html`<input part="input" class="grow" list="homeai-entities" placeholder="light.kitchen, light.hall" .value=${d.entities} @input=${(e: Event) => this.set({ entities: (e.target as HTMLInputElement).value })} />
-            <datalist id="homeai-entities">${Object.keys(this.hass.states).map((id) => html`<option value=${id}></option>`)}</datalist>`)}
-          ${field(t(lang, "plan_data"), html`<input part="input" class="grow" placeholder='{"brightness_pct": 30}' .value=${d.data} @input=${(e: Event) => this.set({ data: (e.target as HTMLInputElement).value })} />`)}`}
-      ${field(t(lang, "plan_when"), html`<select part="input" @change=${(e: Event) => this.setWhen({ kind: (e.target as HTMLSelectElement).value })}>
-        ${KINDS.map((k) => html`<option value=${k} ?selected=${k === w.kind}>${t(lang, `plan_${k}`)}</option>`)}</select>
-        ${w.kind === "once" ? html`<input part="input" type="date" .value=${w.date ?? ""} @change=${(e: Event) => this.setWhen({ date: (e.target as HTMLInputElement).value })} />` : nothing}
-        ${w.kind === "sun"
-          ? html`<select part="input" @change=${(e: Event) => this.setWhen({ event: (e.target as HTMLSelectElement).value })}>
-              ${EVENTS.map((x) => html`<option value=${x} ?selected=${x === w.event}>${t(lang, `plan_${x}`)}</option>`)}</select>
-              <input part="input" type="number" class="w-s" min="-720" max="720" .value=${String(w.offset ?? 0)} @change=${(e: Event) => this.setWhen({ offset: parseInt((e.target as HTMLInputElement).value, 10) || 0 })} /> min`
-          : html`<input part="input" type="time" .value=${w.time ?? ""} @change=${(e: Event) => this.setWhen({ time: (e.target as HTMLInputElement).value })} />`}`)}
-      ${w.kind === "weekly" || w.kind === "sun"
-        ? html`<div class="row">${names.map((n, i) => html`<label class="row"><input part="input" type="checkbox" .checked=${(w.days ?? []).includes(i)} @change=${() => this.toggleDay(i)} />${n}</label>`)}</div>`
-        : nothing}
-      <label class="row field"><input part="input" type="checkbox" .checked=${d.skip_when_away} @change=${(e: Event) => this.set({ skip_when_away: (e.target as HTMLInputElement).checked })} />${t(lang, "plan_skip_away")}</label>
-      <label class="row field"><input part="input" type="checkbox" .checked=${d.enabled} @change=${(e: Event) => this.set({ enabled: (e.target as HTMLInputElement).checked })} />${t(lang, "rule_enabled")}</label>
-      ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
-      <div class="row actions">
-        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
-        <button part="button" @click=${() => { this.draft = undefined; this.error = ""; }}>${t(lang, "cancel")}</button>
+    const field = (label: string, content: unknown) => html`<label class="field"><span class="label">${label}</span>${content}</label>`;
+    return html`<dialog part="sheet" class="card sheet" aria-labelledby="sheet-title" @close=${this.close}>
+      <div class="sheet-head"><h2 id="sheet-title" part="title" class="title">${t(lang, d.id ? "plan_change" : "plan_new")}</h2></div>
+      <div class="sheet-body fields">
+        <div class="segmented" role="group" aria-label=${t(lang, "plan_type")}>
+          ${(["action", "reminder"] as const).map((x) => html`<button part=${x === d.type ? "button button-primary" : "button"} class=${x === d.type ? "primary" : ""}
+            aria-pressed=${x === d.type ? "true" : "false"} @click=${() => this.set({ type: x })}>${t(lang, `plan_${x}`)}</button>`)}
+        </div>
+        ${field(t(lang, "rule_name"), html`<input part="input" .value=${d.title} @input=${(e: Event) => this.set({ title: (e.target as HTMLInputElement).value })} />`)}
+        ${d.type === "reminder"
+          ? html`${field(t(lang, "plan_reminder_text"), html`<input part="input" .value=${d.reminder} @input=${(e: Event) => this.set({ reminder: (e.target as HTMLInputElement).value })} />`)}
+            ${field(t(lang, "plan_to"), html`<select part="input" @change=${(e: Event) => this.set({ to: (e.target as HTMLSelectElement).value })}>
+              ${TO.map((x) => html`<option value=${x} ?selected=${x === d.to}>${t(lang, `plan_to_${x}`)}</option>`)}</select>`)}`
+          : html`${field(t(lang, "plan_service"), html`<input part="input" list="homeai-services" .value=${d.service} @input=${(e: Event) => this.set({ service: (e.target as HTMLInputElement).value })} />
+              <datalist id="homeai-services">${SERVICES.map((x) => html`<option value=${x}></option>`)}</datalist>`)}
+            ${field(t(lang, "rule_entities"), html`<input part="input" list="homeai-entities" placeholder="light.kitchen, light.hall" .value=${d.entities} @input=${(e: Event) => this.set({ entities: (e.target as HTMLInputElement).value })} />
+              <datalist id="homeai-entities">${Object.keys(this.hass.states).map((id) => html`<option value=${id}></option>`)}</datalist>`)}
+            ${field(t(lang, "plan_data"), html`<input part="input" placeholder='{"brightness_pct": 30}' .value=${d.data} @input=${(e: Event) => this.set({ data: (e.target as HTMLInputElement).value })} />`)}`}
+        <div class="pair">
+          ${field(t(lang, "plan_when"), html`<select part="input" @change=${(e: Event) => this.setWhen({ kind: (e.target as HTMLSelectElement).value })}>
+            ${KINDS.map((k) => html`<option value=${k} ?selected=${k === w.kind}>${t(lang, `plan_${k}`)}</option>`)}</select>`)}
+          ${w.kind === "once" ? field("\u00a0", html`<input part="input" type="date" .value=${w.date ?? ""} @change=${(e: Event) => this.setWhen({ date: (e.target as HTMLInputElement).value })} />`) : nothing}
+          ${w.kind === "sun"
+            ? html`${field("\u00a0", html`<select part="input" @change=${(e: Event) => this.setWhen({ event: (e.target as HTMLSelectElement).value })}>
+                ${EVENTS.map((x) => html`<option value=${x} ?selected=${x === w.event}>${t(lang, `plan_${x}`)}</option>`)}</select>`)}
+              ${field("± min", html`<input part="input" type="number" min="-720" max="720" .value=${String(w.offset ?? 0)} @change=${(e: Event) => this.setWhen({ offset: parseInt((e.target as HTMLInputElement).value, 10) || 0 })} />`)}`
+            : field("\u00a0", html`<input part="input" type="time" .value=${w.time ?? ""} @change=${(e: Event) => this.setWhen({ time: (e.target as HTMLInputElement).value })} />`)}
+        </div>
+        ${w.kind === "weekly" || w.kind === "sun"
+          ? html`<div class="chips" role="group">${names.map((n, i) => html`<button part=${(w.days ?? []).includes(i) ? "button button-primary" : "button"} aria-pressed=${(w.days ?? []).includes(i) ? "true" : "false"} @click=${() => this.toggleDay(i)}>${n}</button>`)}</div>`
+          : nothing}
+        <label class="check"><input part="input" type="checkbox" .checked=${d.skip_when_away} @change=${(e: Event) => this.set({ skip_when_away: (e.target as HTMLInputElement).checked })} />${t(lang, "plan_skip_away")}</label>
+        <label class="check"><input part="input" type="checkbox" .checked=${d.enabled} @change=${(e: Event) => this.set({ enabled: (e.target as HTMLInputElement).checked })} />${t(lang, "rule_enabled")}</label>
+        ${this.error ? html`<div part="error" class="error">${this.error}</div>` : nothing}
       </div>
-    </div>`;
+      <div class="sheet-foot">
+        ${d.id ? html`<button part="button button-quiet" class="quiet danger" @click=${() => this.removeEntry(d.id!)}>${t(lang, "remove")}</button>` : nothing}
+        <span class="grow"></span>
+        <button part="button" @click=${this.close}>${t(lang, "cancel")}</button>
+        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
+      </div>
+    </dialog>`;
+  }
+
+  // Occurrences grouped by the home's day; a row of the plan's own entries opens to skip it or edit the entry.
+  private timeline() {
+    const lang = this.hass.language;
+    const tz = this.hass.config?.time_zone;
+    const shown = this.occurrences.slice(0, this.all ? 200 : 12);
+    const rows: unknown[] = [];
+    let last = "";
+    shown.forEach((o, i) => {
+      const day = homeDay(o.at, tz);
+      if (day !== last) {
+        rows.push(html`<li part="day" class="day">${dayLabel(o.at, lang, tz)}</li>`);
+        last = day;
+      }
+      const key = `${o.entry_id}|${o.at}|${i}`;
+      const open = this.expanded === key;
+      const source = o.external ? this.hass.states[o.source ?? ""]?.attributes.friendly_name ?? o.source ?? "" : "";
+      const meta = source && !o.title.toLowerCase().includes(String(source).toLowerCase()) ? `${t(lang, "from_source")} ${source}` : "";
+      const inner = html`<span part="time" class="time">${clock(o.at, lang, tz)}</span>
+        <span class="item-text"><span part="row-title" class="item-title">${o.title}</span>${meta ? html`<span part="row-meta" class="item-meta">${meta}</span>` : nothing}</span>
+        <span></span>`;
+      rows.push(o.external
+        ? html`<li part="row"><div class="item-main timed">${inner}</div></li>`
+        : html`<li part="row" class=${open ? "open" : ""}>
+            <button class="item-main timed" aria-expanded=${open ? "true" : "false"} @click=${() => (this.expanded = open ? null : key)}>${inner}</button>
+            ${open
+              ? html`<div class="item-more"><div class="item-actions">
+                  <button part="button" @click=${() => this.skip(o)}>${t(lang, "plan_skip_once")}</button>
+                  ${this.entries.some((e) => e.id === o.entry_id)
+                    ? html`<button part="button button-quiet" class="quiet" @click=${() => this.edit(o.entry_id)}>${t(lang, "plan_edit_entry")}</button>`
+                    : nothing}
+                </div></div>`
+              : nothing}
+          </li>`);
+    });
+    return html`<ul part="card list" class="list">${rows}</ul>
+      ${this.occurrences.length > 12
+        ? html`<div class="item-actions end"><button part="button button-quiet" class="quiet" @click=${() => (this.all = !this.all)}>${this.all ? t(lang, "show_less") : `${t(lang, "show_all")} (${this.occurrences.length})`}</button></div>`
+        : nothing}`;
+  }
+
+  private edit(id: string): void {
+    const entry = this.entries.find((e) => e.id === id);
+    if (entry) this.draft = fromEntry(entry);
   }
 
   render() {
     const lang = this.hass.language;
     return html`
-      <div class="row toolbar-row">
-        <span class="grow"></span>
-        ${this.draft ? nothing : html`<button part="button button-primary" class="primary" @click=${() => (this.draft = blank())}>${t(lang, "plan_add")}</button>`}
-      </div>
       ${this.draft ? this.form() : nothing}
-      ${this.entries.length ? html`
-        <div part="card" class="card"><div part="title" class="title">${t(lang, "plan_next")}</div><ul part="list" class="plain">
-          ${this.occurrences.slice(0, this.all ? 200 : 12).map((o) => html`<li class="row"><span class="muted">${when(o.at, lang)}</span>
-            <span class="grow">${o.title}${o.external ? html` <span class="muted">· ${this.hass.states[o.source ?? ""]?.attributes.friendly_name ?? o.source}</span>` : nothing}</span>
-            ${o.external ? nothing : html`<button part="button" title=${t(lang, "plan_skip")} @click=${() => this.skip(o)}>${t(lang, "plan_skip")}</button>`}</li>`)}
-        </ul>
-        ${this.occurrences.length > 12 ? html`<button part="button" class="actions" @click=${() => (this.all = !this.all)}>${this.all ? t(lang, "show_less") : `${t(lang, "show_all")} (${this.occurrences.length})`}</button>` : nothing}</div>
-        <div part="card" class="card"><div part="title" class="title">${t(lang, "plan_entries")}</div><ul part="list" class="plain">
-          ${this.entries.map(
-            (e) => html`<li class="row"><span class="grow">${e.enabled ? "" : html`<span class="muted">(${t(lang, "rule_off")}) </span>`}${e.title}<br />
-              <span class="muted">${describeWhen(e.when, lang)} · ${e.author_name}${e.last_result ? ` · ${e.last_result}` : ""}</span></span>
-              <button part="button" @click=${() => (this.draft = fromEntry(e))}>${t(lang, "edit")}</button>
-              <button part="button" @click=${() => this.removeEntry(e.id)}>${t(lang, "remove")}</button></li>`,
-          )}
-        </ul></div>` : html`<div part="empty" class="empty">${t(lang, "no_plan")}</div>`}
-      ${this.watches.length ? html`<div part="card" class="card"><div part="title" class="title">${t(lang, "watching")}</div><ul part="list" class="plain">
-        ${this.watches.map((w) => html`<li class="row"><span class="grow">${w.what}${w.message ? html`<br /><span class="muted">${w.message}</span>` : nothing}<br />
-          <span class="muted">${t(lang, "until")} ${when(w.expires, lang)}</span></span>
-          <button part="button" @click=${() => this.removeWatch(w.id)}>${t(lang, "remove")}</button></li>`)}
-      </ul></div>` : nothing}`;
+      <div class="columns">
+        <section class="section">
+          <div class="section-head"><h2 part="heading" class="heading">${t(lang, "plan_next")}</h2>
+            <button part="button button-primary" class="primary" @click=${() => (this.draft = blank())}>${t(lang, "plan_add")}</button></div>
+          ${this.occurrences.length ? this.timeline() : html`<div part="empty" class="empty">${t(lang, "no_plan")}</div>`}
+        </section>
+        <div>
+          ${this.watches.length
+            ? html`<section class="section">
+                <div class="section-head"><h2 part="heading" class="heading">${t(lang, "watching")} <span class="count">${this.watches.length}</span></h2></div>
+                <ul part="card list" class="list">${this.watches.map((w) => {
+                  const open = this.expanded === `watch|${w.id}`;
+                  return html`<li part="row" class=${open ? "open" : ""}>
+                    <button class="item-main plain" aria-expanded=${open ? "true" : "false"} @click=${() => (this.expanded = open ? null : `watch|${w.id}`)}>
+                      <span class="item-text"><span part="row-title" class="item-title">${w.what}</span>
+                        <span part="row-meta" class="item-meta">${w.message ? `${w.message} · ` : ""}${t(lang, "until")} ${when(w.expires, lang)}</span></span>
+                      <span></span>
+                    </button>
+                    ${open ? html`<div class="item-more flush"><div class="item-actions">
+                      <button part="button" @click=${() => this.removeWatch(w.id)}>${t(lang, "watch_stop")}</button></div></div>` : nothing}
+                  </li>`;
+                })}</ul>
+              </section>`
+            : nothing}
+          ${this.entries.length
+            ? html`<section class="section">
+                <div class="section-head"><h2 part="heading" class="heading">${t(lang, "plan_entries")} <span class="count">${this.entries.length}</span></h2></div>
+                <ul part="card list" class="list">${this.entries.map((e) => html`<li part="row">
+                  <button class="item-main plain" @click=${() => (this.draft = fromEntry(e))}>
+                    <span class="item-text"><span part="row-title" class="item-title ${e.enabled ? "" : "off"}">${e.title}</span>
+                      <span part="row-meta" class="item-meta">${describeWhen(e.when, lang)} · ${e.author_name}${e.enabled ? "" : ` · ${t(lang, "entry_off")}`}</span></span>
+                    <span class="chevron">›</span>
+                  </button></li>`)}</ul>
+              </section>`
+            : nothing}
+        </div>
+      </div>`;
   }
 }

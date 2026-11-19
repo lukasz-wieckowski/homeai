@@ -151,6 +151,12 @@
       "en": "English",
       "pl": "Polski"
     },
+    "general.panels": {
+      "chat": "Chat",
+      "manage": "Learning, journal, rules and settings",
+      "plan": "Home plan and presence",
+      "situations": "Situations and approvals"
+    },
     "heating.activity_action": {
       "off": "Nothing",
       "override": "Override with a preset",
@@ -384,6 +390,12 @@
       "exposed": "Exposed to assistants",
       "selected": "Selected areas"
     }
+  },
+  "panels": {
+    "chat": "Chat",
+    "manage": "Manage {name}",
+    "plan": "Home plan",
+    "situations": "{name}"
   },
   "presence": {
     "away": "Away",
@@ -1037,12 +1049,16 @@
       "label": "Night starts"
     },
     "general.panel_admin_only": {
-      "description": "Hide the HomeAI panel from non-administrators.",
-      "label": "Panel for administrators only"
+      "description": "Hide HomeAI's panels from non-administrators.",
+      "label": "Panels for administrators only"
     },
     "general.panel_sidebar": {
-      "description": "Show the HomeAI panel in Home Assistant's sidebar.",
-      "label": "Show panel in sidebar"
+      "description": "Show HomeAI's panels in Home Assistant's sidebar.",
+      "label": "Panels in sidebar"
+    },
+    "general.panels": {
+      "description": "The panels HomeAI adds to the sidebar. Each person can still hide any of them from their own sidebar.",
+      "label": "Which panels"
     },
     "general.startup_grace": {
       "description": "After Home Assistant starts, integrations need time to come up. HomeAI does not announce situations or act during this time.",

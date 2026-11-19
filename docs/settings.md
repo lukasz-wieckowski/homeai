@@ -22,8 +22,9 @@ Language, parts of the day, journal and panel.
 | **Day starts** — Start of the day part of the day. | `general.day_start` | `10:00` |  | home |  |
 | **Evening starts** — Start of the evening part of the day. | `general.evening_start` | `18:00` |  | home |  |
 | **Journal retention** — How long entries stay in HomeAI's journal. | `general.journal_retention_days` | 30 | 1–365 d | home |  |
-| **Show panel in sidebar** — Show the HomeAI panel in Home Assistant's sidebar. | `general.panel_sidebar` | true |  | home |  |
-| **Panel for administrators only** — Hide the HomeAI panel from non-administrators. | `general.panel_admin_only` | false |  | home |  |
+| **Panels in sidebar** — Show HomeAI's panels in Home Assistant's sidebar. | `general.panel_sidebar` | true |  | home |  |
+| **Which panels** — The panels HomeAI adds to the sidebar. Each person can still hide any of them from their own sidebar. | `general.panels` | ["situations", "plan", "chat", "manage"] | Situations and approvals (`situations`), Home plan and presence (`plan`), Chat (`chat`), Learning, journal, rules and settings (`manage`) | home |  |
+| **Panels for administrators only** — Hide HomeAI's panels from non-administrators. | `general.panel_admin_only` | false |  | home |  |
 
 ## Home model
 

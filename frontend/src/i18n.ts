@@ -1,6 +1,13 @@
 // Panel texts. Messages from HomeAI itself (titles, journal) arrive already translated by the backend.
 const TEXTS: Record<string, Record<string, string>> = {
   en: {
+    manage: "Manage", waiting_approval: "Waiting for your approval", needs_attention: "Needs attention",
+    for_info: "For your information", decided: "Recent decisions", acked_by: "Acknowledged by",
+    today: "Today", tomorrow: "Tomorrow", plan_skip_once: "Skip this time", plan_edit_entry: "Edit the entry",
+    plan_new: "New plan entry", plan_change: "Plan entry", presence_new: "New exception", presence_change: "Exception",
+    rule_new: "New rule", rule_change: "Rule", rule_firing: "met now", watch_stop: "Stop watching",
+    days_of: "of", days_word: "days", close: "Close", section: "Section", entry_off: "off", from_source: "from",
+    status_approved: "approved", status_denied: "denied", status_expired: "expired", status_cancelled: "cancelled",
     situations: "Situations", approvals: "Approvals", plan: "Plan", journal: "Journal", settings: "Settings", ai: "AI",
     nothing_open: "Nothing needs attention.", ack: "Got it", handle: "I'll handle it", snooze: "Snooze",
     dismiss: "Not a problem", severity: "Severity", who: "Who", repairing: "HomeAI is fixing it",
@@ -55,6 +62,13 @@ const TEXTS: Record<string, Record<string, string>> = {
     kind_memory: "Memory", kind_policy: "Policy", kind_system: "System", kind_decision: "Decision", kind_notification: "Notification",
   },
   pl: {
+    manage: "Zarządzanie", waiting_approval: "Czeka na Twoją zgodę", needs_attention: "Wymaga uwagi",
+    for_info: "Do wiadomości", decided: "Ostatnie decyzje", acked_by: "Potwierdzone przez",
+    today: "Dziś", tomorrow: "Jutro", plan_skip_once: "Pomiń tym razem", plan_edit_entry: "Edytuj wpis",
+    plan_new: "Nowy wpis planu", plan_change: "Wpis planu", presence_new: "Nowy wyjątek", presence_change: "Wyjątek",
+    rule_new: "Nowa reguła", rule_change: "Reguła", rule_firing: "spełniona teraz", watch_stop: "Przestań pilnować",
+    days_of: "z", days_word: "dni", close: "Zamknij", section: "Sekcja", entry_off: "wyłączony", from_source: "z",
+    status_approved: "zgoda", status_denied: "odmowa", status_expired: "wygasła", status_cancelled: "anulowana",
     situations: "Sprawy", approvals: "Zgody", plan: "Plan", journal: "Dziennik", settings: "Ustawienia", ai: "AI",
     nothing_open: "Nic nie wymaga uwagi.", ack: "Wiem", handle: "Zajmę się", snooze: "Wycisz",
     dismiss: "To nie problem", severity: "Waga", who: "Kto", repairing: "HomeAI naprawia",
@@ -129,4 +143,29 @@ export function when(iso: string | null | undefined, lang: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleString(lang, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+// The home's day of a moment (YYYY-MM-DD), whatever zone the browser is in.
+export function homeDay(iso: string | number | Date, timeZone?: string): string {
+  return inZone(iso, timeZone).date;
+}
+
+// "Today", "Tomorrow", or the weekday and date, for a heading over one day of a list.
+export function dayLabel(iso: string, lang: string, timeZone?: string): string {
+  const day = homeDay(iso, timeZone);
+  if (day === homeDay(Date.now(), timeZone)) return t(lang, "today");
+  if (day === homeDay(Date.now() + 86400000, timeZone)) return t(lang, "tomorrow");
+  return new Date(iso).toLocaleDateString(lang, { weekday: "long", day: "numeric", month: "long", timeZone: timeZone || undefined });
+}
+
+// The clock time of a moment in the home's zone.
+export function clock(iso: string, lang: string, timeZone?: string): string {
+  return new Date(iso).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit", timeZone: timeZone || undefined });
+}
+
+// A short moment for the side of a row: the time today, else the date.
+export function shortWhen(iso: string | null | undefined, lang: string, timeZone?: string): string {
+  if (!iso) return "";
+  if (homeDay(iso, timeZone) === homeDay(Date.now(), timeZone)) return clock(iso, lang, timeZone);
+  return new Date(iso).toLocaleDateString(lang, { day: "numeric", month: "short", timeZone: timeZone || undefined });
 }

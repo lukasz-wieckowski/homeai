@@ -55,8 +55,8 @@ class OpenAICompatProvider:
         for m in request.messages:
             if isinstance(m.get("content"), str) or m.get("role") == "tool" or "tool_calls" in m:
                 out.append(m)
-            else:  # vendor-neutral list content → plain text
-                text = "\n".join(str(b.get("text", "")) for b in m["content"] if isinstance(b, dict))
+            else:  # vendor-neutral list content → plain text (an empty answer is stored as null)
+                text = "\n".join(str(b.get("text", "")) for b in m.get("content") or [] if isinstance(b, dict))
                 out.append({"role": m["role"], "content": text})
         return out
 
@@ -122,16 +122,16 @@ class OpenAICompatProvider:
             try:
                 args = json.loads(fn.get("arguments") or "{}")
             except ValueError:
-                args = {}
+                args = None  # unreadable arguments: the tool is not run, the model is told (see run_tool)
             out.tool_calls.append(
-                ToolCall(str(call.get("id")), str(fn.get("name")), args if isinstance(args, dict) else {})
+                ToolCall(str(call.get("id")), str(fn.get("name")), args if isinstance(args, dict) else None)
             )
         out.assistant_message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls")}
         if request.schema is not None and not out.tool_calls:
             try:
                 out.data = json.loads(FENCE.sub("", out.text))
             except ValueError as err:
-                raise AIError("bad_json") from err
+                raise AIError("bad_json", billed=out) from err
         return out
 
     def tool_results(self, results: list[tuple[ToolCall, str, bool]]) -> list[dict[str, Any]]:

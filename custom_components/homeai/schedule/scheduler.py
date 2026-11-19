@@ -12,6 +12,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.storage import Store
@@ -19,6 +20,7 @@ from homeassistant.util import dt as dt_util, ulid as ulid_util
 
 from ..const import DOMAIN, LOGGER
 from ..policy import ActionRequest, Risk
+from ..policy.risk import is_protective
 from .occurrences import between, next_after, validate_when
 
 STORAGE_KEY = f"{DOMAIN}.plan"
@@ -69,14 +71,33 @@ class Scheduler:
         self._timer: Callable[[], None] | None = None
         self._listeners: list[Callable[[], None]] = []
         self._last_fire: datetime = dt_util.utcnow()
+        self._started_unsub: Callable[[], None] | None = None
 
     async def async_setup(self) -> None:
         data = await self._store.async_load() or {}
-        self.entries = {e["id"]: e for e in data.get("entries", []) if isinstance(e, dict) and "id" in e}
-        await self._catch_up(dt_util.utcnow())
+        self.entries = {
+            e["id"]: e
+            for e in data.get("entries", [])
+            if isinstance(e, dict) and "id" in e and isinstance(e.get("when"), dict) and "kind" in e["when"]
+        }
+        started = dt_util.utcnow()
+        if self.hass.is_running:
+            await self._catch_up(started, started)
+        else:
+            # during startup other integrations' services and entities are not there yet: a missed entry would
+            # fail and count as run. Catch up once Home Assistant has started, counting lateness from now.
+            async def caught_up(_event: Any) -> None:
+                self._started_unsub = None
+                await self._catch_up(started, dt_util.utcnow())
+                self._schedule()
+
+            self._started_unsub = self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, caught_up)
         self._schedule()
 
     async def async_unload(self) -> None:
+        if self._started_unsub:
+            self._started_unsub()
+            self._started_unsub = None
         if self._timer:
             self._timer()
             self._timer = None
@@ -97,16 +118,30 @@ class Scheduler:
                 LOGGER.exception("Plan listener failed")
 
     # ——— Editing ———
-    async def save(self, raw: dict[str, Any], user_id: str | None, entry_id: str | None = None) -> dict[str, Any]:
-        """Create or update an entry on behalf of a person (None: an automation or HomeAI itself)."""
+    async def save(
+        self,
+        raw: dict[str, Any],
+        user_id: str | None,
+        entry_id: str | None = None,
+        *,
+        through_assistant: bool = False,
+    ) -> dict[str, Any]:
+        """Create or update an entry on behalf of a person (None: an automation or HomeAI itself).
+
+        `through_assistant`: a model asked for it (chat, another assistant, a mission). Nobody can confirm there,
+        so the entry may hold only what a person does without confirming: a reminder or a simple action up to R2
+        for a known person, up to R1 for a speaker without an account. An administrator plans the rest in the panel.
+        """
         user = await self.hass.auth.async_get_user(user_id) if user_id else None
-        admin = user is None or user.is_admin
+        if user_id and (user is None or not user.is_active):
+            raise PlanError("no_user")
+        admin = (user is None or user.is_admin) and not through_assistant
         existing = self.entries.get(entry_id) if entry_id else None
         if entry_id and existing is None:
             raise PlanError("not_found")
         if existing and not admin and existing.get("author") != user_id:
             raise PlanError("not_author")
-        if not admin:
+        if not admin and not (through_assistant and user is not None and user.is_admin):
             self._may_add(user_id)
         if existing is None and len(self.entries) >= min(
             MAX_ENTRIES, int(self.rt.settings.get("schedule.max_entries"))
@@ -129,6 +164,8 @@ class Scheduler:
             "created": existing["created"] if existing else dt_util.utcnow().isoformat(timespec="seconds"),
             "last_run": existing.get("last_run") if existing else None,
             "last_result": existing.get("last_result") if existing else None,
+            # nothing due before this moment runs: an entry starts with its next occurrence, also after an edit
+            "since": dt_util.utcnow().isoformat(timespec="seconds"),
         }
         if raw.get("reminder"):
             entry["reminder"] = str(raw["reminder"]).strip()[:500]
@@ -151,8 +188,14 @@ class Scheduler:
             risk = self.rt.module("policy").risk(request)
             if risk >= Risk.R6:
                 raise PlanError("never_scheduled")
+            if through_assistant and risk > (Risk.R2 if user is not None else Risk.R1):
+                raise PlanError("use_the_panel")
             if not admin and (risk > Risk.R2 or name not in SIMPLE_SERVICES):
                 raise PlanError("admin_required")
+            if risk == Risk.R5 and not is_protective(domain, name, request.entity_ids, self.rt.world):
+                # security actions never run on their own (only protective ones on labelled entities do):
+                # such an entry would be refused every time it came due
+                raise PlanError("never_scheduled")
             entry["action"] = {"service": service, "entity_ids": request.entity_ids, "data": data}
             entry["approved_risk"] = int(risk)
             if not title:
@@ -173,21 +216,26 @@ class Scheduler:
             return
         if who == "admins":
             raise PlanError("admin_required")
-        person = next((p for p in self.rt.world.persons.values() if user_id and p.user_id == user_id), None)
-        if person is None or self.rt.presence.role(person.entity_id) not in ("admin", "member"):
+        if not self.rt.presence.resident_user(user_id):
             raise PlanError("not_allowed")
 
     async def remove(self, entry_id: str, user_id: str | None) -> bool:
         entry = self.entries.get(entry_id)
         if entry is None:
             return False
-        user = await self.hass.auth.async_get_user(user_id) if user_id else None
-        if user is not None and not user.is_admin and entry.get("author") != user_id:
+        if not await self.may_change(entry, user_id):
             raise PlanError("not_author")
         del self.entries[entry_id]
         self.rt.journal.add("schedule", self.rt.text("journal|plan_removed", title=entry["title"]))
         self._changed()
         return True
+
+    async def may_change(self, entry: dict[str, Any], user_id: str | None) -> bool:
+        """Administrators, automations (no user) and the entry's author may remove or skip it."""
+        user = await self.hass.auth.async_get_user(user_id) if user_id else None
+        if user_id and user is None:
+            return False
+        return user is None or user.is_admin or entry.get("author") == user_id
 
     def skip(self, entry_id: str, day: date) -> bool:
         entry = self.entries.get(entry_id)
@@ -270,20 +318,40 @@ class Scheduler:
 
         self._timer = async_track_point_in_utc_time(self.hass, fire, due)
 
-    async def _fire(self, now: datetime) -> None:
-        start, self._last_fire = self._last_fire, now
+    def _due(self, start: datetime, now: datetime) -> list[tuple[datetime, dict[str, Any]]]:
+        """What should run now: for each entry its latest occurrence in (start, now] that has not run yet and is
+        not older than the entry itself (as created, edited or switched back on). One run per entry, however many
+        occurrences were missed."""
+        latest: dict[str, tuple[datetime, dict[str, Any]]] = {}
         for t, entry in self.occurrences(start, now):
-            if entry.get("last_run") and (last := dt_util.parse_datetime(entry["last_run"])) and last >= t:
-                continue
-            await self.run(entry, t)
-        self._schedule()
-
-    async def _catch_up(self, now: datetime) -> None:
-        window = timedelta(minutes=int(self.rt.settings.get("schedule.catch_up_minutes")))
-        for t, entry in self.occurrences(now - window, now):
             last = dt_util.parse_datetime(entry["last_run"]) if entry.get("last_run") else None
-            if last is None or last < t:
+            since = dt_util.parse_datetime(entry["since"]) if entry.get("since") else None
+            if (last is not None and last >= t) or (since is not None and t < since):
+                continue
+            latest[entry["id"]] = (t, entry)
+        return sorted(latest.values(), key=lambda x: x[0])
+
+    async def _fire(self, now: datetime) -> None:
+        window = timedelta(minutes=int(self.rt.settings.get("schedule.catch_up_minutes")))
+        start, self._last_fire = max(self._last_fire, now - window), now
+        try:
+            for t, entry in self._due(start, now):
+                try:
+                    await self.run(entry, t)
+                except Exception:
+                    LOGGER.exception("Plan entry %s failed", entry.get("id"))
+        finally:
+            self._schedule()  # one failing entry never stops the plan
+
+    async def _catch_up(self, since: datetime, now: datetime) -> None:
+        """Run what was missed while Home Assistant was down, at most `schedule.catch_up_minutes` before `since`."""
+        window = timedelta(minutes=int(self.rt.settings.get("schedule.catch_up_minutes")))
+        self._last_fire = now
+        for t, entry in self._due(since - window, now):
+            try:
                 await self.run(entry, t)
+            except Exception:
+                LOGGER.exception("Plan entry %s failed", entry.get("id"))
 
     async def run(self, entry: dict[str, Any], at: datetime | None = None) -> str:
         at = at or dt_util.utcnow()
@@ -298,6 +366,14 @@ class Scheduler:
         if entry.get("reminder"):
             sent = await self._remind(entry)
             entry["last_result"] = "reminded" if sent else "no_recipients"
+        elif (problem := await self._author_problem(entry)) is not None:
+            entry["last_result"] = problem
+            entry["enabled"] = False
+            self.rt.journal.add(
+                "schedule",
+                self.rt.text("journal|plan_skipped", title=entry["title"]),
+                result=problem,
+            )
         else:
             action = entry["action"]
             domain, _, service = action["service"].partition(".")
@@ -318,6 +394,20 @@ class Scheduler:
             entry["enabled"] = False
         self._changed()
         return entry["last_result"]
+
+    async def _author_problem(self, entry: dict[str, Any]) -> str | None:
+        """An action runs on its author's word: not when the account is gone or switched off, and not above
+        device actions when the author is no longer an administrator. Entries without an author (automations,
+        HomeAI itself) run as before."""
+        author = entry.get("author")
+        if not author:
+            return None
+        user = await self.hass.auth.async_get_user(author)
+        if user is None or not user.is_active:
+            return "author_gone"
+        if not user.is_admin and int(entry.get("approved_risk") or 0) > Risk.R2:
+            return "author_not_admin"
+        return None
 
     async def _remind(self, entry: dict[str, Any]) -> bool:
         router = self.rt.module("notify")

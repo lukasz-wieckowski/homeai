@@ -103,7 +103,11 @@ async def get_states(ctx: ToolContext, args: dict[str, Any]) -> Any:
                 "name": ctx.privacy.entity_name(entity_id),
                 "state": clean(state.state, 60),
                 "since": state.last_changed.isoformat(timespec="minutes"),
-                "attributes": ctx.privacy.attributes(dict(state.attributes), (*KEEP_ATTRIBUTES, "friendly_name")),
+                "attributes": ctx.privacy.attributes(
+                    dict(state.attributes),
+                    # the real name would undo the alias a minimal-privacy provider is given
+                    KEEP_ATTRIBUTES if ctx.privacy.level == "minimal" else (*KEEP_ATTRIBUTES, "friendly_name"),
+                ),
             }
         )
     return out
@@ -152,7 +156,14 @@ async def get_situation(ctx: ToolContext, args: dict[str, Any]) -> Any:
         return {"error": "not_found"}
     from .missions.triage import situation_text
 
-    return {"text": situation_text(ctx.rt, s, ctx.privacy), "history": s.history[-15:], "assessment": s.assessment}
+    out: dict[str, Any] = {"text": situation_text(ctx.rt, s, ctx.privacy)}
+    if ctx.privacy.level != "minimal":  # history and reasons carry real names
+        out["history"] = [
+            {"at": h.get("ts"), "event": clean(h.get("event", ""), 40), "text": clean(h.get("text", ""), 200)}
+            for h in s.history[-15:]
+        ]
+        out["assessment"] = {k: _clean_value(v) for k, v in s.assessment.items()}
+    return out
 
 
 async def get_journal(ctx: ToolContext, args: dict[str, Any]) -> Any:
@@ -165,8 +176,27 @@ async def get_journal(ctx: ToolContext, args: dict[str, Any]) -> Any:
 
 
 async def get_system_log(ctx: ToolContext, args: dict[str, Any]) -> Any:
+    """Log lines are text from anywhere (integrations, devices, the network): cleaned like every other data, and
+    not sent at all with minimal privacy (they name devices, people and addresses)."""
     hub = ctx.rt.module("signals")
-    return {"log": hub.system.log[:20], "failed_automations": hub.system.traces[:20]} if hub else {}
+    if hub is None:
+        return {}
+    if ctx.privacy.level == "minimal":
+        return {"error": "not_available_with_minimal_privacy"}
+    return {
+        "log": [_clean_value(item) for item in hub.system.log[:20]],
+        "failed_automations": [_clean_value(item) for item in hub.system.traces[:20]],
+    }
+
+
+def _clean_value(value: Any, limit: int = 300) -> Any:
+    if isinstance(value, dict):
+        return {clean(k, 60): _clean_value(v, limit) for k, v in list(value.items())[:20]}
+    if isinstance(value, (list, tuple)):
+        return [_clean_value(v, limit) for v in value[:20]]
+    if isinstance(value, (bool, int, float)) or value is None:
+        return value
+    return clean(value, limit)
 
 
 async def get_plan(ctx: ToolContext, args: dict[str, Any]) -> Any:
@@ -174,7 +204,11 @@ async def get_plan(ctx: ToolContext, args: dict[str, Any]) -> Any:
     now = dt_util.utcnow()
     days = max(1, min(int(args.get("days") or 7), 60))
     return [
-        {"at": dt_util.as_local(t).isoformat(timespec="minutes"), "entry_id": e["id"], "title": clean(e["title"], 120)}
+        {
+            "at": dt_util.as_local(t).isoformat(timespec="minutes"),
+            "entry_id": e["id"],
+            "title": clean(e["title"], 120) if ctx.privacy.level != "minimal" else "plan entry",
+        }
         for t, e in scheduler.occurrences(now, now + timedelta(days=days))
     ][:100]
 
@@ -254,7 +288,10 @@ async def add_to_plan(ctx: ToolContext, args: dict[str, Any]) -> Any:
 
     raw = {k: v for k, v in args.items() if k in ("title", "when", "reminder", "to", "skip_when_away", "action")}
     try:
-        entry = await ctx.rt.module("scheduler").save(raw, ctx.user_id if ctx.actor == "person" else None)
+        # asked through a model: no confirmation can be given here, so only what needs none may be planned
+        entry = await ctx.rt.module("scheduler").save(
+            raw, ctx.user_id if ctx.actor == "person" else None, through_assistant=True
+        )
     except PlanError as err:
         return {"error": str(err)}
     ctx.actions.append({"what": f"plan: {entry['title']}", "status": "done"})
@@ -310,7 +347,10 @@ async def remember(ctx: ToolContext, args: dict[str, Any]) -> Any:
     if args.get("about_me") and ctx.user_id:
         person = next((p for p in ctx.rt.world.persons.values() if p.user_id == ctx.user_id), None)
         scope = f"person:{person.entity_id}" if person else "home"
-    source = "person" if ctx.actor == "person" else "ai"
+    # A fact about the whole home reaches everyone's conversations: it counts as said by a person (approved at once)
+    # only when a resident said it. Guests, unknown speakers and missions leave a proposal for the residents.
+    own = scope != "home" or ctx.rt.presence.resident_user(ctx.user_id)
+    source = "person" if ctx.actor == "person" and own else "ai"
     fact = memory.add(ctx.privacy.restore(str(args.get("fact") or "")), scope=scope, source=source, author=ctx.user_id)
     return {"remembered": fact["text"], "approved": fact["approved"]}
 
@@ -319,7 +359,13 @@ async def recall(ctx: ToolContext, args: dict[str, Any]) -> Any:
     memory = ctx.rt.module("memory")
     if memory is None:
         return []
-    facts = memory.search(str(args.get("words") or ""), limit=10)
+    person = next((p for p in ctx.rt.world.persons.values() if ctx.user_id and p.user_id == ctx.user_id), None)
+    scopes = ["home", *([f"person:{person.entity_id}"] if person else [])]  # never another person's facts
+    facts = [
+        f
+        for f in memory.search(str(args.get("words") or ""), limit=50)
+        if not f["scope"].startswith("person:") or f["scope"] in scopes
+    ][:10]
     return [{"fact": clean(f["text"], 300), "scope": f["scope"].split(":", 1)[0]} for f in facts]
 
 
@@ -479,11 +525,18 @@ SETS["chat_act"] = tuple(name for name in SETS["chat"] if name != "edit_config")
 SETS["chat_act_config"] = SETS["chat"]
 
 
-async def run_tool(ctx: ToolContext, name: str, args: dict[str, Any]) -> tuple[str, bool]:
-    """Run a tool; returns (JSON text, is_error). Errors are returned to the model, never raised."""
+async def run_tool(
+    ctx: ToolContext, name: str, args: dict[str, Any] | None, allowed: tuple[str, ...] | None = None
+) -> tuple[str, bool]:
+    """Run a tool; returns (JSON text, is_error). Errors are returned to the model, never raised.
+
+    `allowed` is the set the model was offered: a name outside it is refused even when the tool exists, so a
+    read-only conversation or mission cannot act by calling a tool it was never given."""
     tool = TOOLS.get(name)
-    if tool is None:
+    if tool is None or (allowed is not None and name not in allowed):
         return json.dumps({"error": f"unknown tool {name}"}), True
+    if args is None:
+        return json.dumps({"error": "the arguments were not valid JSON; call the tool again"}), True
     try:
         result = await tool.handler(ctx, args if isinstance(args, dict) else {})
     except Exception as err:

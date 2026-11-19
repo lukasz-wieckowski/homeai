@@ -106,6 +106,21 @@ async def chat(ai: Any, text: str, conversation_id: str, user_id: str | None) ->
         purpose="chat",
         source=thread["source"] or None,
     )
+    if result is None and thread["source"]:
+        # the connection this thread started on is down or out of budget: start over on whichever answers
+        # (message formats differ between providers, so the model thread cannot be carried across)
+        thread["source"], thread["messages"] = "", []
+        result = await run_agent(
+            ai,
+            tier,
+            system=system,
+            messages=[{"role": "user", "content": content}],
+            ctx=ctx,
+            toolset=f"chat_{rt.settings.get('ai.chat_can')}",
+            max_steps=int(rt.settings.get("ai.chat_max_steps")),
+            max_tokens=4096,
+            purpose="chat",
+        )
     if result is None:
         return rt.text("ai|unavailable"), []
     thread["source"] = result.source

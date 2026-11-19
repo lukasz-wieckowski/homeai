@@ -125,12 +125,15 @@ class HomeAIRuntime:
         if self.hass.state is CoreState.running:
             self._schedule_ready()
         else:
+            waiting: list[Callable[[], None]] = []
 
             @callback
             def started(_event: Event) -> None:
+                waiting.clear()  # a one-time listener is gone once it has run: nothing left to remove
                 self._schedule_ready()
 
-            self._unsubs.append(self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, started))
+            waiting.append(self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, started))
+            self._unsubs.append(lambda: waiting.pop()() if waiting else None)
 
     @callback
     def _schedule_ready(self) -> None:

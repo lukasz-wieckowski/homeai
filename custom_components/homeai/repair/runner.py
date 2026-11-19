@@ -8,6 +8,7 @@ blocked repair escalates the situation so people are told, with the note that Ho
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
@@ -25,20 +26,35 @@ class RepairRunner:
         self.rt = runtime
         self._unsubs: list[Callable[[], None]] = []
         self.stats: dict[str, dict[str, int]] = {}
+        self._tasks: set[asyncio.Task] = set()
 
     async def async_setup(self) -> None:
-        self.rt.module("situations").add_processor("repair", self.process)
+        engine = self.rt.module("situations")
+        engine.add_processor("repair", self.process)
         self._unsubs.append(self.rt.on_tick(self.tick))
+        now = dt_util.utcnow().isoformat(timespec="seconds")
+        for s in engine.situations.values():
+            if s.repair.get("status") == "trying":
+                # Home Assistant stopped in the middle of an attempt: it counts as made, and the next one is due
+                # (nothing ever resumes “trying”, and triage keeps people out while a repair is under way)
+                s.repair.update(status="waiting", due=now)
 
     async def async_unload(self) -> None:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        for task in list(self._tasks):
+            task.cancel()
 
     # ——— Situation events ———
     async def process(self, event: str, s: Situation) -> None:
         if event == "opened":
-            await self._protect(s)
+            # Protective actions run beside the pipeline, not before it: a valve that does not answer for half a
+            # minute must not delay telling people about the smoke or the water.
+            if self.rt.settings.get("repair.protective_enabled") and protective_requests(self.rt, s):
+                task = self.rt.hass.async_create_task(self._protect(s))
+                self._tasks.add(task)
+                task.add_done_callback(self._tasks.discard)
             self.start(s)
         elif event == "updated" and not s.repair:
             self.start(s)
@@ -132,6 +148,10 @@ class RepairRunner:
         now = now or dt_util.utcnow()
         key = s.repair["playbook"]
         playbook = PLAYBOOKS[key]
+        p = s.primary
+        if p is not None and p.repair and p.repair.get("playbook") == key:
+            # what the signal says now, not when the repair was planned (a backup that was running then is over)
+            s.repair["params"] = {k: v for k, v in p.repair.items() if k != "playbook"}
         try:
             requests = playbook.build(self.rt, s, s.repair.get("params") or {})
         except Defer as later:
@@ -164,7 +184,10 @@ class RepairRunner:
                 outcome = "approval"
                 s.repair["approval_id"] = result.approval_id
                 break
-            if result.status in ("denied", "observed", "blocked", "invalid"):
+            if result.status == "observed":
+                outcome = "observed"
+                break
+            if result.status in ("denied", "blocked", "invalid"):
                 outcome = result.status
                 break
             if result.status == "failed":
@@ -178,6 +201,11 @@ class RepairRunner:
         elif outcome == "approval":
             self._set(s, "awaiting_approval")
             await self._escalate(s, "awaiting_approval")
+        elif outcome == "observed":
+            # the observation period: nothing was tried, so nothing failed. People hear about the matter itself.
+            s.repair["attempts"] = max(0, s.repair.get("attempts", 1) - 1)
+            self._set(s, "observed")
+            await self._escalate(s, "observed")
         elif outcome == "failed":
             await self._retry_or_fail(s, now, "action_failed")
         else:

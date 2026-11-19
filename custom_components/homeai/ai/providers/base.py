@@ -9,10 +9,13 @@ from typing import Any, Protocol
 class AIError(Exception):
     """A provider call failed. `retryable` means another provider (or a later try) may succeed."""
 
-    def __init__(self, message: str, *, retryable: bool = True, refusal: bool = False) -> None:
+    def __init__(
+        self, message: str, *, retryable: bool = True, refusal: bool = False, billed: AIResponse | None = None
+    ) -> None:
         super().__init__(message)
         self.retryable = retryable
         self.refusal = refusal
+        self.billed = billed  # the answer was unusable but the provider charged for it: tokens and cost
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,7 +29,7 @@ class ToolSpec:
 class ToolCall:
     id: str
     name: str
-    input: dict[str, Any]
+    input: dict[str, Any] | None  # None: the model's arguments could not be read
 
 
 @dataclass(slots=True)

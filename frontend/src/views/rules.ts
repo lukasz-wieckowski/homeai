@@ -66,7 +66,13 @@ export class HomeAIRules extends LitElement {
 
   private async save(): Promise<void> {
     const rule = this.editing!;
-    if (!rule.id) rule.id = rule.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || `rule_${Date.now()}`;
+    if (!rule.id) {
+      const base = rule.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 36) || "rule";
+      const taken = new Set(this.rules.map((r) => r.id));
+      let id = base;
+      for (let n = 2; taken.has(id); n++) id = `${base}_${n}`; // a second rule with the same name never replaces the first
+      rule.id = id;
+    }
     const others = this.rules.filter((r) => r.id !== rule.id);
     await this.saveAll([...others, rule]);
   }
@@ -144,7 +150,7 @@ export class HomeAIRules extends LitElement {
             (r) => html`<li class="row"><span class="sev sev-${r.severity}">${r.severity}</span>
               <span class="grow">${r.name}${r.firing ? html` <b>●</b>` : nothing}<br /><span class="muted">${t(lang, `rule_${r.condition.type}`)}${r.condition.type === "unavailable" ? "" : ` ${r.condition.value ?? ""}`} · ${r.minutes} min · ${t(lang, `rule_${r.when}`)}${r.enabled ? "" : ` · ${t(lang, "rule_off")}`}</span></span>
               <button @click=${() => { this.editing = structuredClone(r); this.preview = undefined; }}>${t(lang, "edit")}</button>
-              <button @click=${() => this.saveAll(this.rules.filter((x) => x.id !== r.id))}>${t(lang, "remove")}</button></li>`,
+              <button @click=${() => confirm(`${r.name}\n\n${t(lang, "remove_confirm")}`) && this.saveAll(this.rules.filter((x) => x.id !== r.id))}>${t(lang, "remove")}</button></li>`,
           )}</ul></div>`
         : html`<div class="empty">${t(lang, "no_rules")}</div>`}
     `;

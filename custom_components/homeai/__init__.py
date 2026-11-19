@@ -73,15 +73,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeAIConfigEntry) -> bo
     """Set up HomeAI from a config entry."""
     runtime = HomeAIRuntime(hass, entry)
     entry.runtime_data = runtime
-    await runtime.async_setup()
-    from .repairs import async_check_setup
+    try:
+        await runtime.async_setup()
+        from .repairs import async_check_setup
 
-    async_check_setup(hass, runtime)
-    runtime.subentry_snapshot = _subentries(entry)
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    from .panel import async_setup_panel
+        async_check_setup(hass, runtime)
+        runtime.subentry_snapshot = _subentries(entry)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        from .panel import async_setup_panel
 
-    await async_setup_panel(hass, runtime)
+        await async_setup_panel(hass, runtime)
+    except Exception:
+        # a failed setup leaves nothing running: no listeners, timers or plan that a retry would then double
+        await runtime.async_unload()
+        raise
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 

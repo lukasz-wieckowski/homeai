@@ -9,6 +9,7 @@ snoozing, dismissing or resolving stops escalation and clears what was sent.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -27,6 +28,7 @@ from .recipients import targets_for
 ACTION_PREFIX = "HOMEAI_"
 ACTIONS = ("ACK", "HANDLE", "SNOOZE")
 PERSISTENT_PREFIX = "homeai_"
+SEND_TIMEOUT = 15  # seconds for one notify call: a hung service must not hold up the next alarm
 
 
 class NotificationRouter:
@@ -36,6 +38,7 @@ class NotificationRouter:
         self._unsubs: list[Callable[[], None]] = []
         self._digest_unsubs: list[Callable[[], None]] = []
         self._daily: dict[str, tuple[date, int]] = {}
+        self._delivering = asyncio.Lock()  # the tick and situation events never send the same step twice
 
     async def async_setup(self) -> None:
         engine = self.rt.module("situations")
@@ -89,16 +92,24 @@ class NotificationRouter:
 
     async def deliver(self, s: Situation, now: datetime | None = None) -> bool:
         """Send every step that is due and not sent yet. Returns whether anything was sent."""
-        now = now or dt_util.utcnow()
+        async with self._delivering:
+            return await self._deliver(s, now or dt_util.utcnow())
+
+    async def _deliver(self, s: Situation, now: datetime) -> bool:
         settings = self.rt.settings
         severity = s.severity
+        if s.snoozed_until and s.snoozed_until <= now:
+            # the snooze is over and the matter is still open: the ladder starts again from here
+            s.snoozed_until = None
+            s.notify.pop("sent", None)
+            s.notify["since"] = now.isoformat(timespec="seconds")
         if s.phase is not Phase.OPEN or s.muted(now):
             return False
         if settings.get("notify.paused") and not (severity >= 4 and settings.get("notify.paused_allows_critical")):
             return False
         if s.assessment.get("who") == "nobody" and severity < 4:
             return False  # the home is handling it (repair) or nobody is needed
-        opened = s.opened_at or now
+        opened = s.notify_since(now)
         sent: dict[str, dict[str, str]] = s.notify.setdefault("sent", {})
         anything = False
         for index, step in enumerate(self.ladder(severity)):
@@ -223,6 +234,9 @@ class NotificationRouter:
             "priority": "high" if severity >= 3 else "normal",
             "ttl": 0 if severity >= 3 else 3600,
         }
+        if level == "critical":
+            # Android: the alarm stream sounds at alarm volume, also when the phone is silent or on do not disturb
+            data["channel"] = "alarm_stream"
         sent_any = False
         for target in targets:
             try:
@@ -246,15 +260,16 @@ class NotificationRouter:
         domain, _, name = target.partition(".")
         if domain != "notify":
             raise ValueError(f"Not a notify target: {target}")
-        if self.hass.states.get(target) is not None:  # a notify entity
-            await self.hass.services.async_call(
-                "notify", "send_message", {"entity_id": target, "title": title, "message": message}, blocking=True
-            )
-            return
-        payload: dict[str, Any] = {"title": title, "message": message}
-        if data:
-            payload["data"] = data
-        await self.hass.services.async_call("notify", name, payload, blocking=True)
+        async with asyncio.timeout(SEND_TIMEOUT):
+            if self.hass.states.get(target) is not None:  # a notify entity
+                await self.hass.services.async_call(
+                    "notify", "send_message", {"entity_id": target, "title": title, "message": message}, blocking=True
+                )
+                return
+            payload: dict[str, Any] = {"title": title, "message": message}
+            if data:
+                payload["data"] = data
+            await self.hass.services.async_call("notify", name, payload, blocking=True)
 
     def _persistent(self, s: Situation) -> None:
         title, message = self.message(s)
@@ -279,6 +294,7 @@ class NotificationRouter:
             },
         )
         s.notify["event"] = True
+        s.notify["event_critical"] = bool(step.get("critical")) or bool(s.notify.get("event_critical"))
 
     async def _speak(self, s: Situation) -> bool:
         tts = self.rt.settings.get("notify.tts_entity")
@@ -312,7 +328,15 @@ class NotificationRouter:
         if s.notify.get("event"):
             self.hass.bus.async_fire(
                 EVENT_NOTIFICATION,
-                {"situation_id": s.id, "state": "cleared", "reason": event, "title": "", "message": ""},
+                {
+                    "situation_id": s.id,
+                    "state": "cleared",
+                    "reason": event,
+                    "title": "",
+                    "message": "",
+                    # displays hold only critical notices: they dismiss on this one, not on any cleared matter
+                    "critical": bool(s.notify.get("event_critical")),
+                },
             )
         if event == "resolved" and s.notify.get("targets") and self.rt.settings.get("notify.announce_resolved"):
             title = self.rt.text("notify|resolved_title")
@@ -338,6 +362,8 @@ class NotificationRouter:
 
     async def _handle_action(self, verb: str, situation_id: str, user_id: str | None) -> None:
         engine = self.rt.module("situations")
+        if user_id and not self.rt.presence.resident_user(user_id):
+            return  # a button pressed on a guest's or stranger's phone decides nothing
         who = self.person_name(user_id)
         if verb == "ACK":
             await engine.acknowledge(situation_id, who)
@@ -385,7 +411,7 @@ class NotificationRouter:
         now = now or dt_util.utcnow()
         text = self.digest_text(now)
         ai = self.rt.module("ai")
-        if text is None:
+        if text is None or self.rt.settings.get("notify.paused"):
             return False
         if ai is not None:
             try:

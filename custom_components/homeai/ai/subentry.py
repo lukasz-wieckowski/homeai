@@ -31,6 +31,7 @@ PROVIDERS = ("anthropic", "openai_compatible")
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 PRIVACY = ("default", "minimal", "standard", "full")
 # Optional limits per connection: (field, min, max, step, unit). Empty: the HomeAI settings apply.
+OPTIONAL_FIELDS = ("price_input", "price_output", "max_tokens", "timeout", "budget_daily")
 LIMITS = (
     ("max_tokens", 256, 64000, 256, "tokens"),
     ("timeout", 10, 3600, 5, "s"),
@@ -121,7 +122,9 @@ class TierSubentryFlow(ConfigSubentryFlow):
     async def async_step_details(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            data = {**self._data, **user_input, "priority": int(user_input.get("priority", 1))}
+            # optional fields left empty are absent from the input: they must not survive from the old data
+            kept = {k: v for k, v in self._data.items() if k not in OPTIONAL_FIELDS}
+            data = {**kept, **user_input, "priority": int(user_input.get("priority", 1))}
             if (error := await validate(self.hass, data)) is None:
                 title = f"{data['tier'].upper()} · {data['model']}"
                 if self.source == "reconfigure":

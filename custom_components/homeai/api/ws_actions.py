@@ -12,7 +12,7 @@ import voluptuous as vol
 
 from ..policy import ActionRequest
 from ..schedule.scheduler import PlanError
-from .websocket import TYPE, command, user_name
+from .websocket import TYPE, command, resident, user_name
 
 Conn = websocket_api.ActiveConnection
 
@@ -27,8 +27,20 @@ def _module(rt: Any, connection: Conn, msg: dict[str, Any], name: str) -> Any:
 # ——— Actions ———
 @command({TYPE: "homeai/actions/recent", vol.Optional("limit", default=30): vol.All(int, vol.Range(1, 100))})
 def ws_recent(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
-    if (executor := _module(rt, connection, msg, "executor")) is not None:
-        connection.send_result(msg["id"], {"actions": list(executor.recent)[: msg["limit"]]})
+    if (executor := _module(rt, connection, msg, "executor")) is not None and resident(rt, connection, msg):
+        actions = list(executor.recent)[: msg["limit"]]
+        connection.send_result(msg["id"], {"actions": [_public(a, connection) for a in actions]})
+
+
+def _public(record: dict[str, Any], connection: Conn) -> dict[str, Any]:
+    """What a non-administrator sees of an action or approval: what it was, not its raw data (a saved automation's
+    configuration, another person's account)."""
+    request = record.get("request")
+    if connection.user.is_admin or not isinstance(request, dict):
+        return record
+    mine = request.get("user_id") == connection.user.id
+    kept = {k: v for k, v in request.items() if k not in ("data", "user_id", "approved_by_user")}
+    return {**record, "request": {**kept, "data": {}, "user_id": connection.user.id if mine else None}}
 
 
 @command(
@@ -65,16 +77,28 @@ async def ws_execute(hass: HomeAssistant, connection: Conn, msg: dict[str, Any],
 
 @command({TYPE: "homeai/actions/undo", vol.Required("action_id"): str}, is_async=True)
 async def ws_undo(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
-    if (executor := _module(rt, connection, msg, "executor")) is not None:
-        connection.send_result(msg["id"], (await executor.undo(msg["action_id"], connection.user.id)).as_dict())
+    if (executor := _module(rt, connection, msg, "executor")) is None or not resident(rt, connection, msg):
+        return
+    record = next((r for r in executor.recent if r["action_id"] == msg["action_id"]), None)
+    asked_by = (record or {}).get("request", {}).get("user_id")
+    if asked_by and asked_by != connection.user.id and not connection.user.is_admin:
+        connection.send_error(msg["id"], "unauthorized", "Only the person who asked or an administrator can undo it")
+        return
+    connection.send_result(msg["id"], (await executor.undo(msg["action_id"], connection.user.id)).as_dict())
 
 
 # ——— Approvals ———
 @command({TYPE: "homeai/approvals/list"})
 def ws_approvals(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
-    if (approvals := _module(rt, connection, msg, "approvals")) is not None:
+    if (approvals := _module(rt, connection, msg, "approvals")) is not None and resident(rt, connection, msg):
         recent = sorted(approvals.items.values(), key=lambda a: a["created"], reverse=True)[:30]
-        connection.send_result(msg["id"], {"pending": approvals.pending(), "recent": recent})
+        connection.send_result(
+            msg["id"],
+            {
+                "pending": [_public(a, connection) for a in approvals.pending()],
+                "recent": [_public(a, connection) for a in recent],
+            },
+        )
 
 
 @command({TYPE: "homeai/approvals/subscribe"})
@@ -84,7 +108,8 @@ def ws_approvals_subscribe(hass: HomeAssistant, connection: Conn, msg: dict[str,
 
     @callback
     def changed(_item: dict[str, Any]) -> None:
-        connection.send_message(websocket_api.event_message(msg["id"], {"pending": approvals.pending()}))
+        pending = [_public(a, connection) for a in approvals.pending()]
+        connection.send_message(websocket_api.event_message(msg["id"], {"pending": pending}))
 
     connection.subscriptions[msg["id"]] = approvals.listen(changed)
     connection.send_result(msg["id"])
@@ -165,6 +190,12 @@ def ws_presence(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: 
 def ws_presence_save(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
     if (module := _module(rt, connection, msg, "presence_exceptions")) is None:
         return
+    if not resident(rt, connection, msg):
+        return
+    existing = module.items.get(msg.get("exception_id") or "")
+    if existing is not None and not module.may_change(existing, connection.user.id, connection.user.is_admin):
+        connection.send_error(msg["id"], "unauthorized", "Only its author or an administrator can change this")
+        return
     try:
         item = module.save(msg["item"], msg.get("exception_id"), author=connection.user.id)
     except (ValueError, KeyError) as err:
@@ -175,8 +206,15 @@ def ws_presence_save(hass: HomeAssistant, connection: Conn, msg: dict[str, Any],
 
 @command({TYPE: "homeai/presence/delete", vol.Required("exception_id"): str})
 def ws_presence_delete(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
-    if (module := _module(rt, connection, msg, "presence_exceptions")) is not None:
-        connection.send_result(msg["id"], {"removed": module.remove(msg["exception_id"])})
+    if (module := _module(rt, connection, msg, "presence_exceptions")) is None:
+        return
+    if not resident(rt, connection, msg):
+        return
+    existing = module.items.get(msg["exception_id"])
+    if existing is not None and not module.may_change(existing, connection.user.id, connection.user.is_admin):
+        connection.send_error(msg["id"], "unauthorized", "Only its author or an administrator can remove this")
+        return
+    connection.send_result(msg["id"], {"removed": module.remove(msg["exception_id"])})
 
 
 # ——— Commitments (“tell me when …”) ———

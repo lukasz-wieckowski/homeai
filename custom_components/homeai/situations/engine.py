@@ -27,6 +27,12 @@ from .model import Phase, Situation
 STORAGE_KEY = f"{DOMAIN}.situations"
 STORAGE_VERSION = 1
 HISTORY_LIMIT = 300
+# After a start, detectors that wait for a state to last (unavailable for N minutes, open for N minutes) need that
+# time again, because Home Assistant restarts every state's clock. Situations restored from storage are kept
+# open that long instead of being resolved and opened again as new ones (losing “Got it” and notifying twice).
+RESTORE_HOLD = timedelta(minutes=20)
+# “Not a problem” on a safety alarm silences it for this long at most, and only until the sensor clears.
+SAFETY_MUTE = timedelta(hours=1)
 
 Processor = Callable[[str, Situation], Awaitable[None] | None]
 
@@ -39,6 +45,9 @@ class SituationEngine:
         self.situations: dict[str, Situation] = {}  # id → live situation (pending/open/clearing)
         self.resolved: list[Situation] = []
         self.mutes: dict[str, str] = {}  # signal id → ISO until (dismissed as “not a problem”)
+        self.safety_mutes: set[str] = set()  # muted safety signals: the mute ends as soon as the signal clears
+        self._restored: set[str] = set()  # situations loaded from storage, held open for RESTORE_HOLD
+        self._started = dt_util.utcnow()
         self.stats: dict[str, dict[str, int]] = {}  # kind → counters for calibration
         self.processors: list[tuple[str, Processor]] = []
         self._listeners: list[Callable[[str, Situation], None]] = []
@@ -56,6 +65,8 @@ class SituationEngine:
             except KeyError, ValueError:
                 continue
             self.situations[s.id] = s
+        self._restored = {s.id for s in self.situations.values() if s.phase is Phase.OPEN}
+        self._started = dt_util.utcnow()
         self.resolved = []
         for raw in data.get("resolved") or []:
             try:
@@ -63,6 +74,7 @@ class SituationEngine:
             except KeyError, ValueError:
                 continue
         self.mutes = dict(data.get("mutes") or {})
+        self.safety_mutes = set(data.get("safety_mutes") or [])
         self.stats = dict(data.get("stats") or {})
         hub = self.rt.module("signals")
         if hub is not None:
@@ -91,6 +103,7 @@ class SituationEngine:
             "situations": [s.as_dict() for s in self.situations.values()],
             "resolved": [s.as_dict() for s in self.resolved[-HISTORY_LIMIT:]],
             "mutes": self.mutes,
+            "safety_mutes": sorted(self.safety_mutes),
             "stats": self.stats,
         }
 
@@ -104,6 +117,9 @@ class SituationEngine:
         for sid, signal in changes.items():
             if signal is None:
                 self._signals.pop(sid, None)
+                if sid in self.safety_mutes:  # the alarm cleared: the next one is a new alarm, never muted
+                    self.safety_mutes.discard(sid)
+                    self.mutes.pop(sid, None)
             else:
                 self._signals[sid] = signal
         self.hass.async_create_task(self.process(dt_util.utcnow()))
@@ -114,6 +130,7 @@ class SituationEngine:
             return False
         if (t := dt_util.parse_datetime(until)) is None or t <= now:
             self.mutes.pop(signal.id, None)
+            self.safety_mutes.discard(signal.id)
             return False
         return True
 
@@ -146,14 +163,23 @@ class SituationEngine:
                 s = Situation(id=ulid_util.ulid_now().lower(), group=group, first_seen=now)
                 self.situations[s.id] = s
                 s.log("seen")
-            before = (s.severity, set(s.signals))
+            # compare what the detectors say with what they said: the assessed severity (triage, AI) is not theirs
+            before = (max((x.severity for x in s.signals.values()), default=0), set(s.signals))
+            after = (max(x.severity for x in signals.values()), set(signals))
             s.signals, s.suppressed = signals, suppressed
+            worse = after[0] > before[0] or bool(after[1] - before[1])
+            if s.phase is not Phase.PENDING and worse and (s.acked_at or s.snoozed_until):
+                # “Got it” and snooze cover what the person saw. Something new joined or it got worse: tell again.
+                s.acked_by = s.acked_at = s.snoozed_until = None
+                s.notify.pop("sent", None)
+                s.notify["since"] = now.isoformat(timespec="seconds")
+                s.log("worse")
             if s.phase is Phase.CLEARING:
                 s.phase, s.clearing_since = Phase.OPEN, None
                 s.updated_at = now
                 s.log("reopened")
                 events.append(("updated", s))
-            elif s.phase is Phase.OPEN and before != (max(x.severity for x in signals.values()), set(signals)):
+            elif s.phase is Phase.OPEN and before != after:
                 s.updated_at = now
                 events.append(("updated", s))
 
@@ -169,6 +195,8 @@ class SituationEngine:
             if s.phase is Phase.PENDING:
                 del self.situations[s.id]
             elif s.phase is Phase.OPEN:
+                if s.id in self._restored and (not self.rt.ready or now - self._started < RESTORE_HOLD):
+                    continue  # just started: its detector may only need its waiting time again
                 s.phase, s.clearing_since = Phase.CLEARING, now
                 s.log("clearing")
             elif s.phase is Phase.CLEARING and s.clearing_since and now - s.clearing_since >= self._close_after(s):
@@ -186,9 +214,11 @@ class SituationEngine:
         self._schedule_next(now)
 
     def _ready_to_open(self, s: Situation, now: datetime) -> bool:
-        if not self.rt.ready:
-            return False
         p = s.primary
+        if not self.rt.ready and not (p is not None and p.category == "safety" and self.hass.is_running):
+            # the startup grace period keeps flickers of a starting home quiet; smoke, gas and water do not wait
+            # for it once Home Assistant itself is up
+            return False
         key = f"situations.min_duration_{p.category}" if p else "situations.min_duration"
         seconds = self.rt.settings.get(key) if key in self.rt.settings.registry else None
         if seconds is None:
@@ -202,7 +232,7 @@ class SituationEngine:
         """Wake up exactly when the next pending/clearing situation is due (ticks are coarser)."""
         due: list[datetime] = []
         for s in self.situations.values():
-            if s.phase is Phase.PENDING and self.rt.ready:
+            if s.phase is Phase.PENDING and (self.rt.ready or s.category == "safety"):
                 p = s.primary
                 key = f"situations.min_duration_{p.category}" if p else "situations.min_duration"
                 seconds = self.rt.settings.get(key) if key in self.rt.settings.registry else None
@@ -307,10 +337,15 @@ class SituationEngine:
         s = self.situations.get(situation_id)
         if s is None:
             return None
-        days = int(self.rt.settings.get("situations.dismiss_days"))
-        until = (dt_util.utcnow() + timedelta(days=days)).isoformat(timespec="seconds")
-        for sid in s.signals:
-            self.mutes[sid] = until
+        mute = timedelta(days=int(self.rt.settings.get("situations.dismiss_days")))
+        now = dt_util.utcnow()
+        for sid, signal in s.signals.items():
+            if signal.category == "safety":
+                # a false alarm today says nothing about the next one: silent only while this alarm lasts
+                self.mutes[sid] = (now + min(mute, SAFETY_MUTE)).isoformat(timespec="seconds")
+                self.safety_mutes.add(sid)
+            else:
+                self.mutes[sid] = (now + mute).isoformat(timespec="seconds")
         self._count(s.kind, "dismissed")
         s.log("dismissed", who=who)
         await self.emit("dismissed", s)

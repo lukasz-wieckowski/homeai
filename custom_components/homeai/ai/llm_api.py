@@ -14,7 +14,7 @@ import probatio as pb
 
 from ..const import DOMAIN
 from .privacy import Privacy
-from .tools import TOOLS, ToolContext, run_tool
+from .tools import SETS, TOOLS, ToolContext, run_tool
 
 EXPOSED = (
     "find_entities",
@@ -56,6 +56,12 @@ def _schema(json_schema: dict[str, Any]) -> pb.Schema:
     return pb.Schema(fields)
 
 
+def exposed(rt: Any) -> tuple[str, ...]:
+    """The tools other assistants get: what `ai.chat_can` allows HomeAI's own chat, within EXPOSED."""
+    allowed = SETS.get(f"chat_{rt.settings.get('ai.chat_can')}", SETS["chat_read"])
+    return tuple(name for name in EXPOSED if name in allowed)
+
+
 class HomeAITool(llm.Tool):
     def __init__(self, rt: Any, name: str) -> None:
         tool = TOOLS[name]
@@ -66,9 +72,13 @@ class HomeAITool(llm.Tool):
         self._tool = name
 
     async def async_call(self, hass: HomeAssistant, tool_input: llm.ToolInput, llm_context: llm.LLMContext) -> Any:
+        from .missions.chat import may_talk
+
         user_id = llm_context.context.user_id if llm_context.context else None
+        if not may_talk(self.rt, user_id):
+            return {"error": "not_allowed"}
         ctx = ToolContext(self.rt, Privacy(self.rt), actor="person", user_id=user_id)
-        text, _is_error = await run_tool(ctx, self._tool, dict(tool_input.tool_args))
+        text, _is_error = await run_tool(ctx, self._tool, dict(tool_input.tool_args), exposed(self.rt))
         import json
 
         return json.loads(text) if text.startswith(("{", "[")) else {"result": text}
@@ -82,6 +92,5 @@ class HomeAIAPI(llm.API):
         self.name = "HomeAI"
 
     async def async_get_api_instance(self, llm_context: llm.LLMContext) -> llm.APIInstance:
-        return llm.APIInstance(
-            api=self, api_prompt=PROMPT, llm_context=llm_context, tools=[HomeAITool(self.rt, n) for n in EXPOSED]
-        )
+        tools = [HomeAITool(self.rt, n) for n in exposed(self.rt)]
+        return llm.APIInstance(api=self, api_prompt=PROMPT, llm_context=llm_context, tools=tools)

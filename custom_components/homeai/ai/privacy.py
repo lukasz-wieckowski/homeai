@@ -22,7 +22,7 @@ LEVELS = ("minimal", "standard", "full")
 
 
 def clean(value: Any, limit: int = 120) -> str:
-    text = CONTROL.sub(" ", str(value)).replace("<", "‹").replace(">", "›")
+    text = CONTROL.sub(" ", str(value)).replace("\n", " ").replace("<", "‹").replace(">", "›")
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
@@ -45,8 +45,6 @@ class Privacy:
         return self._aliases[key]
 
     def allowed(self, entity_id: str) -> bool:
-        if self.level == "full":
-            return entity_id not in self.rt.settings.get("privacy.never_send_entities")
         settings, world = self.rt.settings, self.rt.world
         if entity_id in settings.get("privacy.never_send_entities"):
             return False

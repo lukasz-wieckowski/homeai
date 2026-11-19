@@ -23,7 +23,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
-from .risk import Risk, classify, is_protective
+from .risk import Risk, carried_entities, classify, is_protective
 
 ACTORS = ("person", "homeai", "ai", "repair", "schedule")
 MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule")  # actors with their own row in the actor × class matrix
@@ -56,6 +56,9 @@ class ActionRequest:
     approved_by: str | None = None  # an approval was granted (the approver's name, for the journal)
     approved_by_user: str | None = None  # the Home Assistant user who granted it (people's approvals)
     dry_run: bool = False
+    # Start the service and do not wait for it to finish (a backup takes longer than any sensible timeout); the
+    # result is then judged by what follows, not by the call.
+    background: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -98,9 +101,14 @@ class Policy:
 
     # ——— Classification ———
     def risk(self, request: ActionRequest) -> Risk:
-        return classify(
+        risk = classify(
             request.domain, request.service, request.entity_ids, world=self.rt.world, settings=self.rt.settings
         )
+        carried = carried_entities(self.rt.hass, request.domain, request.service, request.data, request.entity_ids)
+        if carried:
+            inside = classify("homeassistant", "turn_on", carried, world=self.rt.world, settings=self.rt.settings)
+            risk = max(risk, inside)
+        return risk
 
     def observing(self, now: datetime | None = None) -> bool:
         days = int(self.rt.settings.get("policy.observation_days"))
@@ -133,7 +141,7 @@ class Policy:
 
     async def _person(self, request: ActionRequest, risk: Risk) -> Decision:
         user = await self.rt.hass.auth.async_get_user(request.user_id) if request.user_id else None
-        if user is None and not request.user_id and risk <= Risk.R1:
+        if user is None and not request.user_id and risk <= Risk.R1 and request.domain != "config":
             return Decision(Verdict.ALLOW, risk, "anonymous")  # e.g. a voice satellite without a user
         if user is None or not user.is_active:
             return Decision(Verdict.DENY, risk, "no_user")

@@ -174,7 +174,8 @@ class SettingsManager:
         if setting.admin_only and not is_admin:
             raise SettingError(f"{key} can only be changed by an administrator")
         new = setting.validate(value)
-        old = self.get(key) if skey == "global" else self._overrides.get(skey, {}).get(key, self.get(key))
+        existing = self._overrides.get(skey, {}).get(key) if skey != "global" else None
+        old = self.get(key) if skey == "global" or existing is None else existing
         if setting.lowers_protection(old, new) and not confirmed:
             raise SettingError(f"{key}: this change lowers protection and needs confirmation")
         if skey == "global":
@@ -184,6 +185,7 @@ class SettingsManager:
                 self._global[key] = new
         else:
             self._overrides.setdefault(skey, {})[key] = new
+            old = existing  # a new override had no value of its own: undoing it removes it again
         self._record(key, skey, old, new, user)
         self._notify(key)
         return new
@@ -220,17 +222,28 @@ class SettingsManager:
 
     @callback
     def undo_last(self, *, user: str | None = None, is_admin: bool = True) -> dict[str, Any] | None:
-        """Restore the value from before the most recent change."""
-        if not self._history:
+        """Restore the value from before the most recent change that has not been undone yet. Undoing again goes
+        one change further back; imports and the undos themselves are skipped."""
+        last = next(
+            (
+                h
+                for h in reversed(self._history)
+                if h["key"] in self.registry and not h.get("undone") and not h.get("undo")
+            ),
+            None,
+        )
+        if last is None:
             return None
-        last = self._history[-1]
         key, skey = last["key"], last["scope"]
-        if key not in self.registry:
-            return None
+        before = len(self._history)
         if last["old"] is None or (skey == "global" and last["old"] == self.registry[key].default):
             self.reset(key, skey=skey, user=user, is_admin=is_admin)
         else:
             self.set(key, last["old"], skey=skey, user=user, confirmed=True, is_admin=is_admin)
+        last["undone"] = True
+        for record in self._history[before:]:
+            record["undo"] = True
+        self._save()
         return last
 
     def _record(self, key: str, skey: str, old: Any, new: Any, user: str | None, *, reset: bool = False) -> None:

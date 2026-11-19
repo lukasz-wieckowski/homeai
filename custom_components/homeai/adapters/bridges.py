@@ -68,7 +68,8 @@ class BridgeDetector(Detector):
                 repair = {"playbook": "press_restart", "device_id": device_id}
             elif (
                 device_id
-                and (entry := ctx.world.devices[device_id].config_entry_id)
+                and (device := ctx.world.devices.get(device_id)) is not None
+                and (entry := device.config_entry_id)
                 and ctx.settings.get("adapters.bridge_reload")
             ):
                 repair = {"playbook": "reload_entry", "entry_id": entry}

@@ -18,8 +18,12 @@ own autonomy, the plan, repair playbooks or an AI tier.
 The class comes from the domain and service, then the device class (a garage or gate cover is R5; a restart
 button is R3), then the device a control belongs to: a number, select, switch, button or text entity is never
 lighter than its device's main entity (a thermostat's valve position counts as the thermostat, a lock's relay or
-auto-relock time as the lock), and a device's configuration entities are at least R2. Administrators can change
-it at three levels, each more specific than the last:
+auto-relock time as the lock), and a device's configuration entities are at least R2. A call is judged by
+everything it changes: `scene.apply` and turning on a scene take the class of the entities inside them, and an
+integration's own service on another domain's entity (a lock's user codes through `zwave_js`) is never lighter
+than that entity. Services HomeAI knows nothing about and that name no entity are R3; shell commands, scripts in
+Python and `conversation.process` are R4, because they can do anything. HomeAI's own switches, selects and
+numbers are its settings (R4). Administrators can change it at three levels, each more specific than the last:
 
 1. *Risk class by action*: a class for a whole domain (`switch`) or one action (`script.turn_on`).
 2. *Risk class by label*: a class for everything with a label; with several labels the highest wins.

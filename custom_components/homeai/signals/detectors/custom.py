@@ -8,12 +8,13 @@ situation per rule); with `mode: all` the rule fires only when all its entities 
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 import re
 from typing import Any
 
 from ...settings import SettingError
 from ..base import Category, DetectionContext, Detector, Need, Signal
-from .util import UNAVAILABLE, held_for, state
+from .util import UNAVAILABLE, state
 
 CONDITIONS = ("state", "not_state", "above", "below", "unavailable")
 WHEN = ("always", "night", "away", "home")
@@ -109,16 +110,29 @@ def targets(ctx: DetectionContext, rule: dict[str, Any]) -> list[str]:
     return sorted(found)
 
 
-def meets(ctx: DetectionContext, rule: dict[str, Any], entity_id: str) -> bool:
+def meets(
+    ctx: DetectionContext,
+    rule: dict[str, Any],
+    entity_id: str,
+    since: dict[tuple[str, str], datetime] | None = None,
+) -> bool:
+    """Whether the entity has met the rule's condition for its minutes.
+
+    `since` remembers when each entity started meeting each rule. Without it the age of the current state is used,
+    which is right for states but not for numbers: a sensor above a limit reports a new value every minute, and
+    each one would start the wait again."""
     s = state(ctx, entity_id)
+    key = (str(rule.get("id")), entity_id)
     if s is None:
+        if since is not None:
+            since.pop(key, None)
         return False
     cond = rule["condition"]
     kind = cond["type"]
     if kind == "unavailable":
         ok = s.state in UNAVAILABLE
     elif s.state in UNAVAILABLE:
-        return False
+        ok = False
     elif kind == "state":
         ok = s.state == cond["value"]
     elif kind == "not_state":
@@ -127,9 +141,15 @@ def meets(ctx: DetectionContext, rule: dict[str, Any], entity_id: str) -> bool:
         try:
             value = float(s.state)
         except ValueError:
-            return False
-        ok = value > cond["value"] if kind == "above" else value < cond["value"]
-    return ok and held_for(s, ctx.now, rule["minutes"])
+            value = None
+        ok = value is not None and (value > cond["value"] if kind == "above" else value < cond["value"])
+    if not ok:
+        if since is not None:
+            since.pop(key, None)
+        return False
+    # the state has been what it is since `last_changed`, so the condition has held at least that long
+    started = s.last_changed if since is None else since.setdefault(key, s.last_changed)
+    return ctx.now - started >= timedelta(minutes=rule["minutes"])
 
 
 def active_now(ctx: DetectionContext, rule: dict[str, Any]) -> bool:
@@ -146,6 +166,9 @@ def active_now(ctx: DetectionContext, rule: dict[str, Any]) -> bool:
 class CustomDetector(Detector):
     key = "custom"
 
+    def __init__(self) -> None:
+        self._since: dict[tuple[str, str], datetime] = {}  # (rule, entity) → the condition holds since
+
     def rules(self, ctx: DetectionContext) -> list[dict[str, Any]]:
         return [r for r in ctx.settings.get("detectors.custom") or [] if r.get("enabled")]
 
@@ -154,11 +177,15 @@ class CustomDetector(Detector):
 
     def evaluate(self, ctx: DetectionContext) -> list[Signal]:
         out: list[Signal] = []
+        checked: set[tuple[str, str]] = set()
         for rule in self.rules(ctx):
+            entities = targets(ctx, rule)
+            checked |= {(rule["id"], e) for e in entities}
+            # checked also while the rule is not active (by day, while someone is home): the wait counts from
+            # when the condition began, not from when the rule's hours did
+            matching = [e for e in entities if meets(ctx, rule, e, self._since)]
             if not active_now(ctx, rule):
                 continue
-            entities = targets(ctx, rule)
-            matching = [e for e in entities if meets(ctx, rule, e)]
             if rule["mode"] == "all":
                 if not entities or len(matching) != len(entities):
                     continue
@@ -191,4 +218,6 @@ class CustomDetector(Detector):
                         root=f"custom:{rule['id']}",
                     )
                 )
+        for key in set(self._since) - checked:  # rules and entities that are gone
+            del self._since[key]
         return out

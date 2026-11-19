@@ -217,6 +217,9 @@
     },
     "watch_invalid": {
       "message": "HomeAI cannot watch this: {reason}."
+    },
+    "residents_only": {
+      "message": "Only people who live here can do this."
     }
   },
   "entity": {

@@ -96,6 +96,17 @@ DOMAIN_RISK: dict[str, Risk] = {
     "alarm_control_panel": Risk.R5,
     "camera": Risk.R5,
     "siren": Risk.R5,
+    # services that can do anything: they run commands, code or other services the policy cannot see
+    "shell_command": Risk.R4,
+    "python_script": Risk.R4,
+    "pyscript": Risk.R4,
+    "conversation": Risk.R4,
+    "cloud": Risk.R4,
+    "rest_command": Risk.R3,
+    "mqtt": Risk.R3,
+    "zwave_js": Risk.R3,
+    "zha": Risk.R3,
+    "homeassistant": Risk.R3,
 }
 
 SERVICE_RISK: dict[tuple[str, str], Risk] = {
@@ -211,12 +222,19 @@ def classify(
     by_label = dict(settings.get("policy.risk_by_label") or {}) if settings is not None else {}
     base = _configured(domain, service, by_service)
     if not entity_ids:
-        return base
+        # a service HomeAI knows nothing about, with no entity to judge it by, is a system action
+        return base if _known(domain, service, by_service) else max(base, Risk.R3)
     risks = []
     for entity_id in entity_ids:
         e_domain = entity_id.split(".", 1)[0]
         risk = _configured(e_domain, service, by_service) if domain == "homeassistant" and service in _GENERIC else base
+        if domain not in ("homeassistant", e_domain):
+            # an integration's own service on another domain's entity (`zwave_js.set_lock_usercode` on a lock) is
+            # never lighter than that entity's domain
+            risk = max(risk, _configured(e_domain, service, by_service))
         info = world.entity(entity_id) if world is not None else None
+        if world is not None and _own(world, entity_id):
+            risk = max(risk, Risk.R4)  # HomeAI's own switches, selects and numbers are its settings
         if e_domain == "cover" and _device_class(world, entity_id, info) in SECURITY_COVER_CLASSES:
             risk = max(risk, Risk.R5)
         if e_domain == "button" and _device_class(world, entity_id, info) == "restart":
@@ -244,6 +262,43 @@ def _configured(domain: str, service: str, by_service: dict[str, str]) -> Risk:
 
 
 _GENERIC = frozenset({"turn_on", "turn_off", "toggle"})
+
+
+def _known(domain: str, service: str, by_service: dict[str, str]) -> bool:
+    return (
+        domain in DOMAIN_RISK
+        or domain == "config"
+        or (domain, service) in SERVICE_RISK
+        or service == "reload"
+        or Risk.parse(by_service.get(f"{domain}.{service}")) is not None
+        or Risk.parse(by_service.get(domain)) is not None
+    )
+
+
+def _own(world: WorldModel, entity_id: str) -> bool:
+    from homeassistant.helpers import entity_registry as er
+
+    from ..const import DOMAIN
+
+    entry = er.async_get(world.hass).async_get(entity_id)
+    return entry is not None and entry.platform == DOMAIN
+
+
+def carried_entities(hass: object, domain: str, service: str, data: dict, entity_ids: list[str]) -> list[str]:
+    """Entities a call changes without naming them as targets: the states `scene.apply` sets and the members of a
+    scene that is turned on. They are judged as if each were switched directly."""
+    if domain != "scene":
+        return []
+    out: list[str] = []
+    if service == "apply" and isinstance(entities := data.get("entities"), dict):
+        out += [str(e) for e in entities]
+    if service == "turn_on":
+        for scene in entity_ids:
+            state = hass.states.get(scene)  # type: ignore[attr-defined]
+            members = state.attributes.get("entity_id") if state is not None else None
+            if isinstance(members, (list, tuple)):
+                out += [str(e) for e in members]
+    return out
 
 
 def _device_class(world: WorldModel | None, entity_id: str, info: object | None) -> str | None:

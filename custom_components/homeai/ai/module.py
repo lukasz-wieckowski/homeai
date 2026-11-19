@@ -24,6 +24,7 @@ from .prompts import system_prompt
 from .providers.base import AIError, AIRequest, AIResponse, Provider
 from .tiers import TierConfig, build_provider
 
+PRIVACY_ORDER = ("minimal", "standard", "full")  # how much a connection may see
 TIER_TIMEOUT = {"p1": "ai.timeout", "p2": "ai.timeout", "p3": "ai.p3_timeout"}
 
 
@@ -69,6 +70,14 @@ class AIModule:
             unsub()
         for task in list(self._tasks):
             task.cancel()
+        for provider in self._providers.values():
+            close = getattr(getattr(provider, "client", None), "close", None)
+            if close is not None:
+                try:
+                    await close()  # the SDK's HTTP connections
+                except Exception:
+                    LOGGER.debug("Closing an AI client failed")
+        self._providers.clear()
         await self.ledger.async_save()
 
     # ——— Tiers ———
@@ -114,9 +123,16 @@ class AIModule:
             return None
         timeout = float(self.rt.settings.get(TIER_TIMEOUT.get(tier, "ai.timeout")))
         wanted_tokens = request.max_tokens
+        # Callers build the request for the tier's first connection. A later connection may answer in its place
+        # only if it may see at least as much: a prompt written for a local model is never sent to a stricter one.
+        first = self.first(tier)
+        built_for = PRIVACY_ORDER.index(self.privacy_level(first)) if first is not None else 0
         for cfg in self.tiers.get(tier, []):
             if only is not None and cfg.subentry_id != only:
                 continue  # a tool loop stays with the provider that started it
+            if PRIVACY_ORDER.index(self.privacy_level(cfg)) < built_for:
+                self.status[cfg.subentry_id] = "privacy"
+                continue
             if cfg.budget_daily is not None and self.ledger.source_today(cfg.subentry_id) >= cfg.budget_daily:
                 self.status[cfg.subentry_id] = "budget"
                 continue  # this connection spent its own daily budget; the next one may answer
@@ -129,6 +145,16 @@ class AIModule:
                 self._calls.append((tier, dt_util.utcnow()))
                 response = await provider.complete(request)
             except AIError as err:
+                if (billed := err.billed) is not None:  # an unusable answer still costs money
+                    self.ledger.record(
+                        tier,
+                        billed.model,
+                        billed.cost,
+                        billed.input_tokens,
+                        billed.output_tokens,
+                        request.purpose,
+                        source=cfg.subentry_id,
+                    )
                 self.status[cfg.subentry_id] = str(err)
                 LOGGER.warning("AI %s (%s) failed for %s: %s", tier, cfg.model, request.purpose, err)
                 continue  # the next provider of this tier may still answer

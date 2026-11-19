@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import ClassVar
 
 from ...world import Role
 from ..base import Category, DetectionContext, Detector, Need, Signal
-from .util import area_of, device_of, held_for, name, setting, state, where
+from .util import UNAVAILABLE, area_of, device_of, held_for, name, setting, state, where
+
+# An alarm whose sensor stops answering (burnt, flooded, no power, hub down) stays an alarm this long.
+LOST_HOLD = timedelta(minutes=60)
 
 
 class SafetyDetector(Detector):
@@ -23,12 +27,33 @@ class SafetyDetector(Detector):
         Role.TAMPER: ("tamper", Category.SECURITY),
     }
 
+    def __init__(self) -> None:
+        # sensors that are alarming: entity → (alarm since, when the sensor was lost or None)
+        self._alarming: dict[str, tuple[datetime, datetime | None]] = {}
+
+    def _since(self, ctx: DetectionContext, entity_id: str) -> datetime | None:
+        """Since when the sensor alarms, or None when it does not. Only an explicit “off” ends an alarm at once:
+        a sensor that becomes unavailable while alarming keeps its alarm for LOST_HOLD."""
+        s = state(ctx, entity_id)
+        if s is not None and s.state == "on":
+            self._alarming[entity_id] = (s.last_changed, None)
+            return s.last_changed
+        held = self._alarming.get(entity_id)
+        if held is not None and (s is None or s.state in UNAVAILABLE):
+            since, lost = held
+            lost = lost or ctx.now
+            if ctx.now - lost < LOST_HOLD:
+                self._alarming[entity_id] = (since, lost)
+                return since
+        self._alarming.pop(entity_id, None)
+        return None
+
     def evaluate(self, ctx: DetectionContext) -> list[Signal]:
         out: list[Signal] = []
         for role, (kind, category) in self.KINDS.items():
             for entity_id in sorted(ctx.world.with_role(role)):
-                s = state(ctx, entity_id)
-                if s is None or s.state != "on":
+                since = self._since(ctx, entity_id)
+                if since is None:
                     continue
                 area = area_of(ctx, entity_id)
                 out.append(
@@ -41,7 +66,7 @@ class SafetyDetector(Detector):
                         entities=(entity_id,),
                         device_id=device_of(ctx, entity_id),
                         area_id=area,
-                        since=s.last_changed,
+                        since=since,
                         data={"name": name(ctx, entity_id), "where": where(ctx, area_id=area)},
                         need=Need.MEMBER,
                         root=f"{kind}:{area or entity_id}",

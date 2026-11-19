@@ -11,6 +11,7 @@ export class HomeAISituations extends LitElement {
   @state() private open: Situation[] = [];
   @state() private resolved: Situation[] = [];
   private unsub?: () => void;
+  private subscribing = false;
 
   static styles = shared;
 
@@ -26,15 +27,22 @@ export class HomeAISituations extends LitElement {
   }
 
   private async subscribe(): Promise<void> {
-    if (!this.hass || this.unsub) return;
-    this.unsub = await this.hass.connection.subscribeMessage<{ type: string; situations?: Situation[] }>(
-      (msg) => {
-        if (msg.type === "situations" && msg.situations) this.open = msg.situations;
-      },
-      { type: "homeai/situations/subscribe", language: this.hass.language },
-    );
-    const list = await this.hass.callWS<{ resolved: Situation[] }>({ type: "homeai/situations/list", resolved: 10 });
-    this.resolved = list.resolved;
+    if (!this.hass || this.unsub || this.subscribing) return;
+    this.subscribing = true;
+    try {
+      const unsub = await this.hass.connection.subscribeMessage<{ type: string; situations?: Situation[] }>(
+        (msg) => {
+          if (msg.type === "situations" && msg.situations) this.open = msg.situations;
+        },
+        { type: "homeai/situations/subscribe", language: this.hass.language },
+      );
+      if (!this.isConnected) return unsub(); // the tab was left while subscribing
+      this.unsub = unsub;
+      const list = await this.hass.callWS<{ resolved: Situation[] }>({ type: "homeai/situations/list", resolved: 10, language: this.hass.language });
+      this.resolved = list.resolved;
+    } finally {
+      this.subscribing = false;
+    }
   }
 
   private async act(verb: string, s: Situation): Promise<void> {

@@ -78,13 +78,18 @@ class Confirmations:
         said: str,
         lang: str,
     ) -> bool:
-        """True once, when the same person in the same conversation answered yes in a later message to exactly
+        """True once, when the same person in the same conversation answered yes in their next message to exactly
         the same action."""
         self._expire(dt_util.utcnow())
         item = self._pending.get(str(code))
         if item is None or turn is None or user_id is None:
             return False
-        if item["user_id"] != user_id or item["conversation_id"] != conversation_id or turn <= item["turn"]:
+        if item["user_id"] != user_id or item["conversation_id"] != conversation_id:
+            return False
+        if turn != item["turn"] + 1:
+            # only the very next message can be the answer; a yes to some later question confirms nothing
+            if turn > item["turn"] + 1:
+                del self._pending[str(code)]
             return False
         if item["fingerprint"] != fingerprint or not affirmative(said, lang):
             return False

@@ -3,6 +3,56 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.1]
+
+Fixes from a second review of the whole code.
+
+### Security
+- A call is judged by everything it changes. `scene.apply` and turning on a scene take the class of the entities
+  inside them (a scene could unlock a door as a comfort action). An integration's own service on another domain's
+  entity is never lighter than that entity. Services HomeAI does not know and that name no entity are R3; shell
+  commands, Python scripts and `conversation.process` are R4. HomeAI's own setting entities are R4.
+- `config.helper_save` can no longer run another WebSocket command through its fields.
+- A plan entry asked for through a model (chat, another assistant) holds only what needs no confirmation: up to
+  R2 for a known person, R1 for a speaker without an account, who is no longer treated as an administrator.
+  Entries of a deleted or deactivated author stop; the plan calendar edits only entries without an author.
+- A model can call only the tools it was offered: a read-only conversation or mission cannot act. Other
+  assistants get what *What chat may do* allows.
+- Reading automations, scripts and dashboards needs an administrator also when the speaker has no account.
+- A confirmation code works only in the person's next message, as documented, not in any later one.
+- Memory, learning proposals, presence exceptions, undo and skipping plan entries check who is asking; people
+  who are not administrators no longer see the raw data of other people's actions.
+- An approval is refused when its time ran out or the action became riskier than what was asked about.
+- A prompt built for one connection's privacy level is never sent to a stricter connection. `recall` returns only
+  the home's and the speaker's facts; a fact about the home from a guest or unknown speaker waits for approval.
+  The system log is cleaned like other data and not sent with minimal privacy; *Full* privacy respects private
+  areas and the private label.
+
+### Fixed
+- A leak, smoke, gas or CO sensor that stops answering while alarming keeps its alarm for an hour. *Not a
+  problem* on a safety alarm is silent only while that alarm lasts. Safety alarms do not wait for the startup
+  grace period once Home Assistant is up.
+- *Got it* and snooze end when something new joins the matter or it gets worse; after a snooze the notifications
+  start again. Situations are not resolved and reopened after a restart.
+- Phones were dropped as computers when the owner's name contained “mac”, “linux” or “tablet”.
+- Critical pushes sound on Android phones that are silent (alarm stream). One notify call has 15 seconds;
+  protective actions no longer delay telling people; a step is never sent twice.
+- The plan ran old occurrences: an entry added after its time ran later that day with another entry, and a new
+  entry could run once for every day the plan had been empty. Missed entries are caught up after Home Assistant
+  has started. Security actions that could never run are refused when saved.
+- Custom rules with *above* or *below* never fired on sensors that report often: the wait now counts how long the
+  condition holds.
+- Unusable AI answers (refusal, cut off, bad JSON) are counted in the cost ledger. A tool call cut off by the
+  token limit is not run. Claude Haiku 4.5 is no longer sent `effort`.
+- Panel: prompt edits were lost when anything in the home changed; settings controls could show a value that was
+  not stored; dates follow Home Assistant's time zone; a second rule with the same name no longer replaces the
+  first.
+- Undoing a new override removes it; undo goes back one change at a time.
+- A repair interrupted by a restart is retried; a repair that was only observed is not reported as failed; a
+  backup is started without waiting for it. Signals reported through the service survive a restart.
+- Limits in °C apply to sensors that report °F. Diagnostics leave out people's names and accounts.
+- `const.py` carried 1.1.0, so browsers could keep an old panel after an update.
+
 ## [1.2.0]
 
 Fixes from an independent review before the first installation in a real home.

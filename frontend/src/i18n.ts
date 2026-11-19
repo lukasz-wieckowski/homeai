@@ -30,7 +30,7 @@ const TEXTS: Record<string, Record<string, string>> = {
     scope_entity: "Entity", scope_person: "Person", scope_pick: "Choose where this applies.",
     scope_none: "Nothing in this section can be set here.", inherited: "inherited", history: "History",
     reset_section: "Reset section", reset_section_confirm: "Restore the defaults of every setting in this section?",
-    import_confirm: "Replace all settings with the file's contents?", remove_confirm: "Remove it?",
+    import_confirm: "Replace all settings with the file's contents?", remove_confirm: "Remove it?", undo_confirm: "Undo the last settings change?",
     plan_add: "Add to plan", plan_next: "Coming up", plan_entries: "Entries", plan_skip: "Skip", plan_type: "Type",
     plan_action: "Action", plan_reminder: "Reminder", plan_reminder_text: "Reminder", plan_to: "Who to remind",
     plan_to_home_or_all: "Who is home, else everyone", plan_to_home: "Who is home", plan_to_all: "Everyone",
@@ -84,7 +84,7 @@ const TEXTS: Record<string, Record<string, string>> = {
     scope_entity: "Encja", scope_person: "Osoba", scope_pick: "Wybierz, czego to dotyczy.",
     scope_none: "Niczego z tej sekcji nie da się ustawić tutaj.", inherited: "dziedziczone", history: "Historia",
     reset_section: "Przywróć sekcję", reset_section_confirm: "Przywrócić domyślne wartości wszystkich ustawień tej sekcji?",
-    import_confirm: "Zastąpić wszystkie ustawienia zawartością pliku?", remove_confirm: "Usunąć?",
+    import_confirm: "Zastąpić wszystkie ustawienia zawartością pliku?", remove_confirm: "Usunąć?", undo_confirm: "Cofnąć ostatnią zmianę ustawień?",
     plan_add: "Dodaj do planu", plan_next: "Wkrótce", plan_entries: "Wpisy", plan_skip: "Pomiń", plan_type: "Rodzaj",
     plan_action: "Akcja", plan_reminder: "Przypomnienie", plan_reminder_text: "Przypomnienie", plan_to: "Komu przypomnieć",
     plan_to_home_or_all: "Kto jest w domu, inaczej wszystkim", plan_to_home: "Kto jest w domu", plan_to_all: "Wszystkim",
@@ -113,6 +113,16 @@ const TEXTS: Record<string, Record<string, string>> = {
 export function t(lang: string, key: string): string {
   const base = (lang || "en").split("-")[0];
   return TEXTS[base]?.[key] ?? TEXTS.en[key] ?? key;
+}
+
+// A moment as the home sees it (Home Assistant's time zone), whatever zone the browser is in.
+export function inZone(iso: string | number | Date, timeZone?: string): { date: string; hour: number; minute: number } {
+  const parts: Record<string, string> = {};
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timeZone || undefined, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  });
+  for (const p of fmt.formatToParts(new Date(iso))) parts[p.type] = p.value;
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour), minute: Number(parts.minute) };
 }
 
 export function when(iso: string | null | undefined, lang: string): string {

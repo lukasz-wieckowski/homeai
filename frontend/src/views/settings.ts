@@ -1,5 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
+import { live } from "lit/directives/live.js";
+import { repeat } from "lit/directives/repeat.js";
 import { element } from "../define";
 import { t, when } from "../i18n";
 import { shared } from "../styles";
@@ -121,6 +123,7 @@ export class HomeAISettings extends LitElement {
   }
 
   private async undo(): Promise<void> {
+    if (!confirm(t(this.hass.language, "undo_confirm"))) return; // an undo can switch a protection back off
     await this.hass.callWS({ type: "homeai/settings/undo" });
     await this.load();
   }
@@ -167,25 +170,25 @@ export class HomeAISettings extends LitElement {
     };
     switch (item.type) {
       case "bool":
-        return html`<input type="checkbox" .checked=${Boolean(v)} @change=${onChange} />`;
+        return html`<input type="checkbox" .checked=${live(Boolean(v))} @change=${onChange} />`;
       case "select":
-        return html`<select @change=${onChange}>${item.options.map((o) => html`<option value=${o} ?selected=${o === v}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
+        return html`<select @change=${onChange}>${item.options.map((o) => html`<option value=${o} .selected=${live(o === v)}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
       case "multiselect":
         return html`<select multiple size=${Math.min(item.options.length, 6)} @change=${onChange}>
-          ${item.options.map((o) => html`<option value=${o} ?selected=${((v as string[]) ?? []).includes(o)}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
+          ${item.options.map((o) => html`<option value=${o} .selected=${live(((v as string[]) ?? []).includes(o))}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
       case "int": case "float": case "duration":
-        return html`<input type="number" style="width: 8em" .value=${String(v)} min=${item.min ?? ""} max=${item.max ?? ""}
+        return html`<input type="number" style="width: 8em" .value=${live(String(v))} min=${item.min ?? ""} max=${item.max ?? ""}
           step=${item.step ?? (item.type === "float" ? "any" : 1)} @change=${onChange} /> ${item.unit ?? ""}`;
       case "time":
-        return html`<input type="time" .value=${String(v)} @change=${onChange} />`;
+        return html`<input type="time" .value=${live(String(v))} @change=${onChange} />`;
       case "json":
-        return html`<textarea @change=${onChange}>${JSON.stringify(v, null, 2)}</textarea>`;
+        return html`<textarea .value=${live(JSON.stringify(v, null, 2))} @change=${onChange}></textarea>`;
       case "entities": case "strings":
-        return html`<textarea @change=${onChange} placeholder="one per line">${((v as string[]) ?? []).join("\n")}</textarea>`;
+        return html`<textarea .value=${live(((v as string[]) ?? []).join("\n"))} @change=${onChange} placeholder="one per line"></textarea>`;
       case "text":
-        return html`<textarea @change=${onChange}>${String(v ?? "")}</textarea>`;
+        return html`<textarea .value=${live(String(v ?? ""))} @change=${onChange}></textarea>`;
       default:
-        return html`<input type="text" .value=${String(v ?? "")} @change=${onChange} />`;
+        return html`<input type="text" .value=${live(String(v ?? ""))} @change=${onChange} />`;
     }
   }
 
@@ -250,7 +253,7 @@ export class HomeAISettings extends LitElement {
       ${this.message ? html`<div class="card muted">${this.message}</div>` : nothing}
       ${this.scopeType !== "global" && !this.scopeRef ? html`<div class="empty">${t(lang, "scope_pick")}</div>` : html`<div class="card">
         ${items.length ? nothing : html`<div class="muted">${t(lang, "scope_none")}</div>`}
-        ${items.map((item) => {
+        ${repeat(items, (item) => `${this.skey}|${item.key}`, (item) => {
           const here = scoped && item.key in this.scopeValues;
           const value = here ? this.scopeValues[item.key] : item.value;
           const count = Object.keys(item.overrides || {}).length;

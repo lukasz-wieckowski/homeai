@@ -86,7 +86,8 @@ homeai_schedule:
   period, and people approve them when the level is *propose and ask*. `set_schedule` is configuration, at least R4
   whatever labels or overrides say: HomeAI only proposes a new week and an administrator approves it.
 - **Its overrides** carry `source: homeai`, a reason people can read (“Vacation”, “Guests”, “Nobody home”) and a stable
-  `override_id` per reason and thermostat, so HomeAI replaces, renews and removes them after a restart. HomeAI
+  `override_id` per reason and thermostat, so HomeAI replaces, renews and removes them after a restart. An
+  override never reaches more than 30 days ahead: a longer trip is sent in pieces and renewed. HomeAI
   removes its override when the reason is gone (the trip was cancelled, someone came home). When a person removes
   HomeAI's override on the thermostat, HomeAI does not set it again for the same reason and treats it like an undo.
 - **Reasons**: a household trip or every resident's own trip at once (`away`), guests (common spaces), working from

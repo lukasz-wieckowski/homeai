@@ -42,6 +42,7 @@ NEAR = timedelta(minutes=1)
 VERIFY_EVERY = timedelta(minutes=5)
 RETRY_AFTER = timedelta(minutes=15)
 GRACE = timedelta(minutes=2)  # an override this fresh may not be listed by the thermostat yet
+MAX_AHEAD = timedelta(days=30)  # a longer reason (a long trip) is sent in 30-day pieces and renewed
 MANUAL_MAX = 1000  # remembered manual changes per thermostat
 OK = ("done", "unverified")
 # A record's status: what became of HomeAI's request.
@@ -315,10 +316,19 @@ class Thermostats:
                 self._recheck = False
                 self._save()
 
+    def _end(self, intent: Intent, now: datetime) -> tuple[datetime, timedelta | None]:
+        """The end sent to the thermostat and, for an end that moves on with time (open-ended or longer than 30
+        days), how much of it must be left before HomeAI renews it."""
+        if intent.rolling:
+            return intent.end, timedelta(hours=int(self.rt.settings.get("heating.rolling_hours"))) / 2
+        if intent.end > now + MAX_AHEAD:
+            return now + MAX_AHEAD, MAX_AHEAD / 2
+        return intent.end, None
+
     def _request(self, intent: Intent, now: datetime, *, follow_up: bool = False) -> ActionRequest:
         t = self.thermostats[intent.entity_id]
         data: dict[str, Any] = {
-            "end": _iso(dt_util.as_local(intent.end)),
+            "end": _iso(dt_util.as_local(self._end(intent, now)[0])),
             "preset_mode": intent.preset,
             "reason": intent.reason[: contract.REASON_MAX],
             "source": contract.SOURCE,
@@ -344,10 +354,10 @@ class Thermostats:
             return False
         if not ((start <= now + NEAR and intent.start <= now + NEAR) or abs(start - intent.start) < NEAR):
             return False
-        if intent.rolling:
-            half = timedelta(hours=int(self.rt.settings.get("heating.rolling_hours"))) / 2
-            return end - now >= half
-        return abs(end - intent.end) < NEAR
+        sent, renew = self._end(intent, now)
+        if renew is not None:
+            return end - now >= renew
+        return abs(end - sent) < NEAR
 
     async def _overrides(self, intents: list[Intent], now: datetime) -> None:
         by_id = {i.override_id: i for i in intents}
@@ -381,7 +391,7 @@ class Thermostats:
                 if self._recheck:
                     await self._start(intent, now)
                 else:
-                    self._remember(record, intent)  # keep the times current without asking again
+                    self._remember(record, intent, now)  # keep the times current without asking again
             elif status == "approved":
                 await self._start(intent, now, follow_up=True)  # allowed: send it with current times
             elif status == "applied":
@@ -391,11 +401,11 @@ class Thermostats:
             else:  # failed, or a request that was withdrawn
                 await self._start(intent, now)
 
-    def _remember(self, record: dict[str, Any], intent: Intent) -> None:
+    def _remember(self, record: dict[str, Any], intent: Intent, now: datetime) -> None:
         record.update(
             preset=intent.preset,
             start=_iso(intent.start),
-            end=_iso(intent.end),
+            end=_iso(self._end(intent, now)[0]),
             reason=intent.reason,
             kind=intent.kind,
             entity_id=intent.entity_id,
@@ -418,7 +428,7 @@ class Thermostats:
             "observed": "observed",
             "denied": "denied",
         }.get(result.status, "failed")
-        self._remember(record, intent)
+        self._remember(record, intent, now)
         record.update(
             domain=request.domain,
             status=status,

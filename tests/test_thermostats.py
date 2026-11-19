@@ -585,3 +585,21 @@ async def test_renewal_that_needs_approval_asks_once(hass: HomeAssistant, freeze
     living = [p for p in approvals.pending() if p["request"]["entity_ids"] == ["climate.living"]]
     assert len(living) == 1 and living[0]["approver"] == "admins"
     assert len(heat.calls_of("add_override")) == 5  # the two others were renewed without asking
+
+
+async def test_long_trip_is_sent_in_pieces(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    freezer.move_to(NOW)
+    rt, heat = await thermostats_rt(hass)
+    module = rt.module("thermostats")
+    rt.module("presence_exceptions").save({"kind": "vacation", "start": "2026-11-18T08:00:00", "end": "2027-02-28"})
+    await module.reconcile()
+    first = [c for c in heat.calls_of("add_override") if c.data["entity_id"] == ["climate.living"]]
+    assert dt_util.parse_datetime(first[0].data["end"]) == dt_util.utcnow() + timedelta(days=30)
+    freezer.tick(timedelta(days=10))
+    await module.reconcile()
+    assert len([c for c in heat.calls_of("add_override") if c.data["entity_id"] == ["climate.living"]]) == 1
+    freezer.tick(timedelta(days=6))
+    await module.reconcile()
+    renewed = [c for c in heat.calls_of("add_override") if c.data["entity_id"] == ["climate.living"]]
+    assert len(renewed) == 2 and renewed[1].data["override_id"] == renewed[0].data["override_id"]
+    assert dt_util.parse_datetime(renewed[1].data["end"]) == dt_util.utcnow() + timedelta(days=30)

@@ -90,3 +90,12 @@ async def test_exclusion_patterns_and_scope(hass: HomeAssistant) -> None:
     assert world.entity("binary_sensor.bedroom_window") is not None
     assert "person.anna" in world.persons
     await world.async_stop()
+
+
+async def test_no_deprecated_registry_use(hass: HomeAssistant, caplog) -> None:
+    """homeai#20: the device registry is iterated, never used as a mapping (deprecated, breaks in 2027.9)."""
+    from .common import setup_homeai
+
+    standard_home(hass)
+    await setup_homeai(hass)
+    assert "device_registry.devices" not in caplog.text

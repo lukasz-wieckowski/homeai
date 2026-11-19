@@ -105,8 +105,9 @@ After the wizard:
 - The **HomeAI** panel appears in the sidebar. Situations, approvals, chat, the plan, presence, learning, rules, the
   journal, all settings and the AI status are there.
 - For the first **14 days** (setting *Observation period*) HomeAI only *observes* the comfort, device and system
-  repair actions it would take on its own: the journal shows what it would have done. Detecting situations,
-  notifications and protective actions on labelled entities work from day one.
+  repair actions it would take or propose on its own: the journal shows what it would have done, and nobody is asked
+  to approve anything. Detecting situations, notifications and protective actions on labelled entities work from day
+  one.
 - HomeAI creates [labels](#labels) you can put on entities and devices to tell it what matters.
 
 ## Adding AI (optional)

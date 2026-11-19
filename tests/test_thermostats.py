@@ -668,3 +668,52 @@ async def test_source_attribute_tells_manual_changes(hass: HomeAssistant, hass_a
     assert module.preset_temperatures("climate.living")["comfort"] == 21.5
     assert module.preset_temperatures("climate.living")["sleep"] == 18.0
     assert "eco" not in module.preset_temperatures("climate.living")
+
+
+async def test_observation_asks_nobody(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    """homeai#18: with the default levels (R2 propose) the observation period notes overrides, it does not ask."""
+    freezer.move_to(NOW)
+    rt, heat = await thermostats_rt(
+        hass, {"policy.observation_days": 14, "policy.autonomy_r2": "propose", "heating.nobody_home_minutes": 30}
+    )
+    module, approvals = rt.module("thermostats"), rt.module("approvals")
+    hass.states.async_set("person.anna", "not_home", {"friendly_name": "Anna"})
+    hass.states.async_set("person.ben", "not_home", {"friendly_name": "Ben"})
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=31))
+    await module.reconcile()
+    assert approvals.pending() == [] and heat.calls == []
+    assert {r["status"] for r in module.records.values()} == {"observed"}
+    assert hass.states.async_all("persistent_notification") == []
+    # once the period is over, HomeAI asks as its level says
+    rt.settings.set("policy.observation_days", 0, confirmed=True)
+    await module.reconcile()
+    assert len(approvals.pending()) == 3
+
+
+async def test_open_ended_overrides_say_so(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    """homeai#19: an open-ended override's end is only a horizon; a thermostat that announces `open_end` is told."""
+    freezer.move_to(NOW)
+    from .home import Home
+
+    _home, heat = heated_home(hass)
+    heat.thermostat(Home(hass), "climate.study", "Bedroom", features=["open_end"])
+    rt = await setup_homeai(hass, {**ACT, "heating.nobody_home_minutes": 30})
+    module = rt.module("thermostats")
+    assert contract.discover(hass, rt.world)["climate.study"].features == {"open_end"}
+    hass.states.async_set("person.anna", "not_home", {"friendly_name": "Anna"})
+    hass.states.async_set("person.ben", "not_home", {"friendly_name": "Ben"})
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=31))
+    await module.reconcile()
+    calls = {c.data["entity_id"][0]: c.data for c in heat.calls_of("add_override")}
+    assert calls["climate.study"]["open_end"] is True
+    assert "open_end" not in calls["climate.living"]  # it does not announce it: never sent there
+    assert {r["status"] for r in module.records.values()} == {"applied"}
+    # a calendar reason has a real end: the thermostat may heat ahead towards it
+    hass.states.async_set("person.anna", "home", {"friendly_name": "Anna"})
+    await hass.async_block_till_done()
+    rt.module("presence_exceptions").save({"kind": "sick", "start": "2026-11-18T08:00:00", "end": "2026-11-19"})
+    await module.reconcile()
+    sick = [c.data for c in heat.calls_of("add_override") if c.data["reason"] == "Sick"]
+    assert sick and all("open_end" not in d for d in sick)

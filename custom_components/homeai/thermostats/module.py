@@ -340,6 +340,8 @@ class Thermostats:
         }
         if intent.start > now + NEAR:
             data["start"] = _iso(dt_util.as_local(intent.start))
+        if intent.rolling and contract.OPEN_END in t.features:
+            data["open_end"] = True  # the end is only a horizon: the thermostat must not heat ahead towards it
         return ActionRequest(
             t.domain,
             "add_override",

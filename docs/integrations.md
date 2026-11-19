@@ -78,6 +78,14 @@ homeai_schedule:
   block, as on any programmable thermostat.
 - `add_override` should accept being called without asking for a response (`SupportsResponse.OPTIONAL`), so
   automations can use it too; HomeAI asks for the response only when the service requires it.
+- **Open end** (extension `open_end`): `add_override` also accepts `open_end: true`. The end is then only a horizon
+  the caller renews while its reason lasts and removes when the reason goes, so the thermostat must not heat ahead
+  towards it (an override always wins for its whole time; after it is removed the schedule simply resumes). HomeAI
+  sends it with its open-ended overrides (nobody home, vacation mode, activity), and only to thermostats that list
+  `open_end` in `homeai_schedule.features`. Overrides with a real end (a trip, guests) leave it out, so the thermostat
+  can heat up in time for the end. `get_schedule` returns `open_end: true` on such overrides; a renewal that only moves
+  the end keeps the override's age (it is not a newer instruction than a person's change). If nobody renews it, the
+  schedule resumes at that end without heating ahead.
 - Between an override and a person's manual change the newer instruction wins. An override sent again **unchanged**
   (same start, end and value) keeps its age; one sent with other times or another value is a new instruction.
 - The thermostat's own changes (schedule blocks, heating ahead, the end of an override) are written with a fresh
@@ -88,6 +96,7 @@ homeai_schedule:
 | Attribute | Meaning |
 |---|---|
 | `homeai_schedule.areas` | the area ids the thermostat heats (a zone of several rooms, or a device without an area) |
+| `homeai_schedule.features` | optional contract extensions the thermostat understands, e.g. `["open_end"]` |
 | `source` | where the current target comes from: `schedule`, `override`, `hold` (a manual change until the next block), `manual` (the schedule is off), `preheat` |
 | `preset_temperatures` | what each preset means in °C, e.g. `{comfort: 21, eco: 18}` |
 
@@ -108,7 +117,8 @@ homeai_schedule:
   home (the person's workplace), sickness (the whole home), nobody home for a while (`eco`, until someone is back),
   vacation mode, and activity in a room (an entity labelled *HomeAI: activity*). Presets and timings are settings
   (section *Heating*). Calendar reasons are sent ahead (*Send overrides ahead*), so the thermostat can heat up in
-  time; reasons without a known end (nobody home, vacation mode, activity) run a few hours ahead and are renewed.
+  time; reasons without a known end (nobody home, vacation mode, activity) run a few hours ahead, are renewed, and
+  carry `open_end` where the thermostat supports it.
 - **Rooms.** The thermostat's rooms come from `homeai_schedule.areas` (`{version: 1, domain: …, areas: [living_room,
   kitchen]}`), else from its entity or device area.
 - **Valve limit.** For activity, HomeAI can lower a valve limit instead of setting an override: a `number` of the

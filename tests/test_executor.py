@@ -139,7 +139,7 @@ async def test_non_admin_cannot_approve_admin_requests(hass: HomeAssistant, hass
     assert await async_setup_component(hass, "homeassistant", {})
     home = standard_home(hass)
     home.person("ben", "Ben", user_id=hass_read_only_user.id)
-    rt = await setup_homeai(hass)
+    rt = await setup_homeai(hass, {"policy.observation_days": 0})  # while observing HomeAI asks nobody
     result = await rt.module("executor").execute(
         ActionRequest("homeassistant", "reload_config_entry", {"entry_id": "x"})
     )
@@ -157,7 +157,7 @@ async def test_approvals_expire(hass: HomeAssistant) -> None:
 
     assert await async_setup_component(hass, "homeassistant", {})
     standard_home(hass)
-    rt = await setup_homeai(hass, {"policy.approval_minutes": 5})
+    rt = await setup_homeai(hass, {"policy.approval_minutes": 5, "policy.observation_days": 0})
     result = await rt.module("executor").execute(
         ActionRequest("homeassistant", "reload_config_entry", {"entry_id": "x"})
     )

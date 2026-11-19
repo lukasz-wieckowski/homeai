@@ -208,7 +208,7 @@ class WorldModel:
             for a in ar.async_get(self.hass).async_list_areas()
         }
         self.devices = {}
-        for d in dr.async_get(self.hass).devices.values():
+        for d in dr.async_get(self.hass).devices:  # iterating gives the entries; `.values()` is deprecated
             if not d.disabled_by and not _own(d):
                 self.devices[d.id] = self._device_info(d)
         self.entities.clear()

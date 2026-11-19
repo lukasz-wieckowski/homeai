@@ -9,7 +9,8 @@ Actors:
   R5 and R6 are never autonomous, except protective actions on entities the administrator labelled.
   Repairs may only run R3 actions from playbooks, within the daily limit. Schedule entries run up to the
   class their author approved. During the first `policy.observation_days` autonomy only observes (R1–R3,
-  repairs included; set the period to 0 to start acting at once).
+  repairs included): it neither acts nor asks anyone, it notes what it would have done or proposed (set the period to
+  0 to start at once).
   The actor × class matrix (`policy.actor_<actor>_r<n>`) gives one actor its own level for a class, e.g. AI
   only proposes device actions while HomeAI's own rules act on them; schedule entries then follow that level.
   A follow-up (HomeAI renewing, shortening or removing a change it already made, such as its own thermostat
@@ -199,14 +200,20 @@ class Policy:
             if self.actor_level(risk, "schedule") is None:
                 return Decision(Verdict.ALLOW, risk, "schedule")
             return self._by_level(self.level(risk, "schedule"), risk)
+        # Observation period: nothing changes in a new home before people have seen HomeAI work, and nobody is asked
+        # either: what HomeAI would do or propose (repairs and system actions included) is only noted. Never stays
+        # never; configuration (R4) proposals still go to an administrator.
+        observing = Risk.R1 <= risk <= Risk.R3 and self.observing(now)
         if risk == Risk.R3:
             if request.actor != "repair" or not request.playbook:
+                if observing:
+                    return Decision(Verdict.OBSERVE, risk, "observing")
                 return Decision(Verdict.ASK, risk, "system_needs_playbook", approver="admins")
-            if not self._repair_budget(now):
+            if not observing and not self._repair_budget(now):
                 return Decision(Verdict.ASK, risk, "repair_limit", approver="admins")
         level = self.level(risk, request.actor)
-        if risk in (Risk.R1, Risk.R2, Risk.R3) and self.observing(now) and level in ("act", "act_tell"):
-            level = "observe"  # repairs too: nothing changes in a new home before people have seen HomeAI work
+        if observing and level != "never":
+            level = "observe"
         learning = self.rt.module("learning")
         if level in ("act", "act_tell") and learning is not None and learning.restricted(request):
             level = "propose"  # people undid this too often

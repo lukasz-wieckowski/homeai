@@ -3,6 +3,20 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1]
+
+Fixes from testing HomeAI 1.3.0 together with Heat Zones on a copy of a real home.
+
+### Fixed
+- The observation period asks nobody: what HomeAI would only propose (R1–R3, its own rules, AI and system actions
+  without a playbook) is noted in the journal like everything else, instead of becoming approval requests and
+  phone notifications right after installing (#18). *Never* stays never; configuration (R4) is still proposed.
+- Open-ended heating overrides (nobody home, vacation mode, activity) no longer make the thermostat heat ahead
+  towards their end, which is only a horizon HomeAI renews: they are sent with `open_end: true` to thermostats that
+  announce the `open_end` extension in `homeai_schedule.features` (#19, agreed with Heat Zones, heat-zones#2).
+- The device registry is iterated instead of being used as a mapping, which Home Assistant reports as deprecated and
+  stops supporting in 2027.9 (#20).
+
 ## [1.3.0]
 
 HomeAI and heating: thermostats that speak HomeAI's schedule contract keep their own weekly schedule, and HomeAI

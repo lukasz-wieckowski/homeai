@@ -53,6 +53,15 @@ async def test_autonomy_levels_and_observation(hass: HomeAssistant) -> None:
     rt.settings.set("policy.observation_days", 14, confirmed=True)
     assert policy.observing()
     assert (await policy.decide(light)).verdict is Verdict.OBSERVE
+    # what HomeAI would only propose is noted too: nobody is asked while it is observing
+    assert (await policy.decide(plug)).verdict is Verdict.OBSERVE
+    ai_plug = ActionRequest("switch", "turn_off", entity_ids=["switch.coffee"], actor="ai")
+    assert (await policy.decide(ai_plug)).verdict is Verdict.OBSERVE
+    rt.settings.set("policy.autonomy_r2", "never", confirmed=True)
+    assert (await policy.decide(plug)).verdict is Verdict.DENY
+    # configuration is still proposed to an administrator
+    config = ActionRequest("config", "automation_save", {"id": "x", "config": {}})
+    assert (await policy.decide(config)).verdict is Verdict.ASK
     assert not policy.observing(dt_util.utcnow() + timedelta(days=15))
 
 
@@ -61,13 +70,15 @@ async def test_system_actions_only_from_playbooks_within_limit(hass: HomeAssista
     rt = await setup_homeai(hass, {"policy.repairs_per_day": 2})
     policy = rt.module("policy")
     plain = ActionRequest("homeassistant", "reload_config_entry", {"entry_id": "x"})
-    assert (await policy.decide(plain)).verdict is Verdict.ASK
+    # in the observation period HomeAI asks nobody: a system action without a playbook is only noted
+    assert (await policy.decide(plain)).verdict is Verdict.OBSERVE
     repair = ActionRequest(
         "homeassistant", "reload_config_entry", {"entry_id": "x"}, actor="repair", playbook="reload_entry"
     )
     # in the observation period repairs only observe too, like every other autonomous action
     assert (await policy.decide(repair)).verdict is Verdict.OBSERVE
     rt.settings.set("policy.observation_days", 0, confirmed=True)
+    assert (await policy.decide(plain)).verdict is Verdict.ASK
     assert (await policy.decide(repair)).verdict is Verdict.ALLOW
     policy.count_repair()
     policy.count_repair()

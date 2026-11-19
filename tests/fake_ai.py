@@ -22,6 +22,8 @@ class FakeProvider:
     async def complete(self, request: AIRequest) -> AIResponse:
         self.requests.append(request)
         answer = self.answers.pop(0) if self.answers else {"text": "ok"}
+        if callable(answer):  # an answer that depends on what the model was sent (e.g. a code from a tool result)
+            answer = answer(request)
         if isinstance(answer, Exception):
             raise answer
         if isinstance(answer, dict) and "tool_calls" in answer:
@@ -58,6 +60,19 @@ class FakeProvider:
         ]
 
 
+def last_tool_result(request: AIRequest) -> dict[str, Any]:
+    """The newest tool result the model was sent, parsed."""
+    import json
+
+    for message in reversed(request.messages):
+        content = message.get("content")
+        if message.get("role") == "user" and isinstance(content, list):
+            for block in reversed(content):
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    return json.loads(block["content"])
+    return {}
+
+
 def tier(t: str = "p1", model: str = "claude-haiku-5-5", **kw: Any) -> dict[str, Any]:
     return {"tier": t, "provider": "anthropic", "model": model, "api_key": "sk-test", **kw}
 
@@ -67,4 +82,4 @@ def install(rt: Any, tier_name: str, provider: FakeProvider, index: int = 0) -> 
     rt.module("ai")._providers[cfg.subentry_id] = provider
 
 
-__all__ = ["AIError", "FakeProvider", "install", "tier"]
+__all__ = ["AIError", "FakeProvider", "install", "last_tool_result", "tier"]

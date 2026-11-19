@@ -185,3 +185,39 @@ async def test_backup_never_succeeded_says_so(hass: HomeAssistant) -> None:
     await settle(hass, rt)
     [s] = [s for s in rt.module("situations").open() if s.kind == "backup_stale"]
     assert s.description("en").startswith("Last successful automatic backup: ")
+
+
+def test_backup_schedule_hours() -> None:
+    from custom_components.homeai.signals.system import schedule_hours
+
+    assert schedule_hours("daily", []) == 24
+    assert schedule_hours("never", []) == 0
+    assert schedule_hours("custom_days", ["mon", "thu"]) == 96  # Thursday to Monday is the longest gap
+    assert schedule_hours("custom_days", ["sun"]) == 168
+    assert schedule_hours("custom_days", []) == 0
+
+
+async def test_backup_age_follows_the_backup_schedule(hass: HomeAssistant) -> None:
+    """A twice-a-week schedule is not 'stale' after 30 hours, and switched-off automatic backups are never retried."""
+    home = standard_home(hass)
+    home.entity(
+        "sensor.backup_last_successful",
+        (dt_util.utcnow() - timedelta(days=3)).isoformat(),
+        platform="backup",
+        translation_key="last_successful_automatic_backup",
+        category="diagnostic",
+    )
+    rt = await setup_homeai(hass)
+    hub = rt.module("signals")
+
+    def stale() -> bool:
+        return any(s.kind == "backup_stale" for s in hub.evaluate().values() if s) or any(
+            s.kind == "backup_stale" for s in hub.signals.values()
+        )
+
+    hub.system.backup_every_hours = 96.0  # Monday and Thursday
+    assert not stale()
+    hub.system.backup_every_hours = 0.0  # automatic backups off in Home Assistant
+    assert not stale()
+    hub.system.backup_every_hours = 24.0
+    assert stale()

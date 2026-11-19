@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .entity import HomeAIEntity
 
@@ -94,6 +95,13 @@ class AICostSensor(HomeAIEntity, SensorEntity):
     def native_value(self) -> float:
         ledger = self.rt.module("ai").ledger
         return round(ledger.today() if self.translation_key == "ai_cost_today" else ledger.month(), 4)
+
+    @property
+    def last_reset(self) -> datetime:
+        """Start of the local day or month the total counts from (a `total` that starts over needs it; without
+        it the recorder took the drop at midnight for negative spend)."""
+        start = dt_util.start_of_local_day()
+        return start.replace(day=1) if self.translation_key == "ai_cost_month" else start
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

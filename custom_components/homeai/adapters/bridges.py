@@ -3,13 +3,15 @@
 A bridge is a connectivity entity of a device that other devices connect through (`via_device`), the
 Zigbee2MQTT bridge state, or an entity the administrator listed in `adapters.bridge_entities`. Its signal
 suppresses `via:<hub device>` (and `zigbee` for Zigbee2MQTT), so unavailable devices behind it are folded in.
-Repair: restart the Zigbee2MQTT add-on when its slug is set, otherwise reload the hub's integration.
+Repair: restart the Zigbee2MQTT add-on when its slug is set (Supervisor installations), else press the hub's own
+restart button while it still works (any installation), otherwise reload the hub's integration.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from ..repair.restart import restart_button
 from ..signals.base import Category, DetectionContext, Detector, Need, Signal
 from ..signals.detectors.util import held_for, setting, state
 from ..world import Role
@@ -60,8 +62,10 @@ class BridgeDetector(Detector):
                 suppresses.add("zigbee")
             repair: dict[str, Any] | None = None
             addon = ctx.settings.get("adapters.zigbee2mqtt_addon")
-            if z2m and addon:
+            if z2m and addon and ctx.hass.services.has_service("hassio", "addon_restart"):
                 repair = {"playbook": "restart_addon", "addon": addon}
+            elif restart_button(ctx.hass, device_id):
+                repair = {"playbook": "press_restart", "device_id": device_id}
             elif (
                 device_id
                 and (entry := ctx.world.devices[device_id].config_entry_id)

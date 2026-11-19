@@ -4,7 +4,7 @@ blueprint:
     Shows HomeAI notifications (ladder steps with the event channel) on an AWTRIX 3 clock over MQTT and removes
     them when the situation is acknowledged or resolved.
   domain: automation
-  source_url: https://github.com/THEFIX-PL/homeai/blob/main/blueprints/automation/homeai/notification_to_awtrix.yaml
+  source_url: https://github.com/lukasz-wieckowski/homeai/blob/main/blueprints/automation/homeai/notification_to_awtrix.yaml
   input:
     prefix:
       name: AWTRIX MQTT prefix

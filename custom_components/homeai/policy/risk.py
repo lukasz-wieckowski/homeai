@@ -2,9 +2,13 @@
 
 R0 read · R1 reversible comfort · R2 devices · R3 system · R4 configuration · R5 security · R6 destructive.
 The class comes from the domain and service (or the administrator's `policy.risk_by_service` for a domain or a
-`domain.service`), the entity's device class, the administrator's class for a label (`policy.risk_by_label`,
-the highest among the entity's labels), then the override for an entity, device, area or floor
-(`policy.risk_override`). The highest class among the targets wins.
+`domain.service`), the entity's device class, the device it controls, the administrator's class for a label
+(`policy.risk_by_label`, the highest among the entity's labels), then the override for an entity, device, area or
+floor (`policy.risk_override`). The highest class among the targets wins.
+
+A control entity (number, select, switch, button, text, time…) is never lighter than the device it belongs to:
+the valve position of a thermostat counts as the thermostat, a lock's auto-relock time as the lock. A device's
+own configuration entities (`entity_category: config`) are at least R2.
 """
 
 from __future__ import annotations
@@ -143,6 +147,24 @@ SERVICE_RISK: dict[tuple[str, str], Risk] = {
 
 SECURITY_COVER_CLASSES = frozenset({"garage", "gate", "door"})
 
+# Entities that adjust a device rather than being the device: they take the class of the device's main entities.
+CONTROL_DOMAINS = frozenset({"number", "select", "switch", "button", "text", "time", "date", "datetime"})
+# The main entity domains that make a device heavier than its controls on their own.
+DEVICE_DOMAINS = frozenset(
+    {
+        "climate",
+        "water_heater",
+        "valve",
+        "cover",
+        "vacuum",
+        "lawn_mower",
+        "lock",
+        "alarm_control_panel",
+        "camera",
+        "siren",
+    }
+)
+
 # Services that make things safer: allowed as protective actions on entities labelled by the administrator.
 PROTECTIVE_SERVICES: frozenset[tuple[str, str]] = frozenset(
     {
@@ -195,10 +217,12 @@ def classify(
         e_domain = entity_id.split(".", 1)[0]
         risk = _configured(e_domain, service, by_service) if domain == "homeassistant" and service in _GENERIC else base
         info = world.entity(entity_id) if world is not None else None
-        if e_domain == "cover" and info is not None and info.device_class in SECURITY_COVER_CLASSES:
+        if e_domain == "cover" and _device_class(world, entity_id, info) in SECURITY_COVER_CLASSES:
             risk = max(risk, Risk.R5)
-        if e_domain == "switch" and world is not None and _is_lock_like(world, entity_id):
-            risk = max(risk, Risk.R5)
+        if e_domain == "button" and _device_class(world, entity_id, info) == "restart":
+            risk = max(risk, Risk.R3)  # restarting a device or hub is a system action
+        if e_domain in CONTROL_DOMAINS and world is not None:
+            risk = max(risk, _device_risk(world, entity_id, service, by_service))
         if info is not None and by_label:
             labelled = [r for label in info.labels if (r := Risk.parse(by_label.get(label))) is not None]
             if labelled:
@@ -222,12 +246,37 @@ def _configured(domain: str, service: str, by_service: dict[str, str]) -> Risk:
 _GENERIC = frozenset({"turn_on", "turn_off", "toggle"})
 
 
-def _is_lock_like(world: WorldModel, entity_id: str) -> bool:
-    """A switch on a device that also has a lock or alarm entity (relay for a gate, door opener)."""
-    info = world.entity(entity_id)
-    if info is None or not info.device_id:
-        return False
-    return any(e.split(".", 1)[0] in ("lock", "alarm_control_panel") for e in world.of_device(info.device_id))
+def _device_class(world: WorldModel | None, entity_id: str, info: object | None) -> str | None:
+    """The entity's device class from the world model, or from its state when the world model leaves it out."""
+    if info is not None:
+        return getattr(info, "device_class", None)
+    state = world.state(entity_id) if world is not None else None
+    return state.attributes.get("device_class") if state is not None else None
+
+
+def _device_risk(world: WorldModel, entity_id: str, service: str, by_service: dict[str, str]) -> Risk:
+    """The class of the device a control entity belongs to, from the entity registry (all of the device's entities,
+    not only those the world model watches); at least R2 for the device's own configuration entities."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(world.hass)
+    entry = registry.async_get(entity_id)
+    if entry is None or not entry.device_id:
+        return Risk.R0
+    risk = Risk.R2 if entry.entity_category is not None and str(entry.entity_category) == "config" else Risk.R0
+    for sibling in er.async_entries_for_device(registry, entry.device_id):
+        s_domain = sibling.entity_id.split(".", 1)[0]
+        if s_domain not in DEVICE_DOMAINS:
+            continue
+        s_risk = DOMAIN_RISK.get(s_domain, Risk.R2)
+        if (r := Risk.parse(by_service.get(s_domain))) is not None:
+            s_risk = r
+        if s_domain == "cover" and _device_class(world, sibling.entity_id, world.entity(sibling.entity_id)) in (
+            SECURITY_COVER_CLASSES
+        ):
+            s_risk = Risk.R5
+        risk = max(risk, s_risk)
+    return risk
 
 
 def is_protective(domain: str, service: str, entity_ids: list[str] | tuple[str, ...], world: WorldModel) -> bool:

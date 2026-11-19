@@ -691,6 +691,28 @@
     "no_areas": {
       "title": "HomeAI does not know your rooms",
       "description": "There are no areas in Home Assistant. With areas HomeAI says where things happen, groups related problems and targets actions; add them in Settings → Areas."
+    },
+    "finish_setup": {
+      "title": "Finish setting up HomeAI",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Language and privacy",
+            "description": "HomeAI's configuration entry was not made by its setup wizard (for example, it was left by an earlier integration that used the name HomeAI). HomeAI runs with defaults: language from Home Assistant, standard privacy, and people's roles from their Home Assistant accounts. Choose them now.",
+            "data": {
+              "language": "Language of HomeAI's messages",
+              "privacy": "Data sent to cloud AI"
+            }
+          },
+          "people": {
+            "title": "People",
+            "description": "Choose each person's role. Administrators approve risky actions and configuration changes; members get notifications; guests and ignored people are not tracked as residents. People: {people}"
+          }
+        },
+        "abort": {
+          "not_loaded": "HomeAI is not loaded. Reload it and try again."
+        }
+      }
     }
   }
 }

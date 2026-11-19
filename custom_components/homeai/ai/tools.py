@@ -12,7 +12,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
-from ..policy import ActionRequest
+from ..policy import ActionRequest, Decision, Risk, Verdict
 from .privacy import Privacy, clean
 from .providers.base import ToolSpec
 
@@ -27,6 +27,12 @@ class ToolContext:
     user_id: str | None = None
     situation_id: str | None = None
     actions: list[dict[str, Any]] = field(default_factory=list)
+    # HomeAI's own conversations: which thread, which of the person's messages this is and what they said — a
+    # confirmation code is redeemed only in a later message that is itself a yes. None elsewhere (other assistants
+    # using HomeAI's tools): there a needed yes becomes an approval addressed to the person.
+    conversation_id: str | None = None
+    turn: int | None = None
+    said: str = ""
 
 
 Handler = Callable[[ToolContext, dict[str, Any]], Awaitable[Any]]
@@ -174,14 +180,40 @@ async def get_plan(ctx: ToolContext, args: dict[str, Any]) -> Any:
 
 
 # ——— Changing (through the executor) ———
-async def _execute(ctx: ToolContext, request: ActionRequest) -> dict[str, Any]:
-    request.actor = "person" if ctx.actor == "person" else "ai"
-    request.user_id = ctx.user_id if ctx.actor == "person" else None
+async def _execute(ctx: ToolContext, request: ActionRequest, confirmation_id: Any = None) -> dict[str, Any]:
+    """Run an action for a tool. A model can never confirm on the person's behalf: `confirmed` is set only when a
+    confirmation code is redeemed after the person's own yes (see actions/confirmations.py)."""
+    person = ctx.actor == "person"
+    request.actor = "person" if person else "ai"
+    request.user_id = ctx.user_id if person else None
     request.situation_id = request.situation_id or ctx.situation_id
-    result = await ctx.rt.module("executor").execute(request)
-    record = {"what": ctx.rt.module("executor").describe(request), **result.as_dict()}
-    ctx.actions.append(record)
+    request.confirmed = False
+    executor = ctx.rt.module("executor")
+    if person and confirmation_id:
+        request.confirmed = executor.confirmations.redeem(
+            str(confirmation_id),
+            executor.fingerprint(request),
+            user_id=ctx.user_id,
+            conversation_id=ctx.conversation_id,
+            turn=ctx.turn,
+            said=ctx.said,
+            lang=ctx.rt.language,
+        )
+    result = await executor.execute(request)
+    record = {"what": executor.describe(request), **result.as_dict()}
     out: dict[str, Any] = {"status": result.status, "risk": result.risk, "message": result.message}
+    if result.status == "needs_confirmation" and person:
+        if ctx.turn is not None:
+            out["confirmation_id"] = executor.confirmations.issue(
+                executor.fingerprint(request), user_id=ctx.user_id, conversation_id=ctx.conversation_id, turn=ctx.turn
+            )
+        elif result.risk < Risk.R6 and (approvals := ctx.rt.module("approvals")) is not None:
+            # no conversation to ask in: the person confirms with Approve on their phone or in the panel
+            decision = Decision(Verdict.ASK, Risk(result.risk), "person_confirm", approver="requester")
+            item = await approvals.create(request, decision, executor.describe(request))
+            out.update(status="pending_approval", approval_id=item["id"])
+            record.update(status="pending_approval", approval_id=item["id"])
+    ctx.actions.append(record)
     if result.approval_id:
         out["approval_id"] = result.approval_id
     if result.data is not None:
@@ -199,8 +231,8 @@ async def call_service(ctx: ToolContext, args: dict[str, Any]) -> Any:
             dict(args.get("data") or {}),
             entity_ids=list(args.get("entity_ids") or []),
             reason=str(args.get("reason") or ""),
-            confirmed=bool(args.get("confirmed")),
         ),
+        args.get("confirmation_id"),
     )
 
 
@@ -212,8 +244,8 @@ async def edit_config(ctx: ToolContext, args: dict[str, Any]) -> Any:
             str(args.get("operation") or ""),
             dict(args.get("data") or {}),
             reason=str(args.get("reason") or ""),
-            confirmed=bool(args.get("confirmed")),
         ),
+        args.get("confirmation_id"),
     )
 
 
@@ -335,16 +367,17 @@ TOOLS: dict[str, Tool] = {
         Tool(
             "call_service",
             "Run a Home Assistant action (service) through HomeAI's policy. The result status is done, unverified, "
-            "needs_confirmation (ask the person, then call again with confirmed true), pending_approval (someone was "
-            "asked), observed (HomeAI is only observing), denied or failed. Never say something was done unless the "
-            "status is done or unverified.",
+            "needs_confirmation (ask the person and end your turn; when they answer yes in their next message, call "
+            "the same action again with the confirmation_id you got), pending_approval (someone was asked, possibly "
+            "the person on their phone), observed (HomeAI is only observing), denied or failed. Never say something "
+            "was done unless the status is done or unverified.",
             _obj(
                 {
                     "service": STR,
                     "entity_ids": STRS,
                     "data": {"type": "object"},
                     "reason": STR,
-                    "confirmed": {"type": "boolean"},
+                    "confirmation_id": STR,
                 },
                 ["service", "reason"],
             ),
@@ -358,7 +391,7 @@ TOOLS: dict[str, Tool] = {
             "item_id, fields), label_save, area_save, dashboard_get/save. Saves need an administrator; deletions are "
             "destructive.",
             _obj(
-                {"operation": STR, "data": {"type": "object"}, "reason": STR, "confirmed": {"type": "boolean"}},
+                {"operation": STR, "data": {"type": "object"}, "reason": STR, "confirmation_id": STR},
                 ["operation", "data", "reason"],
             ),
             edit_config,

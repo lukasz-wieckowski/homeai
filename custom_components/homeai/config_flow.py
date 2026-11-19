@@ -34,6 +34,7 @@ class HomeAIConfigFlow(ConfigFlow, domain=DOMAIN):
     """Set up HomeAI. Only one instance is allowed (`single_config_entry` in the manifest)."""
 
     VERSION = 1
+    MINOR_VERSION = 2  # 1.2: entries the wizard did not make are cleaned up and flagged (see __init__.py)
 
     def __init__(self) -> None:
         self._initial: dict[str, Any] = {"overrides": {}}
@@ -61,9 +62,9 @@ class HomeAIConfigFlow(ConfigFlow, domain=DOMAIN):
         persons = self._persons()
         if user_input is not None:
             for entity_id, _name in persons:
+                # every role is stored, members too: without a stored role an administrator's person is an admin
                 role = user_input.get(entity_id, "member")
-                if role != "member":
-                    self._initial["overrides"][f"person:{entity_id}"] = {"presence.role": role}
+                self._initial["overrides"][f"person:{entity_id}"] = {"presence.role": role}
             return self._finish()
         schema = {
             vol.Required(entity_id, default=await self._default_role(entity_id)): _select(list(ROLES), "role")

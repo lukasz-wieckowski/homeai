@@ -121,3 +121,31 @@ async def test_tier_connection_limits(hass: HomeAssistant) -> None:
     assert response.text == "b" and len(first.requests) == 1
     assert second.requests[0].max_tokens == 4096 and second.requests[0].timeout == 90
     assert ai.status[ai.tiers["p1"][0].subentry_id] == "budget"
+
+
+def test_pruned_chat_history_drops_thinking() -> None:
+    """Thinking blocks are bound to the history before them: once old turns go, the kept turns lose theirs."""
+    from custom_components.homeai.ai.missions.chat import _prune
+
+    def turn(n: int) -> list[dict]:
+        return [
+            {"role": "user", "content": f"question {n}"},
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": "", "signature": f"s{n}"},
+                    {"type": "tool_use", "id": f"t{n}", "name": "get_state", "input": {}},
+                ],
+            },
+            {"role": "user", "content": [{"type": "tool_result", "tool_use_id": f"t{n}", "content": "{}"}]},
+            {"role": "assistant", "content": [{"type": "redacted_thinking", "data": "x"}]},
+        ]
+
+    history = [m for n in range(3) for m in turn(n)]
+    assert _prune(history, 3) is history  # nothing dropped: append-only, thinking kept
+    kept = _prune(history, 2)
+    assert kept[0]["content"] == "question 1" and len(kept) == 8
+    blocks = [b for m in kept if isinstance(m["content"], list) for b in m["content"]]
+    assert not [b for b in blocks if b["type"] in ("thinking", "redacted_thinking")]
+    assert any(b["type"] == "tool_use" for b in blocks)
+    assert kept[3]["content"] == [{"type": "text", "text": "…"}]

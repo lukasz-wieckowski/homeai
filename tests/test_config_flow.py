@@ -62,3 +62,56 @@ async def test_options_quick_settings(hass: HomeAssistant) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.runtime_data.settings.get("general.language") == "pl"
+
+
+async def test_entry_not_made_by_the_wizard_is_cleaned_and_finished_in_repairs(
+    hass: HomeAssistant, hass_admin_user, hass_read_only_user
+) -> None:
+    """An entry left by an earlier integration with the same domain: its foreign data is dropped, people's roles
+    follow their Home Assistant accounts until chosen, and Repairs asks the wizard's questions."""
+    from homeassistant.helpers import issue_registry as ir
+    from homeassistant.setup import async_setup_component
+
+    from custom_components.homeai.const import CONF_NEEDS_SETUP
+    from custom_components.homeai.repairs import ISSUE_FINISH_SETUP
+
+    from .home import standard_home
+
+    assert await async_setup_component(hass, "repairs", {})
+    home = standard_home(hass)
+    home.person("anna", "Anna", user_id=hass_admin_user.id)
+    home.person("ben", "Ben", user_id=hass_read_only_user.id)
+    entry = MockConfigEntry(domain=DOMAIN, data={"api_key": "sk-old", "something": 1}, version=1, minor_version=1)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.minor_version == 2
+    assert "api_key" not in entry.data and "something" not in entry.data and entry.data[CONF_NEEDS_SETUP]
+    rt = entry.runtime_data
+    assert rt.presence.role("person.anna") == "admin" and rt.presence.role("person.ben") == "member"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_FINISH_SETUP)
+    assert issue is not None and issue.is_fixable
+
+    from custom_components.homeai.repairs import async_create_fix_flow
+
+    flow = await async_create_fix_flow(hass, ISSUE_FINISH_SETUP, issue.data)
+    flow.hass = hass
+    result = await flow.async_step_init()
+    assert result["step_id"] == "init"
+    result = await flow.async_step_init({"language": "pl", "privacy": "minimal"})
+    assert result["step_id"] == "people"
+    result = await flow.async_step_people({"person.anna": "admin", "person.ben": "guest"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert rt.settings.get("general.language") == "pl" and rt.settings.get("privacy.level") == "minimal"
+    assert rt.presence.role("person.ben") == "guest"
+    assert CONF_NEEDS_SETUP not in entry.data
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_FINISH_SETUP) is None
+
+
+async def test_wizard_entries_are_not_flagged(hass: HomeAssistant) -> None:
+    from custom_components.homeai.const import CONF_NEEDS_SETUP
+
+    from .common import setup_homeai
+
+    rt = await setup_homeai(hass)
+    assert CONF_NEEDS_SETUP not in rt.entry.data and rt.entry.minor_version == 2

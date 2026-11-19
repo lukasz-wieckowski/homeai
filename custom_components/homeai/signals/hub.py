@@ -165,7 +165,17 @@ class SignalHub:
         refresh = timedelta(seconds=int(self.rt.settings.get("detectors.system_refresh")))
         if self._system_due is None or now >= self._system_due:
             self._system_due = now + refresh
-            await async_refresh(self.hass, self.system)
+            event = next(
+                (
+                    st.state
+                    for e in self.rt.world.entities.values()
+                    if e.platform == "backup"
+                    and e.translation_key == "automatic_backup_event"
+                    and (st := self.hass.states.get(e.entity_id)) is not None
+                ),
+                None,
+            )
+            await async_refresh(self.hass, self.system, event)
         self.evaluate({d.key for d in self.detectors})
 
     # ——— Evaluation ———

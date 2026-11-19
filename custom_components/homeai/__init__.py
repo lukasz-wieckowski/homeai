@@ -17,7 +17,15 @@ from homeassistant.helpers.typing import ConfigType
 
 from .api.services import async_register_services
 from .api.websocket import async_register as async_register_websocket
-from .const import CONF_SYSTEM_USER, DOMAIN
+from .const import (
+    CONF_INITIAL_APPLIED,
+    CONF_INITIAL_SETTINGS,
+    CONF_INSTALLED_AT,
+    CONF_NEEDS_SETUP,
+    CONF_SYSTEM_USER,
+    DOMAIN,
+    LOGGER,
+)
 from .platforms import PLATFORMS
 from .runtime import HomeAIRuntime
 
@@ -43,11 +51,32 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+ENTRY_KEYS = (CONF_INITIAL_SETTINGS, CONF_INITIAL_APPLIED, CONF_SYSTEM_USER, CONF_INSTALLED_AT, CONF_NEEDS_SETUP)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """1.1 → 1.2. An entry HomeAI's wizard did not make (it has no wizard answers — e.g. one left by an earlier
+    integration with the same domain) keeps only HomeAI's own keys, so foreign data such as an old API key does not
+    linger in it, and is flagged so Repairs offers to finish the setup."""
+    if entry.version > 1:
+        return False
+    if entry.minor_version < 2:
+        data = {k: v for k, v in entry.data.items() if k in ENTRY_KEYS}
+        if CONF_INITIAL_SETTINGS not in entry.data:
+            data[CONF_NEEDS_SETUP] = True
+            LOGGER.warning("HomeAI's config entry was not made by its setup wizard; finish the setup in Repairs")
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=2)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: HomeAIConfigEntry) -> bool:
     """Set up HomeAI from a config entry."""
     runtime = HomeAIRuntime(hass, entry)
     entry.runtime_data = runtime
     await runtime.async_setup()
+    from .repairs import async_check_setup
+
+    async_check_setup(hass, runtime)
     runtime.subentry_snapshot = _subentries(entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     from .panel import async_setup_panel

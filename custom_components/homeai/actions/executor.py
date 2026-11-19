@@ -10,10 +10,13 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from dataclasses import asdict, dataclass, field
+import json
 from typing import Any
 
+from homeassistant.const import ATTR_AREA_ID, ATTR_DEVICE_ID, ATTR_ENTITY_ID, ATTR_FLOOR_ID, ATTR_LABEL_ID
 from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.target import TargetSelection, async_extract_referenced_entity_ids
 from homeassistant.util import dt as dt_util, ulid as ulid_util
 
 from .. import i18n
@@ -53,6 +56,10 @@ ON_OFF_DOMAINS = frozenset(
     }
 )
 UNDO_PREFIX = "homeai_undo_"
+# Target fields of a service call. The executor resolves them to entities itself and calls the service with that
+# exact list, so the policy judges every entity the call can reach.
+SELECTORS = (ATTR_ENTITY_ID, ATTR_DEVICE_ID, ATTR_AREA_ID, ATTR_FLOOR_ID, ATTR_LABEL_ID)
+CONFIG_UNDO = 50  # configuration changes that can still be undone
 
 
 @dataclass(slots=True)
@@ -82,8 +89,10 @@ class Executor:
         self._undo: dict[str, str] = {}  # action id → scene entity
         self._config_undo: dict[str, tuple[str, dict[str, Any], Any]] = {}  # action id → (operation, data, previous)
         from .config import ConfigEditor
+        from .confirmations import Confirmations
 
         self.config = ConfigEditor(runtime)
+        self.confirmations = Confirmations()
 
     async def async_setup(self) -> None:
         return None
@@ -93,21 +102,41 @@ class Executor:
 
     # ——— Targets ———
     def targets(self, request: ActionRequest) -> list[str]:
-        """Entity ids the request touches, including those named in data and area/device targets."""
+        """Every entity the request can reach: named ones and those behind device, area, floor and label targets.
+
+        Resolved from Home Assistant's registries the way a service call resolves them (groups expanded; through a
+        device, area, floor or label only primary, visible entities, and for a domain's own services only entities of
+        that domain — `homeassistant.*` services reach every domain). The world model is not used here: it may leave
+        entities out (scope, hidden, ignored), and the policy must see everything the call would touch.
+        """
         ids: list[str] = list(request.entity_ids)
-        data = request.data
-        for key in ("entity_id",):
-            value = data.get(key)
-            if isinstance(value, str) and value not in ("all", "none"):
-                ids += [v.strip() for v in value.split(",") if v.strip()]
-            elif isinstance(value, list):
-                ids += [v for v in value if isinstance(v, str)]
-        world = self.rt.world
-        for area in _as_list(data.get("area_id")):
-            ids += [e for e in world.in_area(area) if e.split(".", 1)[0] == request.domain]
-        for device in _as_list(data.get("device_id")):
-            ids += [e for e in world.of_device(device) if e.split(".", 1)[0] == request.domain]
-        return list(dict.fromkeys(ids))
+        if request.domain == "config":
+            return list(dict.fromkeys(ids))
+        selectors: dict[str, Any] = {}
+        for key in SELECTORS:
+            value = request.data.get(key)
+            if isinstance(value, str):
+                value = [v.strip() for v in value.split(",") if v.strip()]
+            if isinstance(value, list) and (items := [v for v in value if isinstance(v, str) and v]):
+                selectors[key] = items
+        if not selectors:
+            return list(dict.fromkeys(ids))
+        found = async_extract_referenced_entity_ids(self.hass, TargetSelection(selectors), expand_group=True)
+        indirect = found.indirectly_referenced
+        if request.domain != "homeassistant":
+            indirect = {e for e in indirect if e.split(".", 1)[0] == request.domain}
+        return list(dict.fromkeys([*ids, *sorted(found.referenced), *sorted(indirect)]))
+
+    def fingerprint(self, request: ActionRequest) -> str:
+        """The action as the policy judges it: service, data without target fields and every entity it reaches."""
+        data = {k: v for k, v in request.data.items() if k not in SELECTORS}
+        return json.dumps(
+            [request.domain, request.service, sorted(self.targets(request)), data], sort_keys=True, default=str
+        )
+
+    @staticmethod
+    def _has_selectors(request: ActionRequest) -> bool:
+        return any(request.data.get(key) not in (None, "", []) for key in SELECTORS)
 
     def describe(self, request: ActionRequest) -> str:
         if request.domain == "config":
@@ -131,7 +160,15 @@ class Executor:
     # ——— Running ———
     async def execute(self, request: ActionRequest) -> ActionResult:
         policy = self.rt.module("policy")
+        named = request.data.get(ATTR_ENTITY_ID)
+        if "all" in [*request.entity_ids, *([named] if isinstance(named, str) else named or [])]:
+            # `entity_id: all` would reach every entity of the domain
+            return self._finish(request, ActionResult("invalid", int(policy.risk(request)), "match_all_not_supported"))
+        targeted = self._has_selectors(request)
         request.entity_ids = self.targets(request)
+        if targeted and not request.entity_ids:
+            # a device, area, floor or label with nothing to act on: refuse rather than judge an empty call
+            return self._finish(request, ActionResult("invalid", int(policy.risk(request)), "no_targets"))
         problem = self._validate(request)
         if problem:
             return self._finish(request, ActionResult("invalid", int(policy.risk(request)), problem))
@@ -185,6 +222,8 @@ class Executor:
         return False
 
     def context(self, request: ActionRequest) -> Context:
+        if request.actor == "person" and request.approved_by_user:
+            return Context(user_id=request.approved_by_user)  # approved by an administrator: their permissions apply
         if request.actor == "person" and request.user_id:
             return Context(user_id=request.user_id)
         return Context(user_id=self.rt.system_user_id)
@@ -199,9 +238,10 @@ class Executor:
         if Risk.R1 <= decision.risk <= Risk.R2 and request.entity_ids and self.rt.settings.get("executor.undo"):
             undo = await self._snapshot(action_id, request.entity_ids, ctx)
         before = {e: s.state for e in request.entity_ids if (s := self.hass.states.get(e)) is not None}
-        data = dict(request.data)
-        if request.entity_ids and not any(k in data for k in ("entity_id", "area_id", "device_id")):
-            data["entity_id"] = request.entity_ids
+        # call exactly what the policy judged: the resolved entities instead of device/area/floor/label targets
+        data = {k: v for k, v in request.data.items() if k not in SELECTORS}
+        if request.entity_ids:
+            data[ATTR_ENTITY_ID] = list(request.entity_ids)
         timeout = float(self.rt.settings.get("executor.timeout"))
         try:
             async with asyncio.timeout(timeout):
@@ -244,6 +284,8 @@ class Executor:
             "scene",
         ):
             self._config_undo[action_id] = (request.service, dict(request.data), outcome.get("previous"))
+            while len(self._config_undo) > CONFIG_UNDO:
+                self._config_undo.pop(next(iter(self._config_undo)))  # the oldest can no longer be undone
             undo = True
         result = ActionResult(
             "done", risk, decision.reason, action_id, undo=undo, decision=decision.as_dict(), data=outcome.get("result")
@@ -426,11 +468,3 @@ class Executor:
 
     def diagnostics(self) -> dict[str, Any]:
         return {"recent": list(self.recent)[:20], "undo": list(self._undo), "config_undo": list(self._config_undo)}
-
-
-def _as_list(value: Any) -> list[str]:
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [v for v in value if isinstance(v, str)]
-    return []

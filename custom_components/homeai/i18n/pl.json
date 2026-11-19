@@ -24,7 +24,9 @@
       "turn_on": "Włącz: {targets}",
       "valve.close_valve": "Zamknij zawór: {targets}",
       "valve.open_valve": "Otwórz zawór: {targets}"
-    }
+    },
+    "yes_words": "tak, ta, no tak, ok, okej, dobrze, jasne, pewnie, potwierdzam, zgoda, zgadzam się, dawaj, zrób to, śmiało, oczywiście, proszę",
+    "no_words": "nie, nie rób, anuluj, stop, czekaj, poczekaj, wstrzymaj, nigdy, przerwij"
   },
   "ai": {
     "all_quiet": "W domu wszystko w porządku. Nic nie wymaga uwagi.",
@@ -352,6 +354,7 @@
       "reload_after_outage": "Przeładuj po powrocie internetu",
       "retry_backup": "Ponów nieudaną kopię",
       "restart_addon": "Uruchom ponownie dodatek",
+      "press_restart": "Uruchom ponownie hub jego przyciskiem restartu",
       "action": "Sugerowane szybkie akcje"
     },
     "schedule.who_may_add": {
@@ -1277,7 +1280,7 @@
       "label": "Konfiguracja (R4)"
     },
     "policy.observation_days": {
-      "description": "Dni po instalacji, przez które autonomia komfortu i urządzeń tylko obserwuje.",
+      "description": "Dni po instalacji, przez które HomeAI tylko obserwuje: akcje komfortu, urządzeń i napraw systemu trafiają do dziennika, ale się nie wykonują. 0 — działa od razu.",
       "label": "Okres obserwacji"
     },
     "policy.person_r2": {

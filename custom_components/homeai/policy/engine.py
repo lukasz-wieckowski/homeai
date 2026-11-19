@@ -8,7 +8,8 @@ Actors:
   (`policy.autonomy_r1` … `policy.autonomy_r4`): never → observe → propose → act and tell → act.
   R5 and R6 are never autonomous, except protective actions on entities the administrator labelled.
   Repairs may only run R3 actions from playbooks, within the daily limit. Schedule entries run up to the
-  class their author approved. During the first `policy.observation_days` R1–R2 autonomy only observes.
+  class their author approved. During the first `policy.observation_days` autonomy only observes (R1–R3,
+  repairs included; set the period to 0 to start acting at once).
   The actor × class matrix (`policy.actor_<actor>_r<n>`) gives one actor its own level for a class, e.g. AI
   only proposes device actions while HomeAI's own rules act on them; schedule entries then follow that level.
 """
@@ -49,8 +50,11 @@ class ActionRequest:
     situation_id: str | None = None
     playbook: str | None = None
     approved_risk: int | None = None  # schedule entries: the class approved by their author
-    confirmed: bool = False  # the person confirmed (R5/R6, or R2 when asked)
-    approved_by: str | None = None  # an approval was granted
+    # The person confirmed (R5/R6, or R2 when asked). Set only from a person's own act: a button in the panel, the
+    # requester's approval, or a confirmation code redeemed in a later message of theirs — never from a model.
+    confirmed: bool = False
+    approved_by: str | None = None  # an approval was granted (the approver's name, for the journal)
+    approved_by_user: str | None = None  # the Home Assistant user who granted it (people's approvals)
     dry_run: bool = False
 
     def as_dict(self) -> dict[str, Any]:
@@ -134,6 +138,14 @@ class Policy:
         if user is None or not user.is_active:
             return Decision(Verdict.DENY, risk, "no_user")
         admin = user.is_admin
+        if request.domain == "config" and risk == Risk.R0 and not admin:
+            # reading automations, scripts or dashboards runs through HA's editors, not as the person: admins only
+            return Decision(Verdict.DENY, risk, "admin_required")
+        if request.approved_by_user and request.approved_by_user != user.id and risk < Risk.R6:
+            # an administrator approved this person's request; it then runs in the administrator's context
+            approver = await self.rt.hass.auth.async_get_user(request.approved_by_user)
+            if approver is not None and approver.is_active and approver.is_admin:
+                return Decision(Verdict.ALLOW, risk, "approved", tell=True)
         if risk <= Risk.R1:
             return Decision(Verdict.ALLOW, risk, "person")
         if risk == Risk.R2:
@@ -178,8 +190,8 @@ class Policy:
             if not self._repair_budget(now):
                 return Decision(Verdict.ASK, risk, "repair_limit", approver="admins")
         level = self.level(risk, request.actor)
-        if risk in (Risk.R1, Risk.R2) and self.observing(now) and level in ("act", "act_tell"):
-            level = "observe"
+        if risk in (Risk.R1, Risk.R2, Risk.R3) and self.observing(now) and level in ("act", "act_tell"):
+            level = "observe"  # repairs too: nothing changes in a new home before people have seen HomeAI work
         learning = self.rt.module("learning")
         if level in ("act", "act_tell") and learning is not None and learning.restricted(request):
             level = "propose"  # people undid this too often

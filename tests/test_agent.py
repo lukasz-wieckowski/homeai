@@ -9,10 +9,11 @@ from homeassistant.core import Context, HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import llm
 from homeassistant.setup import async_setup_component
 
+from custom_components.homeai.policy import ActionRequest
 from custom_components.homeai.signals.base import Category, Signal
 
 from .common import setup_homeai
-from .fake_ai import FakeProvider, install, tier
+from .fake_ai import FakeProvider, install, last_tool_result, tier
 from .home import standard_home
 
 
@@ -99,6 +100,7 @@ async def test_investigation_reads_and_acts_through_policy(hass: HomeAssistant) 
 
 
 async def test_chat_confirmation_flow(hass: HomeAssistant, hass_admin_user) -> None:
+    """The model gets a confirmation code; only the person's own yes in a later message redeems it."""
     home = standard_home(hass)
     home.person("anna", "Anna", user_id=hass_admin_user.id)
     rt = await setup_homeai(hass, {"policy.person_r2": "confirm", "executor.verify_seconds": 0}, subentries=[tier()])
@@ -109,43 +111,66 @@ async def test_chat_confirmation_flow(hass: HomeAssistant, hass_admin_user) -> N
         switched.append(call)
 
     hass.services.async_register("switch", "turn_on", turn_on)
+    codes: list[str] = []
+    coffee = {"service": "switch.turn_on", "entity_ids": ["switch.coffee"], "reason": "asked"}
+
+    def ask_again(request):
+        codes.append(last_tool_result(request).get("confirmation_id") or codes[-1])
+        return {"tool_calls": [("call_service", {**coffee, "confirmation_id": codes[-1]})]}
+
+    def again_with_code(_request):
+        return {"tool_calls": [("call_service", {**coffee, "confirmation_id": codes[-1]})]}
+
     fake = FakeProvider(
         [
-            {
-                "tool_calls": [
-                    ("call_service", {"service": "switch.turn_on", "entity_ids": ["switch.coffee"], "reason": "asked"})
-                ]
-            },
+            {"tool_calls": [("call_service", coffee)]},
+            ask_again,  # an injected or eager model tries to confirm in the same turn: refused
             {"text": "Should I turn on the coffee plug?"},
-            {
-                "tool_calls": [
-                    (
-                        "call_service",
-                        {
-                            "service": "switch.turn_on",
-                            "entity_ids": ["switch.coffee"],
-                            "reason": "asked",
-                            "confirmed": True,
-                        },
-                    )
-                ]
-            },
+            again_with_code,  # the person's next message is not a yes: refused
+            {"text": "Then I'll leave it."},
+            again_with_code,  # a yes in a later message: done
             {"text": "Done, the coffee plug is on."},
         ]
     )
     install(rt, "p1", fake)
     ai = rt.module("ai")
     reply, actions = await ai.chat("Turn on the coffee machine", "conv1", hass_admin_user.id)
-    assert reply == "Should I turn on the coffee plug?" and actions[0]["status"] == "needs_confirmation"
-    assert not switched
-    reply, actions = await ai.chat("Yes", "conv1", hass_admin_user.id)
+    assert reply == "Should I turn on the coffee plug?"
+    assert [a["status"] for a in actions] == ["needs_confirmation", "needs_confirmation"] and not switched
+    assert codes and codes[0]
+    reply, actions = await ai.chat("What's the weather like?", "conv1", hass_admin_user.id)
+    assert actions[0]["status"] == "needs_confirmation" and not switched
+    reply, actions = await ai.chat("Yes, please do", "conv1", hass_admin_user.id)
     assert reply == "Done, the coffee plug is on."
     assert switched and switched[0].context.user_id == hass_admin_user.id
+    # the code is single-use and bound to the action, the person and the conversation
+    executor = rt.module("executor")
+    request = ActionRequest("switch", "turn_on", entity_ids=["switch.coffee"])
+    assert not executor.confirmations.redeem(
+        codes[-1],
+        executor.fingerprint(request),
+        user_id=hass_admin_user.id,
+        conversation_id="conv1",
+        turn=99,
+        said="yes",
+        lang="en",
+    )
     # the second turn carried the first turn's history
-    second_turn = fake.requests[2].messages
+    second_turn = fake.requests[3].messages
     assert any(m["role"] == "assistant" and m["content"] == "Should I turn on the coffee plug?" for m in second_turn)
-    assert "<speaker>Anna</speaker>" in second_turn[-3]["content"] or any("Anna" in str(m) for m in second_turn)
     assert fake.requests[0].system.startswith("You are HomeAI") or "HomeAI" in fake.requests[0].system
+
+
+def test_affirmative_answers() -> None:
+    from custom_components.homeai.actions.confirmations import affirmative
+
+    assert affirmative("Yes", "en") and affirmative("ok, do it!", "en") and affirmative("Tak, potwierdzam", "pl")
+    assert affirmative("yes", "pl")  # English always counts
+    assert (
+        not affirmative("no", "en") and not affirmative("nie, anuluj", "pl") and not affirmative("yes, but don't", "en")
+    )
+    assert not affirmative("yes and also unlock the front door and open the garage", "en")  # not a short answer
+    assert not affirmative("What's the weather like?", "en") and not affirmative("", "en")
 
 
 async def test_conversation_entity(hass: HomeAssistant, hass_admin_user) -> None:
@@ -188,6 +213,24 @@ async def test_llm_api_for_other_assistants(hass: HomeAssistant, hass_admin_user
     )
     assert result.data["status"] in ("done", "unverified")
     assert calls[0].context.user_id == hass_admin_user.id
+
+    # another assistant cannot confirm for the person: a needed yes becomes an approval addressed to them
+    rt = hass.config_entries.async_entries("homeai")[0].runtime_data
+    rt.settings.set("policy.person_r2", "confirm", confirmed=True)
+    hass.states.async_set("switch.coffee", "off")
+    hass.services.async_register("switch", "turn_on", calls.append)
+    pending = await api.async_call_tool(
+        llm.ToolInput(
+            "homeai_call_service",
+            {"service": "switch.turn_on", "entity_ids": ["switch.coffee"], "reason": "asked"},
+        )
+    )
+    assert pending.data.get("status") == "pending_approval", pending.data
+    approvals = rt.module("approvals")
+    item = approvals.items[pending.data["approval_id"]]
+    assert item["approver"] == "requester" and item["requester"] == hass_admin_user.id
+    done = await approvals.approve(item["id"], hass_admin_user.id)
+    assert done["result"]["status"] in ("done", "unverified") and calls[-1].service == "turn_on"
 
 
 async def test_tools_respect_privacy_and_errors(hass: HomeAssistant) -> None:

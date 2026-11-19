@@ -382,7 +382,15 @@ APPLIANCE_WORDS = (
     "kocioł",
     "kotł",
 )
-PLAYBOOK_KEYS = ("reload_entry", "wait_then_reload", "reload_after_outage", "retry_backup", "restart_addon", "action")
+PLAYBOOK_KEYS = (
+    "reload_entry",
+    "wait_then_reload",
+    "reload_after_outage",
+    "retry_backup",
+    "restart_addon",
+    "press_restart",
+    "action",
+)
 RISK_OVERRIDES = ("auto", "R0", "R1", "R2", "R3", "R4", "R5", "R6")
 MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule")
 

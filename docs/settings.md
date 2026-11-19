@@ -237,7 +237,7 @@ What HomeAI may do on its own, what needs a yes, and what never happens.
 | **System repairs (R3)** — Reloading integrations, restarting add-ons and retrying backups, only from repair playbooks. | `policy.autonomy_r3` | `act` | Never (`never`), Only observe (`observe`), Propose and ask (`propose`), Act and tell (`act_tell`), Act (`act`) | home | confirm (change) |
 | **Configuration (R4)** — Automations, scripts, scenes, helpers and dashboards. Never done without an administrator's yes. | `policy.autonomy_r4` | `propose` | Never (`never`), Only observe (`observe`), Propose and ask (`propose`) | home | confirm (change) |
 | **Residents' device requests** — When a resident asks for a device action (R2): do it, or ask them to confirm first. | `policy.person_r2` | `act` | Do it (`act`), Ask to confirm (`confirm`) | home |  |
-| **Observation period** — Days after installation during which comfort and device autonomy only observes. | `policy.observation_days` | 14 | 0–90 d | home | confirm (lower) |
+| **Observation period** — Days after installation during which HomeAI only observes: comfort, device and system repair actions are written to the journal but not done. 0 starts acting at once. | `policy.observation_days` | 14 | 0–90 d | home | confirm (lower) |
 | **Protective actions** — Allow safe-direction actions on entities labelled “HomeAI: protective action” (e.g. close the water valve on a leak), even for security devices. | `policy.protective_actions` | true |  | home | confirm (disable) |
 | **System repairs per day** — Most automatic system repairs (R3) per day; more need an administrator. | `policy.repairs_per_day` | 10 | 1–100 | home | advanced |
 | **Approval expires after** — How long a request for approval waits for an answer. | `policy.approval_minutes` | 120 | 5–10080 min | home |  |
@@ -291,7 +291,7 @@ How HomeAI fixes things before bothering anyone.
 | **Devices of one integration down: wait** — Minutes before reloading an integration whose devices all went silent. | `repair.outage_wait` | 5 | 0–240 min | home | advanced |
 | **Backup: wait before retrying** — Minutes before retrying a failed backup. | `repair.backup_wait` | 30 | 0–1440 min | home | advanced |
 | **Suggested action: wait** — Minutes before running a suggested action. | `repair.action_wait` | 0 | 0–240 min | home | advanced |
-| **Repair playbooks in use** — Which repairs HomeAI may try on its own before telling anyone. | `repair.playbooks` | see panel | Reload an integration (`reload_entry`), Wait for an integration to retry, then reload (`wait_then_reload`), Reload after the internet returns (`reload_after_outage`), Retry a failed backup (`retry_backup`), Restart an add-on (`restart_addon`), Suggested quick actions (`action`) | home | confirm (disable) |
+| **Repair playbooks in use** — Which repairs HomeAI may try on its own before telling anyone. | `repair.playbooks` | see panel | Reload an integration (`reload_entry`), Wait for an integration to retry, then reload (`wait_then_reload`), Reload after the internet returns (`reload_after_outage`), Retry a failed backup (`retry_backup`), Restart an add-on (`restart_addon`), Restart a hub with its restart button (`press_restart`), Suggested quick actions (`action`) | home | confirm (disable) |
 | **Never reload** — Integrations HomeAI never reloads, by domain (zha, mqtt) or config entry id. Their failures go straight to people. | `repair.never_reload` | [] | –100 | home |  |
 
 ## Hubs and bridges

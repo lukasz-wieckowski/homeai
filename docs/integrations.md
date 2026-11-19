@@ -78,6 +78,18 @@ homeai_schedule:
   block, as on any programmable thermostat.
 - `add_override` should accept being called without asking for a response (`SupportsResponse.OPTIONAL`), so
   automations can use it too; HomeAI asks for the response only when the service requires it.
+- Between an override and a person's manual change the newer instruction wins. An override sent again **unchanged**
+  (same start, end and value) keeps its age; one sent with other times or another value is a new instruction.
+- The thermostat's own changes (schedule blocks, heating ahead, the end of an override) are written with a fresh
+  context, without a user or a parent; a change somebody asked for carries the caller's context.
+
+**Optional attributes** HomeAI uses when they are there:
+
+| Attribute | Meaning |
+|---|---|
+| `homeai_schedule.areas` | the area ids the thermostat heats (a zone of several rooms, or a device without an area) |
+| `source` | where the current target comes from: `schedule`, `override`, `hold` (a manual change until the next block), `manual` (the schedule is off), `preheat` |
+| `preset_temperatures` | what each preset means in °C, e.g. `{comfort: 21, eco: 18}` |
 
 **How HomeAI uses it**
 
@@ -90,21 +102,23 @@ homeai_schedule:
   override never reaches more than 30 days ahead: a longer trip is sent in pieces and renewed. HomeAI
   removes its override when the reason is gone (the trip was cancelled, someone came home). When a person removes
   HomeAI's override on the thermostat, HomeAI does not set it again for the same reason and treats it like an undo.
+  When a person changes the thermostat by hand while HomeAI's override runs, HomeAI no longer renews or moves it (that
+  would be a newer instruction than theirs): the override runs out, and HomeAI still removes it when the reason goes.
 - **Reasons**: a household trip or every resident's own trip at once (`away`), guests (common spaces), working from
   home (the person's workplace), sickness (the whole home), nobody home for a while (`eco`, until someone is back),
   vacation mode, and activity in a room (an entity labelled *HomeAI: activity*). Presets and timings are settings
   (section *Heating*). Calendar reasons are sent ahead (*Send overrides ahead*), so the thermostat can heat up in
   time; reasons without a known end (nobody home, vacation mode, activity) run a few hours ahead and are renewed.
-- **Rooms.** The thermostat's room comes from its entity or device area. Optionally, a thermostat that heats several
-  rooms lists their area ids in the attribute: `homeai_schedule: {version: 1, domain: …, areas: [living_room,
-  kitchen]}`; HomeAI then treats it as heating all of them.
+- **Rooms.** The thermostat's rooms come from `homeai_schedule.areas` (`{version: 1, domain: …, areas: [living_room,
+  kitchen]}`), else from its entity or device area.
 - **Valve limit.** For activity, HomeAI can lower a valve limit instead of setting an override: a `number` of the
   thermostat's device whose translation key is `valve_limit` (or whose id ends with `_valve_limit`, or the entity
   in the setting *Valve-limit entity*). HomeAI puts the previous value back afterwards.
 - **Proposals.** HomeAI notices people changing the target by hand before a block that would do the same (warming
   up earlier, going to sleep earlier) on most workdays or weekend days, and proposes moving that block with
-  `set_schedule`. Manual changes are told apart by the change's context: a person's account, or an automation a
-  button or remote started; the thermostat's own schedule changes it without either. A proposal is withdrawn when the
+  `set_schedule`. Manual changes are told apart by the `source` attribute when the thermostat has one (`hold` or
+  `manual`, also a turn of the knob), else by the change's context: a person's account, or an automation a button or
+  remote started. What a preset means comes from `preset_temperatures`, else from what the thermostat showed. A proposal is withdrawn when the
   thermostat's week changes before it is approved.
 - **Plan and signals.** Publish the next 36 hours of the schedule and overrides as `homeai_plan` and the zone's
   problems as `homeai_signals` (both above); HomeAI shows them in `calendar.homeai_plan` and handles the signals as

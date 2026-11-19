@@ -18,13 +18,16 @@ changes it for a while from presence and proposes lasting changes.
   home for a while → `eco` until someone is back. Each carries `source: homeai`, a reason and a stable id; calendar
   events are sent ahead so rooms warm up in time; open-ended reasons are renewed; a higher reason trims a lower one.
   HomeAI removes its override when the reason is gone and withdraws a request nobody answered yet. An override a
-  person removes on the thermostat is not set again for that reason and counts as an undo.
+  person removes on the thermostat is not set again for that reason and counts as an undo; after a person changes
+  the thermostat by hand, HomeAI no longer renews or moves its override, so their change is not overruled. Long
+  reasons are sent at most 30 days ahead and renewed.
 - **Activity**: entities labelled *HomeAI: activity* (a desk's power above a threshold, a PC) warm their room with an
   override, or lower the thermostat's valve limit (a `valve_limit` number) and put it back afterwards.
 - **Schedule proposals from habits**: when people change a thermostat by hand to what its next block would set, some
-  time before that block, on most workdays or weekend days, HomeAI proposes moving the block. A new week is
-  configuration (R4): an administrator approves it in *Approvals*, and a proposal is withdrawn and never runs when the
-  thermostat's week changed meanwhile.
+  time before that block, on most workdays or weekend days, HomeAI proposes moving the block. Manual changes come
+  from the thermostat's optional `source` attribute (also turns of the knob), else from the change's context. A new
+  week is configuration (R4): an administrator approves it in *Approvals*, and a proposal is withdrawn and never runs
+  when the thermostat's week changed meanwhile.
 - **Room roles** in the world model: bedroom, bathroom, common space and workplace, from the setting *Room roles* per
   room, from the labels *HomeAI: bedroom / bathroom / common space / workplace* on a room or on a device in it, or
   from the room's icon and name. AI sees them in its description of the home. A person's *Workplace* is a setting.

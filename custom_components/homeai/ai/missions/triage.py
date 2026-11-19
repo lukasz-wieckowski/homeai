@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...signals.base import Category
+from ...signals.base import Category, limit_severity
 from ...situations.model import Situation
 from ..context import entity_lines, home_card, moment_card
 from ..privacy import Privacy, clean
@@ -85,6 +85,7 @@ def validate(result: Any, s: Situation, code: dict[str, Any], privacy: Privacy) 
         severity = max(severity, code_severity)
     if code_severity >= 4:
         severity = 4
+    severity = limit_severity(s.category, severity)  # only safety can be critical
     if who == "nobody" and severity >= 3:
         who = str(code.get("fallback_who") or code.get("who") or "member")
         if who == "nobody":

@@ -2,7 +2,8 @@
 
 The code decides first. Severity comes from the signals, adjusted by configured overrides, the “critical”
 label, the context (safety and security matters while nobody is home are raised) and calibration from the
-household's reactions (a kind dismissed again and again as “not a problem” is lowered — never safety).
+household's reactions (a kind dismissed again and again as “not a problem” is lowered — never safety). Only
+safety matters can be critical (4); everything else stops at urgent (3), also after an AI tier's assessment.
 Who is needed: nobody while a repair playbook is trying; otherwise what the signal says (a member for a
 physical task, an administrator for configuration or sign-in, a technician). AI tiers may refine an assessment
 later; their result is kept as long as the situation's signals do not change.
@@ -14,7 +15,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
-from ..signals.base import Category, Need
+from ..signals.base import Category, Need, limit_severity
 from ..situations.model import Situation
 
 URGENCY_MINUTES: dict[str, int | None] = {
@@ -82,6 +83,9 @@ class Triage:
                 if ratio >= float(settings.get("triage.calibration_dismiss_ratio")):
                     severity = max(0, severity - 1)
                     reasons.append("calibrated_down")
+        if limit_severity(category, severity) < severity:
+            severity = limit_severity(category, severity)
+            reasons.append("critical_is_safety_only")
 
         need = p.need
         fallback = need
@@ -102,7 +106,7 @@ class Triage:
 
     def apply_ai(self, s: Situation, result: dict[str, Any], tier: str) -> None:
         """Store an AI tier's assessment (already validated) for the current set of signals."""
-        s.assessment = {
+        assessment = {
             **self.assess(s),
             **{
                 k: v
@@ -113,3 +117,6 @@ class Triage:
             "assessed_at": dt_util.utcnow().isoformat(timespec="seconds"),
             "signal_ids": sorted(s.signals),
         }
+        if s.primary is not None:
+            assessment["severity"] = limit_severity(s.primary.category, assessment["severity"])
+        s.assessment = assessment

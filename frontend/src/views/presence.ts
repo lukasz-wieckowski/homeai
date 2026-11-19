@@ -93,20 +93,20 @@ export class HomeAIPresence extends LitElement {
     const lang = this.hass.language;
     const d = this.draft!;
     const set = (patch: Partial<Draft>) => (this.draft = { ...d, ...patch });
-    const field = (label: string, content: unknown) => html`<label class="row" style="margin: 6px 0"><span style="min-width: 9em">${label}</span>${content}</label>`;
-    return html`<div class="card">
-      ${field(t(lang, "presence_kind"), html`<select @change=${(e: Event) => set({ kind: (e.target as HTMLSelectElement).value })}>
+    const field = (label: string, content: unknown) => html`<label class="row field"><span class="label">${label}</span>${content}</label>`;
+    return html`<div part="card" class="card">
+      ${field(t(lang, "presence_kind"), html`<select part="input" @change=${(e: Event) => set({ kind: (e.target as HTMLSelectElement).value })}>
         ${KINDS.map((k) => html`<option value=${k} ?selected=${k === d.kind}>${t(lang, `presence_${k}`)}</option>`)}</select>`)}
-      ${field(t(lang, "presence_person"), html`<select @change=${(e: Event) => set({ person: (e.target as HTMLSelectElement).value })}>
+      ${field(t(lang, "presence_person"), html`<select part="input" @change=${(e: Event) => set({ person: (e.target as HTMLSelectElement).value })}>
         <option value="" ?selected=${!d.person}>${t(lang, "presence_everyone")}</option>
         ${(this.world?.persons ?? []).map((p) => html`<option value=${p.id} ?selected=${p.id === d.person}>${p.name}</option>`)}</select>`)}
-      ${field(t(lang, "presence_from"), html`<input type="date" .value=${d.start} @change=${(e: Event) => set({ start: (e.target as HTMLInputElement).value })} />`)}
-      ${field(t(lang, "presence_to"), html`<input type="date" .value=${d.end} @change=${(e: Event) => set({ end: (e.target as HTMLInputElement).value })} />`)}
-      ${field(t(lang, "presence_note"), html`<input class="grow" maxlength="300" .value=${d.note} @input=${(e: Event) => set({ note: (e.target as HTMLInputElement).value })} />`)}
-      ${this.error ? html`<div class="muted" style="color: var(--error-color)">${this.error}</div>` : nothing}
-      <div class="row" style="margin-top: 8px">
-        <button class="primary" @click=${this.save}>${t(lang, "save")}</button>
-        <button @click=${() => { this.draft = undefined; this.error = ""; }}>${t(lang, "cancel")}</button>
+      ${field(t(lang, "presence_from"), html`<input part="input" type="date" .value=${d.start} @change=${(e: Event) => set({ start: (e.target as HTMLInputElement).value })} />`)}
+      ${field(t(lang, "presence_to"), html`<input part="input" type="date" .value=${d.end} @change=${(e: Event) => set({ end: (e.target as HTMLInputElement).value })} />`)}
+      ${field(t(lang, "presence_note"), html`<input part="input" class="grow" maxlength="300" .value=${d.note} @input=${(e: Event) => set({ note: (e.target as HTMLInputElement).value })} />`)}
+      ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
+      <div class="row actions">
+        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
+        <button part="button" @click=${() => { this.draft = undefined; this.error = ""; }}>${t(lang, "cancel")}</button>
       </div>
     </div>`;
   }
@@ -114,18 +114,18 @@ export class HomeAIPresence extends LitElement {
   render() {
     const lang = this.hass.language;
     return html`
-      <div class="row" style="margin-bottom: 12px">
+      <div class="row toolbar-row">
         <span class="muted grow">${t(lang, "presence_hint")}</span>
-        ${this.draft ? nothing : html`<button class="primary" @click=${() => (this.draft = { kind: "away", person: "", start: day(this.hass.config?.time_zone), end: day(this.hass.config?.time_zone, 1), note: "" })}>${t(lang, "presence_add")}</button>`}
+        ${this.draft ? nothing : html`<button part="button button-primary" class="primary" @click=${() => (this.draft = { kind: "away", person: "", start: day(this.hass.config?.time_zone), end: day(this.hass.config?.time_zone, 1), note: "" })}>${t(lang, "presence_add")}</button>`}
       </div>
-      ${this.draft ? this.form() : this.error ? html`<div class="card" style="color: var(--error-color)">${this.error}</div>` : nothing}
+      ${this.draft ? this.form() : this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
       ${this.items.length
-        ? html`<div class="card"><ul class="plain">${this.items.map(
+        ? html`<div part="card" class="card"><ul part="list" class="plain">${this.items.map(
             (i) => html`<li class="row"><span class="grow">${t(lang, `presence_${i.kind}`)} · ${this.personName(i.person)}<br />
               <span class="muted">${span(i.start, i.end, lang, this.hass.config?.time_zone)}${i.note ? ` · ${i.note}` : ""}</span></span>
-              <button @click=${() => (this.draft = { id: i.id, kind: i.kind, person: i.person ?? "", start: localDay(i.start, this.hass.config?.time_zone), end: localDay(i.end, this.hass.config?.time_zone, true), note: i.note })}>${t(lang, "edit")}</button>
-              <button @click=${() => this.removeItem(i.id)}>${t(lang, "remove")}</button></li>`,
+              <button part="button" @click=${() => (this.draft = { id: i.id, kind: i.kind, person: i.person ?? "", start: localDay(i.start, this.hass.config?.time_zone), end: localDay(i.end, this.hass.config?.time_zone, true), note: i.note })}>${t(lang, "edit")}</button>
+              <button part="button" @click=${() => this.removeItem(i.id)}>${t(lang, "remove")}</button></li>`,
           )}</ul></div>`
-        : html`<div class="empty">${t(lang, "presence_none")}</div>`}`;
+        : html`<div part="empty" class="empty">${t(lang, "presence_none")}</div>`}`;
   }
 }

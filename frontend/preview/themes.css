@@ -1,0 +1,96 @@
+/* Home Assistant's theme variables, as its default theme sets them (frontend src/resources/theme/), for the preview
+   page only. "light" and "dark" are Home Assistant's own; "custom" is a made-up theme that overrides --homeai-*
+   variables and uses ::part(), to show what a home's theme can change. Not shipped with the integration. */
+
+:root {
+  --ha-border-width-sm: 1px;
+  --ha-border-width-md: 2px;
+  --ha-border-radius-sm: 4px;
+  --ha-border-radius-md: 8px;
+  --ha-border-radius-lg: 12px;
+  --ha-border-radius-xl: 16px;
+  --ha-border-radius-pill: 9999px;
+  --ha-space-1: 4px;
+  --ha-space-2: 8px;
+  --ha-space-3: 12px;
+  --ha-space-4: 16px;
+  --ha-content-gutter: var(--ha-space-4);
+  --ha-font-family-body: Roboto, Noto, sans-serif;
+  --ha-font-family-code: monospace;
+  --ha-font-size-scale: 1;
+  --ha-font-size-s: calc(12px * var(--ha-font-size-scale));
+  --ha-font-size-m: calc(14px * var(--ha-font-size-scale));
+  --ha-font-size-l: calc(16px * var(--ha-font-size-scale));
+  --ha-font-size-xl: calc(20px * var(--ha-font-size-scale));
+  --ha-font-weight-normal: 400;
+  --ha-font-weight-medium: 500;
+  --ha-font-weight-bold: 700;
+  --header-height: 56px;
+  --text-primary-color: #ffffff;
+  --primary-color: #009ac7;
+  --error-color: #db4437;
+  --warning-color: #ffa600;
+  --success-color: #43a047;
+  --info-color: #039be5;
+  font-size: 14px;
+}
+
+:root[data-theme="light"],
+:root[data-theme="custom"] {
+  --primary-text-color: #212121;
+  --secondary-text-color: #727272;
+  --disabled-text-color: #bdbdbd;
+  --primary-background-color: #fafafa;
+  --secondary-background-color: #e5e5e5;
+  --card-background-color: #ffffff;
+  --divider-color: rgba(0, 0, 0, 0.12);
+  --input-fill-color: rgb(245, 245, 245);
+  --input-ink-color: rgba(0, 0, 0, 0.87);
+  --input-outlined-idle-border-color: rgba(0, 0, 0, 0.38);
+  --app-header-background-color: #fafafa;
+  --app-header-text-color: #212121;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --primary-text-color: #e1e1e1;
+  --secondary-text-color: #9b9b9b;
+  --disabled-text-color: #6f6f6f;
+  --primary-background-color: #111111;
+  --secondary-background-color: #282828;
+  --card-background-color: #1c1c1c;
+  --divider-color: rgba(225, 225, 225, 0.12);
+  --input-fill-color: rgba(255, 255, 255, 0.05);
+  --input-ink-color: rgba(255, 255, 255, 0.87);
+  --input-outlined-idle-border-color: rgba(255, 255, 255, 0.38);
+  --app-header-background-color: #111111;
+  --app-header-text-color: #e1e1e1;
+  color-scheme: dark;
+}
+
+/* A home's own theme: only --homeai-* variables (what a Home Assistant theme file can set) and ::part(). */
+:root[data-theme="custom"] {
+  --homeai-background: #f3ede4;
+  --homeai-text-color: #2b2118;
+  --homeai-secondary-text-color: #7a6a58;
+  --homeai-accent-color: #c4581c;
+  --homeai-on-accent-color: #fff8f0;
+  --homeai-card-background: rgba(255, 252, 247, 0.72);
+  --homeai-card-border-color: rgba(196, 88, 28, 0.18);
+  --homeai-card-border-radius: 22px;
+  --homeai-card-box-shadow: 0 8px 24px rgba(60, 30, 10, 0.12);
+  --homeai-header-background: #2b2118;
+  --homeai-header-text-color: #f3ede4;
+  --homeai-font-family: Georgia, "Iowan Old Style", serif;
+  --homeai-severity-3-color: #d98b2b;
+  --homeai-severity-4-color: #b3261e;
+  --homeai-spacing: 10px;
+  --homeai-assistant-message-background: #eadfce;
+}
+:root[data-theme="custom"] homeai-panel::part(card),
+:root[data-theme="custom"] homeai-situations-card::part(card) {
+  backdrop-filter: blur(12px);
+}
+:root[data-theme="custom"] homeai-panel::part(tab-active) {
+  font-weight: 700;
+}

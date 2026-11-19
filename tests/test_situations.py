@@ -193,7 +193,9 @@ async def test_triage_context(hass: HomeAssistant) -> None:
     )
     await engine.process()
     freezer = next(x for x in engine.open() if x.kind == "stale_sensor")
-    assert freezer.severity == 4 and "critical_label" in freezer.assessment["reasons"]
+    # the label makes it as serious as possible, which outside safety is urgent
+    assert freezer.severity == 3 and "critical_label" in freezer.assessment["reasons"]
+    assert "critical_is_safety_only" in freezer.assessment["reasons"]
 
 
 async def test_overrides_and_repair_mean_nobody(hass: HomeAssistant) -> None:

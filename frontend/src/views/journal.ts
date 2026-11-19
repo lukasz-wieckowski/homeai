@@ -24,10 +24,10 @@ export class HomeAIJournal extends LitElement {
 
   render() {
     const lang = this.hass.language;
-    return html`<div class="card"><ul class="plain">
+    return html`<div part="card" class="card"><ul part="list" class="plain">
       ${this.entries.map(
-        (e) => html`<li class="row"><span class="muted" style="min-width: 9em">${when(e.ts, lang)}</span>
-          <span class="muted" style="min-width: 7em">${t(lang, `kind_${e.kind}`).replace(/^kind_/, "")}</span><span class="grow">${e.text}</span></li>`,
+        (e) => html`<li class="row"><span class="muted when">${when(e.ts, lang)}</span>
+          <span class="muted kind">${t(lang, `kind_${e.kind}`).replace(/^kind_/, "")}</span><span class="grow">${e.text}</span></li>`,
       )}
     </ul></div>`;
   }

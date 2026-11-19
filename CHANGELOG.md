@@ -3,6 +3,30 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0]
+
+Decisions after testing HomeAI on a copy of a real home: critical alerts are for danger to people only, and the
+panel and the cards follow the Home Assistant theme, so a home with its own look can restyle them.
+
+### Changed
+- **Only safety is critical.** Severity 4 (critical alerts, everyone, repeated every 5 minutes until someone reacts)
+  is now reserved for safety matters: a leak, smoke, gas, carbon monoxide and other safety sensors. Every other
+  matter stops at urgent (3, one push now, everyone after 15 minutes, no critical alert, no repeating), whatever
+  raised it: a detector, presence, the *HomeAI: critical* label, an override, an own rule, another integration's
+  signal or an AI tier. A window left open while everyone is away used to become critical (3 from the detector, one
+  more for the empty home) and sent critical alerts every 5 minutes; it is now urgent.
+- Severity settings of detectors outside safety go from 0 to 3; a stored 4 becomes 3.
+- The triage prompt tells the AI that only safety is critical.
+- **Theming.** The panel `/homeai` and the cards have no colours, fonts, radii, shadows or spacing of their own any
+  more: everything comes from `--homeai-*` variables whose defaults are Home Assistant theme variables (including
+  `--ha-card-*`, `--ha-space-*`, `--ha-border-radius-*` and `--ha-font-*`), so they follow the light and dark theme
+  and a theme can restyle them. Parts (`::part()`) for what variables cannot change; the panel passes its tabs' parts
+  on. Listed in the README, section *Theming*.
+
+### Added
+- A preview page (`frontend/preview/`) with example data and Home Assistant's light and dark variables, for looking
+  at the panel and the cards without Home Assistant, and a test that keeps fixed styles out of the frontend.
+
 ## [1.3.1]
 
 Fixes from testing HomeAI 1.3.0 together with Heat Zones on a copy of a real home.

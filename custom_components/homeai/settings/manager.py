@@ -16,7 +16,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from ..const import DOMAIN, LOGGER
-from .registry import RESOLUTION_ORDER, Scope, Setting, SettingError, SettingsRegistry
+from .registry import RESOLUTION_ORDER, Scope, Setting, SettingError, SettingsRegistry, SettingType
 
 STORAGE_KEY = f"{DOMAIN}.settings"
 STORAGE_VERSION = 1
@@ -103,8 +103,29 @@ class SettingsManager:
             try:
                 clean[key] = setting.validate(value)
             except SettingError as err:
-                LOGGER.warning("Ignoring stored value for %s: %s", key, err)
+                if narrowed := self._narrowed(setting, value):
+                    clean[key] = narrowed[0]
+                    LOGGER.info("Stored value for %s is now %s: %s", key, narrowed[0], err)
+                else:
+                    LOGGER.warning("Ignoring stored value for %s: %s", key, err)
         return clean
+
+    @staticmethod
+    def _narrowed(setting: Setting, value: Any) -> tuple[Any] | None:
+        """A whole number above a maximum that an upgrade lowered (e.g. severity 4 outside safety) becomes the
+        new maximum instead of being dropped."""
+        if (
+            setting.type is SettingType.INT
+            and setting.max is not None
+            and isinstance(value, int)
+            and not isinstance(value, bool)
+            and value > setting.max
+        ):
+            try:
+                return (setting.validate(int(setting.max)),)
+            except SettingError:
+                return None
+        return None
 
     def _data(self) -> dict[str, Any]:
         return {"global": self._global, "overrides": self._overrides, "history": self._history}

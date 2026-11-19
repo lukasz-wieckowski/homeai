@@ -39,7 +39,7 @@ Which entities HomeAI watches and the labels it understands.
 | **Create HomeAI labels** — Create the labels HomeAI understands (ignore, personal, critical, protective action, private) if they do not exist. | `world.create_labels` | true |  | home |  |
 | **Label: ignore** — Entities and devices with this label are invisible to HomeAI. | `world.label_ignore` | `homeai_ignore` |  | home | advanced |
 | **Label: personal** — Personal devices (phones, laptops) may go offline; that is not a problem of the home. | `world.label_personal` | `homeai_personal` |  | home | advanced |
-| **Label: critical** — Problems with these devices are always treated as the highest severity. | `world.label_critical` | `homeai_critical` |  | home | advanced |
+| **Label: critical** — Problems with these devices are always treated as urgent, and as critical when they are about safety (a leak, smoke, gas, carbon monoxide). | `world.label_critical` | `homeai_critical` |  | home | advanced |
 | **Label: protective action** — Actions on these entities may run automatically to protect the home (for example closing a water valve during a leak). | `world.label_protective` | `homeai_protective_action` |  | home | advanced |
 | **Label: private** — Data of these entities is never sent to cloud AI. | `world.label_private` | `homeai_private` |  | home | advanced |
 | **Room roles** — What this room is for: bedroom, bathroom, common space, workplace (a room may have several). Set it per room; empty means from HomeAI's labels, else from the room's icon and name. None means no role. | `world.room_roles` | [] | None (`none`), Bedroom (`bedroom`), Bathroom (`bathroom`), Common space (`common`), Workplace (`workplace`) | area, floor, home |  |
@@ -117,66 +117,66 @@ What HomeAI watches and its limits.
 | **Gas: severity** — Severity 0–4 of gas (0 journal only, 4 critical). | `detectors.safety.severity_gas` | 4 | 0–4 | area, device, entity, floor, home | advanced |
 | **Carbon monoxide: severity** — Severity 0–4 of carbon monoxide (0 journal only, 4 critical). | `detectors.safety.severity_carbon_monoxide` | 4 | 0–4 | area, device, entity, floor, home | advanced |
 | **Safety alarm: severity** — Severity 0–4 of safety alarm (0 journal only, 4 critical). | `detectors.safety.severity_safety` | 3 | 0–4 | area, device, entity, floor, home | advanced |
-| **Tampering: severity** — Severity 0–4 of tampering (0 journal only, 4 critical). | `detectors.safety.severity_tamper` | 2 | 0–4 | area, device, entity, floor, home | advanced |
+| **Tampering: severity** — Severity 0–3 of tampering (0 journal only, 3 urgent; only safety can be critical). | `detectors.safety.severity_tamper` | 2 | 0–3 | area, device, entity, floor, home | advanced |
 | **Open while away: wait** — How long a door, window or lock must stay open while everyone is away. | `detectors.security.away_minutes` | 10 | 0–720 min | area, device, entity, floor, home |  |
 | **Open at night: wait** — How long something must stay open while everyone at home sleeps. | `detectors.security.night_minutes` | 30 | 0–720 min | area, device, entity, floor, home |  |
 | **Windows at night** — Also report doors and windows (not only locks and gates) open at night. | `detectors.security.openings_at_night` | true |  | area, device, entity, floor, home |  |
 | **Internet sensor** — Binary sensor that is on while the internet works. Empty: the first Ping sensor. | `detectors.internet.entity` | `` |  | home |  |
 | **Internet down: wait** — How long the connection must be down before it counts. | `detectors.internet.minutes` | 2 | 0–120 min | home |  |
-| **Internet down: severity** — Severity 0–4 of internet down (0 journal only, 4 critical). | `detectors.internet.severity` | 3 | 0–4 | home | advanced |
+| **Internet down: severity** — Severity 0–3 of internet down (0 journal only, 3 urgent; only safety can be critical). | `detectors.internet.severity` | 3 | 0–3 | home | advanced |
 | **Unresponsive after** — How long all entities of a device must be unavailable. | `detectors.availability.minutes` | 15 | 1–10080 min | area, device, entity, floor, home |  |
-| **Unresponsive device: severity** — Severity 0–4 of unresponsive device (0 journal only, 4 critical). | `detectors.availability.severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
-| **Integration problem: severity** — Severity 0–4 of integration problem (0 journal only, 4 critical). | `detectors.integrations.severity` | 1 | 0–4 | home | advanced |
+| **Unresponsive device: severity** — Severity 0–3 of unresponsive device (0 journal only, 3 urgent; only safety can be critical). | `detectors.availability.severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
+| **Integration problem: severity** — Severity 0–3 of integration problem (0 journal only, 3 urgent; only safety can be critical). | `detectors.integrations.severity` | 1 | 0–3 | home | advanced |
 | **Repairs issues** — Report open issues from Settings → Repairs. | `detectors.integrations.repairs` | true |  | home |  |
-| **Repairs issues: severity** — Severity 0–4 of repairs issues (0 journal only, 4 critical). | `detectors.integrations.repairs_severity` | 0 | 0–4 | home | advanced |
+| **Repairs issues: severity** — Severity 0–3 of repairs issues (0 journal only, 3 urgent; only safety can be critical). | `detectors.integrations.repairs_severity` | 0 | 0–3 | home | advanced |
 | **Backup too old after** — Hours since the last successful automatic backup. | `detectors.backups.max_age_hours` | 30 | 1–720 h | home |  |
-| **Backup problem: severity** — Severity 0–4 of backup problem (0 journal only, 4 critical). | `detectors.backups.severity` | 1 | 0–4 | home | advanced |
-| **Updates: severity** — Severity 0–4 of updates (0 journal only, 4 critical). | `detectors.updates.severity` | 0 | 0–4 | home | advanced |
+| **Backup problem: severity** — Severity 0–3 of backup problem (0 journal only, 3 urgent; only safety can be critical). | `detectors.backups.severity` | 1 | 0–3 | home | advanced |
+| **Updates: severity** — Severity 0–3 of updates (0 journal only, 3 urgent; only safety can be critical). | `detectors.updates.severity` | 0 | 0–3 | home | advanced |
 | **Log window** — How far back log errors and failed automations count. | `detectors.log.window_hours` | 24 | 1–168 h | home | advanced |
 | **Minimum log errors** — Report the log only from this many errors. | `detectors.log.min_errors` | 1 | 1–1000 | home | advanced |
-| **Log errors: severity** — Severity 0–4 of log errors (0 journal only, 4 critical). | `detectors.log.severity` | 0 | 0–4 | home | advanced |
+| **Log errors: severity** — Severity 0–3 of log errors (0 journal only, 3 urgent; only safety can be critical). | `detectors.log.severity` | 0 | 0–3 | home | advanced |
 | **Failed automations** — Report automations whose last run failed. | `detectors.log.automations` | true |  | home |  |
-| **Failed automation: severity** — Severity 0–4 of failed automation (0 journal only, 4 critical). | `detectors.log.automation_severity` | 1 | 0–4 | home | advanced |
+| **Failed automation: severity** — Severity 0–3 of failed automation (0 journal only, 3 urgent; only safety can be critical). | `detectors.log.automation_severity` | 1 | 0–3 | home | advanced |
 | **Battery threshold** — Report batteries at or below this level. | `detectors.battery.threshold` | 20 | 1–99 % | area, device, entity, floor, home |  |
-| **Low battery: severity** — Severity 0–4 of low battery (0 journal only, 4 critical). | `detectors.battery.severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
-| **Low battery in a safety device: severity** — Severity 0–4 of low battery in a safety device (0 journal only, 4 critical). | `detectors.battery.safety_severity` | 2 | 0–4 | area, device, entity, floor, home | advanced |
+| **Low battery: severity** — Severity 0–3 of low battery (0 journal only, 3 urgent; only safety can be critical). | `detectors.battery.severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
+| **Low battery in a safety device: severity** — Severity 0–3 of low battery in a safety device (0 journal only, 3 urgent; only safety can be critical). | `detectors.battery.safety_severity` | 2 | 0–3 | area, device, entity, floor, home | advanced |
 | **Group batteries** — All low batteries in one situation. | `detectors.battery.group` | true |  | home |  |
 | **Consumable threshold** — Report consumables with this much life left or less. | `detectors.consumables.percent` | 10 | 0–100 % | area, device, entity, floor, home |  |
 | **Sensors showing usage** — Consumable sensors that show how much is used (100 = worn out) instead of what is left. | `detectors.consumables.used_up_entities` | [] |  | home | advanced |
-| **Consumable: severity** — Severity 0–4 of consumable (0 journal only, 4 critical). | `detectors.consumables.severity` | 0 | 0–4 | area, device, entity, floor, home | advanced |
+| **Consumable: severity** — Severity 0–3 of consumable (0 journal only, 3 urgent; only safety can be critical). | `detectors.consumables.severity` | 0 | 0–3 | area, device, entity, floor, home | advanced |
 | **Soil moisture limit** — Below this soil moisture a plant needs water. | `detectors.watering.min` | 20 | 1–90 % | area, device, entity, floor, home |  |
-| **Plant watering: severity** — Severity 0–4 of a plant that needs water (0 journal only, 4 critical). | `detectors.watering.severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
-| **Device problem: severity** — Severity 0–4 of device problem (0 journal only, 4 critical). | `detectors.problems.severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
-| **Plant problem: severity** — Severity 0–4 of plant problem (0 journal only, 4 critical). | `detectors.problems.plant_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **Plant watering: severity** — Severity 0–3 of a plant that needs water (0 journal only, 3 urgent; only safety can be critical). | `detectors.watering.severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
+| **Device problem: severity** — Severity 0–3 of device problem (0 journal only, 3 urgent; only safety can be critical). | `detectors.problems.severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
+| **Plant problem: severity** — Severity 0–3 of plant problem (0 journal only, 3 urgent; only safety can be critical). | `detectors.problems.plant_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 | **Silent after** — Hours without a report from a measuring sensor. 0 turns this off. | `detectors.stale.hours` | 6 | 0–720 h | area, device, entity, floor, home |  |
-| **Silent sensor: severity** — Severity 0–4 of silent sensor (0 journal only, 4 critical). | `detectors.stale.severity` | 0 | 0–4 | area, device, entity, floor, home | advanced |
+| **Silent sensor: severity** — Severity 0–3 of silent sensor (0 journal only, 3 urgent; only safety can be critical). | `detectors.stale.severity` | 0 | 0–3 | area, device, entity, floor, home | advanced |
 | **Beyond limit for** — How long a value must stay beyond its limit. | `detectors.environment.minutes` | 20 | 0–1440 min | area, device, entity, floor, home |  |
 | **Appliance sensors** — Words in a sensor's or device's name that mark it as inside an appliance (freezer, fridge, oven, aquarium). Their temperature and humidity are not treated as the room's. | `detectors.environment.appliance_words` | see panel | –60 | home | advanced |
 | **Allowed difference** — Maximum difference between temperature sensors in one room. | `detectors.divergence.degrees` | 2.5 | 0.5–20 ° | area, floor, home |  |
-| **Disagreeing sensors: severity** — Severity 0–4 of disagreeing sensors (0 journal only, 4 critical). | `detectors.divergence.severity` | 0 | 0–4 | home | advanced |
+| **Disagreeing sensors: severity** — Severity 0–3 of disagreeing sensors (0 journal only, 3 urgent; only safety can be critical). | `detectors.divergence.severity` | 0 | 0–3 | home | advanced |
 | **Lights on for** — How long lights must be on while everyone is away. | `detectors.lights_away.minutes` | 10 | 0–720 min | area, device, entity, floor, home |  |
-| **Lights in an empty home: severity** — Severity 0–4 of lights in an empty home (0 journal only, 4 critical). | `detectors.lights_away.severity` | 2 | 0–4 | home | advanced |
+| **Lights in an empty home: severity** — Severity 0–3 of lights in an empty home (0 journal only, 3 urgent; only safety can be critical). | `detectors.lights_away.severity` | 2 | 0–3 | home | advanced |
 | **Window open for** — How long a window must be open while heating. | `detectors.window_heating.minutes` | 10 | 0–720 min | area, device, entity, floor, home |  |
-| **Window open while heating: severity** — Severity 0–4 of window open while heating (0 journal only, 4 critical). | `detectors.window_heating.severity` | 2 | 0–4 | area, device, entity, floor, home | advanced |
+| **Window open while heating: severity** — Severity 0–3 of window open while heating (0 journal only, 3 urgent; only safety can be critical). | `detectors.window_heating.severity` | 2 | 0–3 | area, device, entity, floor, home | advanced |
 | **Read homeai_signals attributes** — Accept signals that other integrations publish in a homeai_signals attribute. | `detectors.external.attributes` | true |  | home | advanced |
 | **Low temperature: watch** — Report low temperature indoors. | `detectors.environment.temperature_min_enabled` | true |  | area, device, entity, floor, home |  |
 | **Low temperature: limit** — The limit for low temperature. | `detectors.environment.temperature_min` | 10.0 | -20–30 °C | area, device, entity, floor, home |  |
-| **Low temperature: severity** — Severity 0–4 of low temperature (0 journal only, 4 critical). | `detectors.environment.temperature_min_severity` | 3 | 0–4 | area, device, entity, floor, home | advanced |
+| **Low temperature: severity** — Severity 0–3 of low temperature (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.temperature_min_severity` | 3 | 0–3 | area, device, entity, floor, home | advanced |
 | **High temperature: watch** — Report high temperature indoors. | `detectors.environment.temperature_max_enabled` | true |  | area, device, entity, floor, home |  |
 | **High temperature: limit** — The limit for high temperature. | `detectors.environment.temperature_max` | 30.0 | 15–60 °C | area, device, entity, floor, home |  |
-| **High temperature: severity** — Severity 0–4 of high temperature (0 journal only, 4 critical). | `detectors.environment.temperature_max_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **High temperature: severity** — Severity 0–3 of high temperature (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.temperature_max_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 | **High humidity: watch** — Report high humidity indoors. | `detectors.environment.humidity_max_enabled` | true |  | area, device, entity, floor, home |  |
 | **High humidity: limit** — The limit for high humidity. | `detectors.environment.humidity_max` | 70.0 | 30–100 % | area, device, entity, floor, home |  |
-| **High humidity: severity** — Severity 0–4 of high humidity (0 journal only, 4 critical). | `detectors.environment.humidity_max_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **High humidity: severity** — Severity 0–3 of high humidity (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.humidity_max_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 | **Low humidity: watch** — Report low humidity indoors. | `detectors.environment.humidity_min_enabled` | false |  | area, device, entity, floor, home |  |
 | **Low humidity: limit** — The limit for low humidity. | `detectors.environment.humidity_min` | 25.0 | 0–60 % | area, device, entity, floor, home |  |
-| **Low humidity: severity** — Severity 0–4 of low humidity (0 journal only, 4 critical). | `detectors.environment.humidity_min_severity` | 0 | 0–4 | area, device, entity, floor, home | advanced |
+| **Low humidity: severity** — Severity 0–3 of low humidity (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.humidity_min_severity` | 0 | 0–3 | area, device, entity, floor, home | advanced |
 | **High CO₂: watch** — Report high co₂ indoors. | `detectors.environment.co2_max_enabled` | true |  | area, device, entity, floor, home |  |
 | **High CO₂: limit** — The limit for high co₂. | `detectors.environment.co2_max` | 1500.0 | 400–10000 ppm | area, device, entity, floor, home |  |
-| **High CO₂: severity** — Severity 0–4 of high co₂ (0 journal only, 4 critical). | `detectors.environment.co2_max_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **High CO₂: severity** — Severity 0–3 of high co₂ (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.co2_max_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 | **High PM2.5: watch** — Report high pm2.5 indoors. | `detectors.environment.pm25_max_enabled` | true |  | area, device, entity, floor, home |  |
 | **High PM2.5: limit** — The limit for high pm2.5. | `detectors.environment.pm25_max` | 50.0 | 1–1000 µg/m³ | area, device, entity, floor, home |  |
-| **High PM2.5: severity** — Severity 0–4 of high pm2.5 (0 journal only, 4 critical). | `detectors.environment.pm25_max_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **High PM2.5: severity** — Severity 0–3 of high pm2.5 (0 journal only, 3 urgent; only safety can be critical). | `detectors.environment.pm25_max_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 
 ## Situations
 
@@ -197,8 +197,8 @@ How serious a situation is.
 
 | Setting | Key | Default | Range / options | Scope | Notes |
 |---|---|---|---|---|---|
-| **Severity overrides** — Fixed severity per kind of situation, for example {"updates": 1}. | `triage.severity_overrides` | see panel |  | home | advanced |
-| **Raise when nobody is home** — Safety, security and damage situations are one step more serious while everyone is away. | `triage.raise_when_away` | true |  | home |  |
+| **Severity overrides** — Fixed severity per kind of situation, for example {"updates": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent). | `triage.severity_overrides` | see panel |  | home | advanced |
+| **Raise when nobody is home** — Safety, security and damage situations are one step more serious while everyone is away (up to urgent; only safety can be critical). | `triage.raise_when_away` | true |  | home |  |
 | **Learn from “not a problem”** — Lower the severity of kinds that are dismissed again and again (never safety). | `triage.calibration_enabled` | true |  | home |  |
 | **Learning: minimum situations** — How many situations of a kind before learning applies. | `triage.calibration_min_events` | 5 | 2–100 | home | advanced |
 | **Learning: dismissed share** — Share of dismissed situations that lowers severity. | `triage.calibration_dismiss_ratio` | 0.6 | 0.1–1.0 | home | advanced |
@@ -311,7 +311,7 @@ Knowledge about hubs, bridges and Zigbee2MQTT.
 | **Find hubs automatically** — Treat connectivity sensors of devices that others connect through, and the Zigbee2MQTT bridge, as hubs. | `adapters.auto_bridges` | true |  | home |  |
 | **Hub sensors** — Extra entities that are off or offline when a hub is down. | `adapters.bridge_entities` | [] |  | home |  |
 | **Hub offline for** — How long a hub must be offline before it counts. | `adapters.bridge_minutes` | 2 | 0–120 min | area, device, entity, floor, home |  |
-| **Hub offline: severity** — Severity 0–4 of a hub that is offline. | `adapters.bridge_severity` | 3 | 0–4 | area, device, entity, floor, home | advanced |
+| **Hub offline: severity** — Severity 0–3 of a hub that is offline (3 urgent; only safety can be critical). | `adapters.bridge_severity` | 3 | 0–3 | area, device, entity, floor, home | advanced |
 | **Reload hub integration** — Repair a hub that is offline by reloading its integration. | `adapters.bridge_reload` | true |  | home |  |
 | **Zigbee2MQTT add-on** — Slug of the Zigbee2MQTT add-on (e.g. 45df7312_zigbee2mqtt) to restart when the bridge is offline. Empty: reload instead. | `adapters.zigbee2mqtt_addon` | `` | up to 100 characters | home | advanced |
 
@@ -412,7 +412,7 @@ Norms, anomalies, habits and the weekly review.
 | **Anomalies: watch** — Report values far outside their usual range for that hour of the week. | `detectors.anomaly.enabled` | true |  | home |  |
 | **Anomaly threshold** — How many spreads away from the norm counts as unusual. | `learning.anomaly_sigma` | 3.0 | 1.5–10 | home |  |
 | **Unusual for** — How long a value must stay unusual before it is reported. | `learning.anomaly_minutes` | 30 | 5–720 min | area, device, entity, floor, home |  |
-| **Anomaly: severity** — Severity 0–4 of an unusual value. | `learning.anomaly_severity` | 1 | 0–4 | area, device, entity, floor, home | advanced |
+| **Anomaly: severity** — Severity 0–3 of an unusual value (3 urgent; only safety can be critical). | `learning.anomaly_severity` | 1 | 0–3 | area, device, entity, floor, home | advanced |
 | **Habits** — Notice things done by hand at the same time and propose them for the plan. | `learning.habits` | true |  | home |  |
 | **Habits from** — How many past days are searched for habits. | `learning.habit_days` | 21 | 7–60 d | home | advanced |
 | **Habit after** — On how many days something must repeat to become a proposal. | `learning.habit_min_days` | 8 | 3–60 d | home | advanced |

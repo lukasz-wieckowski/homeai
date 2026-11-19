@@ -170,39 +170,39 @@ export class HomeAISettings extends LitElement {
     };
     switch (item.type) {
       case "bool":
-        return html`<input type="checkbox" .checked=${live(Boolean(v))} @change=${onChange} />`;
+        return html`<input part="input" type="checkbox" .checked=${live(Boolean(v))} @change=${onChange} />`;
       case "select":
-        return html`<select @change=${onChange}>${item.options.map((o) => html`<option value=${o} .selected=${live(o === v)}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
+        return html`<select part="input" @change=${onChange}>${item.options.map((o) => html`<option value=${o} .selected=${live(o === v)}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
       case "multiselect":
-        return html`<select multiple size=${Math.min(item.options.length, 6)} @change=${onChange}>
+        return html`<select part="input" multiple size=${Math.min(item.options.length, 6)} @change=${onChange}>
           ${item.options.map((o) => html`<option value=${o} .selected=${live(((v as string[]) ?? []).includes(o))}>${item.option_labels?.[o] ?? o}</option>`)}</select>`;
       case "int": case "float": case "duration":
-        return html`<input type="number" style="width: 8em" .value=${live(String(v))} min=${item.min ?? ""} max=${item.max ?? ""}
+        return html`<input part="input" type="number" class="w-m" .value=${live(String(v))} min=${item.min ?? ""} max=${item.max ?? ""}
           step=${item.step ?? (item.type === "float" ? "any" : 1)} @change=${onChange} /> ${item.unit ?? ""}`;
       case "time":
-        return html`<input type="time" .value=${live(String(v))} @change=${onChange} />`;
+        return html`<input part="input" type="time" .value=${live(String(v))} @change=${onChange} />`;
       case "json":
-        return html`<textarea .value=${live(JSON.stringify(v, null, 2))} @change=${onChange}></textarea>`;
+        return html`<textarea part="input" .value=${live(JSON.stringify(v, null, 2))} @change=${onChange}></textarea>`;
       case "entities": case "strings":
-        return html`<textarea .value=${live(((v as string[]) ?? []).join("\n"))} @change=${onChange} placeholder="one per line"></textarea>`;
+        return html`<textarea part="input" .value=${live(((v as string[]) ?? []).join("\n"))} @change=${onChange} placeholder="one per line"></textarea>`;
       case "text":
-        return html`<textarea .value=${live(String(v ?? ""))} @change=${onChange}></textarea>`;
+        return html`<textarea part="input" .value=${live(String(v ?? ""))} @change=${onChange}></textarea>`;
       default:
-        return html`<input type="text" .value=${live(String(v ?? ""))} @change=${onChange} />`;
+        return html`<input part="input" type="text" .value=${live(String(v ?? ""))} @change=${onChange} />`;
     }
   }
 
   private scopeBar() {
     const lang = this.hass.language;
     const targets = this.targets();
-    return html`<div class="row" style="margin-bottom: 12px">
+    return html`<div class="row toolbar-row">
       <span class="muted">${t(lang, "scope")}</span>
-      <select @change=${(e: Event) => {
+      <select part="input" @change=${(e: Event) => {
         this.scopeType = (e.target as HTMLSelectElement).value as ScopeType;
         this.scopeRef = "";
         this.loadScope();
       }}>${SCOPES.map((s) => html`<option value=${s} ?selected=${s === this.scopeType}>${t(lang, `scope_${s}`)}</option>`)}</select>
-      ${this.scopeType === "global" ? nothing : html`<select class="grow" @change=${(e: Event) => {
+      ${this.scopeType === "global" ? nothing : html`<select part="input" class="grow" @change=${(e: Event) => {
         this.scopeRef = (e.target as HTMLSelectElement).value;
         this.loadScope();
       }}><option value="">—</option>${targets.map((x) => html`<option value=${x.id} ?selected=${x.id === this.scopeRef}>${x.name}</option>`)}</select>`}
@@ -213,7 +213,7 @@ export class HomeAISettings extends LitElement {
     const lang = this.hass.language;
     const labels = new Map((this.schema?.settings ?? []).map((s) => [s.key, s.label]));
     const show = (v: unknown) => (v === null || v === undefined ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v));
-    return html`<div class="card"><div class="title">${t(lang, "history")}</div><ul class="plain">
+    return html`<div part="card" class="card"><div part="title" class="title">${t(lang, "history")}</div><ul part="list" class="plain">
       ${(this.history ?? []).map((c) => html`<li><div class="row"><span class="muted">${when(c.ts, lang)}</span>
         <span class="grow">${labels.get(c.key) ?? c.key}${c.scope !== "global" ? html` <span class="muted">(${c.scope})</span>` : nothing}</span>
         <span class="muted">${c.user ?? ""}</span></div>
@@ -223,7 +223,7 @@ export class HomeAISettings extends LitElement {
 
   render() {
     const lang = this.hass.language;
-    if (!this.hass.user.is_admin) return html`<div class="empty">${t(lang, "admin_only")}</div>`;
+    if (!this.hass.user.is_admin) return html`<div part="empty" class="empty">${t(lang, "admin_only")}</div>`;
     if (!this.schema) return nothing;
     const q = this.filter.toLowerCase();
     const scoped = this.skey !== "global";
@@ -235,35 +235,35 @@ export class HomeAISettings extends LitElement {
     );
     const section = this.schema.sections.find((s) => s.id === this.section);
     return html`
-      <div class="row" style="margin-bottom: 12px">
-        <input class="grow" type="search" placeholder=${t(lang, "search")} .value=${this.filter} @input=${(e: Event) => (this.filter = (e.target as HTMLInputElement).value)} />
-        <label class="row"><input type="checkbox" .checked=${this.advanced} @change=${(e: Event) => (this.advanced = (e.target as HTMLInputElement).checked)} />${t(lang, "advanced")}</label>
-        <button @click=${this.undo}>${t(lang, "undo")}</button>
-        <button @click=${this.toggleHistory}>${t(lang, "history")}</button>
-        <button @click=${this.exportSettings}>${t(lang, "export")}</button>
-        <span><button @click=${(e: Event) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLInputElement).click()}>${t(lang, "import")}</button><input type="file" accept="application/json,.json" hidden @change=${this.importSettings} /></span>
+      <div class="row toolbar-row">
+        <input part="input" class="grow" type="search" placeholder=${t(lang, "search")} .value=${this.filter} @input=${(e: Event) => (this.filter = (e.target as HTMLInputElement).value)} />
+        <label class="row"><input part="input" type="checkbox" .checked=${this.advanced} @change=${(e: Event) => (this.advanced = (e.target as HTMLInputElement).checked)} />${t(lang, "advanced")}</label>
+        <button part="button" @click=${this.undo}>${t(lang, "undo")}</button>
+        <button part="button" @click=${this.toggleHistory}>${t(lang, "history")}</button>
+        <button part="button" @click=${this.exportSettings}>${t(lang, "export")}</button>
+        <span><button part="button" @click=${(e: Event) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLInputElement).click()}>${t(lang, "import")}</button><input part="input" type="file" accept="application/json,.json" hidden @change=${this.importSettings} /></span>
       </div>
       ${this.scopeBar()}
       ${this.history ? this.historyCard() : nothing}
-      ${q ? nothing : html`<div class="row" style="margin-bottom: 12px">
-        ${this.schema.sections.map((s) => html`<button class=${s.id === this.section ? "primary" : ""} @click=${() => (this.section = s.id)}>${s.label}</button>`)}
+      ${q ? nothing : html`<div class="row toolbar-row">
+        ${this.schema.sections.map((s) => html`<button part=${s.id === this.section ? "button button-primary" : "button"} class=${s.id === this.section ? "primary" : ""} @click=${() => (this.section = s.id)}>${s.label}</button>`)}
       </div>
       ${section ? html`<div class="row"><p class="muted grow">${section.description}</p>
-        ${scoped ? nothing : html`<button @click=${this.resetSection}>${t(lang, "reset_section")}</button>`}</div>` : nothing}`}
-      ${this.message ? html`<div class="card muted">${this.message}</div>` : nothing}
-      ${this.scopeType !== "global" && !this.scopeRef ? html`<div class="empty">${t(lang, "scope_pick")}</div>` : html`<div class="card">
+        ${scoped ? nothing : html`<button part="button" @click=${this.resetSection}>${t(lang, "reset_section")}</button>`}</div>` : nothing}`}
+      ${this.message ? html`<div part="card" class="card muted">${this.message}</div>` : nothing}
+      ${this.scopeType !== "global" && !this.scopeRef ? html`<div part="empty" class="empty">${t(lang, "scope_pick")}</div>` : html`<div part="card" class="card">
         ${items.length ? nothing : html`<div class="muted">${t(lang, "scope_none")}</div>`}
         ${repeat(items, (item) => `${this.skey}|${item.key}`, (item) => {
           const here = scoped && item.key in this.scopeValues;
           const value = here ? this.scopeValues[item.key] : item.value;
           const count = Object.keys(item.overrides || {}).length;
-          return html`<div class="row" style="padding: 8px 0; border-bottom: 1px solid var(--divider-color)">
+          return html`<div class="row setting">
             <div class="grow"><div>${item.label}</div><div class="muted">${item.description}</div>
               ${here ? html`<div class="muted"><b>${t(lang, "overridden")}</b></div>`
                 : scoped ? html`<div class="muted">${t(lang, "inherited")}</div>`
                 : count ? html`<div class="muted">${count} × ${t(lang, "overridden")}</div>` : nothing}</div>
             <div>${this.input(item, value)}</div>
-            ${(scoped ? here : item.source !== "default") ? html`<button title=${t(lang, "reset")} @click=${() => this.reset(item)}>↺</button>` : nothing}
+            ${(scoped ? here : item.source !== "default") ? html`<button part="button" title=${t(lang, "reset")} @click=${() => this.reset(item)}>↺</button>` : nothing}
           </div>`;
         })}
       </div>`}`;

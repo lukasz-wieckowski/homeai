@@ -45,28 +45,28 @@ export class HomeAILearning extends LitElement {
   render() {
     const lang = this.hass.language;
     return html`
-      <h3>${t(lang, "proposals")}</h3>
+      <h3 part="heading" class="heading">${t(lang, "proposals")}</h3>
       ${this.proposals.length
         ? this.proposals.map(
-            (p) => html`<div class="card row"><span class="grow">${p.title}<br /><span class="muted">${p.days_seen}/${p.days_possible}</span></span>
-              <button class="primary" @click=${() => this.call("homeai/learning/approve", { proposal_id: p.id })}>${t(lang, "approve")}</button>
-              <button @click=${() => this.call("homeai/learning/reject", { proposal_id: p.id })}>${t(lang, "deny")}</button></div>`,
+            (p) => html`<div part="card" class="card row"><span class="grow">${p.title}<br /><span class="muted">${p.days_seen}/${p.days_possible}</span></span>
+              <button part="button button-primary" class="primary" @click=${() => this.call("homeai/learning/approve", { proposal_id: p.id })}>${t(lang, "approve")}</button>
+              <button part="button" @click=${() => this.call("homeai/learning/reject", { proposal_id: p.id })}>${t(lang, "deny")}</button></div>`,
           )
-        : html`<div class="empty">${t(lang, "no_proposals")}</div>`}
-      <h3>${t(lang, "memory")}</h3>
-      <div class="card">
-        <div class="row"><input class="grow" .value=${this.draft} placeholder=${t(lang, "remember_hint")}
+        : html`<div part="empty" class="empty">${t(lang, "no_proposals")}</div>`}
+      <h3 part="heading" class="heading">${t(lang, "memory")}</h3>
+      <div part="card" class="card">
+        <div class="row"><input part="input" class="grow" .value=${this.draft} placeholder=${t(lang, "remember_hint")}
           @input=${(e: Event) => (this.draft = (e.target as HTMLInputElement).value)} @keydown=${(e: KeyboardEvent) => e.key === "Enter" && this.remember()} />
-          <button @click=${this.remember}>${t(lang, "remember")}</button></div>
-        <ul class="plain">${this.facts.map(
+          <button part="button" @click=${this.remember}>${t(lang, "remember")}</button></div>
+        <ul part="list" class="plain">${this.facts.map(
           (f) => html`<li class="row"><span class="grow">${f.text} <span class="muted">${f.scope === "home" ? t(lang, "memory_home") : this.hass.states[f.scope.replace(/^person:/, "")]?.attributes.friendly_name ?? f.scope} · ${t(lang, `memory_from_${f.source}`)}</span></span>
-            ${f.approved ? nothing : html`<button @click=${() => this.call("homeai/memory/approve", { fact_id: f.id })}>${t(lang, "approve")}</button>`}
-            <button @click=${() => this.call("homeai/memory/remove", { fact_id: f.id })}>${t(lang, "remove")}</button></li>`,
+            ${f.approved ? nothing : html`<button part="button" @click=${() => this.call("homeai/memory/approve", { fact_id: f.id })}>${t(lang, "approve")}</button>`}
+            <button part="button" @click=${() => this.call("homeai/memory/remove", { fact_id: f.id })}>${t(lang, "remove")}</button></li>`,
         )}</ul>
       </div>
       ${this.reviews.length
-        ? html`<h3>${t(lang, "review")}</h3><div class="card"><div class="muted">${when(this.reviews[0].ts, lang)}</div>
-            <p style="white-space: pre-line">${this.reviews[0].text}</p></div>`
+        ? html`<h3 part="heading" class="heading">${t(lang, "review")}</h3><div part="card" class="card"><div class="muted">${when(this.reviews[0].ts, lang)}</div>
+            <p class="pre-line">${this.reviews[0].text}</p></div>`
         : nothing}
     `;
   }

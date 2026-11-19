@@ -23,6 +23,7 @@ model.</sub>
   [Situations](#situations) · [Approvals](#approvals) · [Chat](#chat) · [Plan](#plan) · [Presence](#presence) ·
   [Learning](#learning) · [Rules](#rules) · [Journal](#journal) · [Settings](#settings) · [AI](#ai)
 - [Dashboard cards](#dashboard-cards)
+- [Theming](#theming)
 - [On the phone](#on-the-phone)
 - [Calendars](#calendars)
 - [Heating](#heating)
@@ -140,7 +141,8 @@ next one answers. Daily and monthly budgets for all of HomeAI are in the panel's
 Everything that needs attention, most serious first. Each situation shows:
 
 - the **severity** badge: 0 information (journal only), 1 low (a summary is enough), 2 medium (someone today),
-  3 high (someone now), 4 critical (danger to people or serious damage; wakes people up);
+  3 high (someone now), 4 critical (safety only, danger to people: a leak, smoke, gas, carbon monoxide; wakes people
+  up). Everything else, a window left open while nobody is home included, is at most high (3);
 - what happened and the **advice**; with AI, **Why** (the model's reasoning) and numbered **steps**;
 - **HomeAI is fixing it** when a repair playbook is running; people are told only if it fails.
 
@@ -321,6 +323,92 @@ sections:
           - sensor.homeai_next_plan_change
 ```
 
+## Theming
+
+The panel and the cards have no colours, fonts, radii, shadows or spacing of their own. Everything comes from the
+Home Assistant theme in use, light or dark, through the same variables Home Assistant's own cards read. A home with
+its own look sets `--homeai-*` variables in its theme; what a variable cannot change, `::part()` can.
+
+```yaml
+# a theme file (frontend: themes: !include_dir_merge_named themes); theme keys are written without "--"
+My home:
+  homeai-card-background: "rgba(255, 255, 255, 0.7)"
+  homeai-card-border-radius: 24px
+  homeai-accent-color: "#c4581c"
+  homeai-font-family: Georgia, serif
+  modes:
+    dark:
+      homeai-card-background: "rgba(28, 28, 28, 0.7)"
+```
+
+| Variable | Default (Home Assistant variable) | What it styles |
+|---|---|---|
+| `--homeai-text-color` | `--primary-text-color` | text |
+| `--homeai-secondary-text-color` | `--secondary-text-color` | secondary text, times |
+| `--homeai-accent-color` | `--primary-color` | buttons, the active tab, checkboxes |
+| `--homeai-on-accent-color` | `--text-primary-color` | text on the accent colour |
+| `--homeai-background` | `--primary-background-color` | the panel's background |
+| `--homeai-surface-color` | `--secondary-background-color` | quieter surfaces (HomeAI's chat messages) |
+| `--homeai-divider-color` | `--divider-color` | lines between items |
+| `--homeai-error-color` | `--error-color` | error messages |
+| `--homeai-header-background` | `--app-header-background-color` | the panel's top bar |
+| `--homeai-header-text-color` | `--app-header-text-color` | its text |
+| `--homeai-severity-0-color`, `--homeai-severity-1-color`, `--homeai-severity-2-color`, `--homeai-severity-3-color`, `--homeai-severity-4-color` | `--secondary-text-color`, `--success-color`, `--info-color`, `--warning-color`, `--error-color` | severity badges 0–4 |
+| `--homeai-severity-text-color` | `--text-primary-color` | numbers on the badges |
+| `--homeai-card-background` | `--ha-card-background`, else `--card-background-color` | cards |
+| `--homeai-card-border-color` | `--ha-card-border-color`, else `--divider-color` | card border |
+| `--homeai-card-border-width` | `--ha-card-border-width`, else `--ha-border-width-sm` | card border |
+| `--homeai-card-border-radius` | `--ha-card-border-radius`, else `--ha-border-radius-lg` | card corners |
+| `--homeai-card-box-shadow` | `--ha-card-box-shadow`, else none | card shadow |
+| `--homeai-card-padding` | `--ha-space-4` | inside a card |
+| `--homeai-card-spacing` | `--ha-space-3` | between cards |
+| `--homeai-button-border-radius` | `--ha-border-radius-pill` | buttons |
+| `--homeai-button-padding` | `--ha-space-2` `--ha-space-4` | buttons |
+| `--homeai-button-border-color` | `--homeai-divider-color` | buttons |
+| `--homeai-input-background` | `--input-fill-color` | fields |
+| `--homeai-input-text-color` | `--input-ink-color` | fields |
+| `--homeai-input-border-color` | `--input-outlined-idle-border-color` | fields |
+| `--homeai-input-border-radius` | `--ha-border-radius-sm` | fields |
+| `--homeai-input-padding` | `--ha-space-2` | fields |
+| `--homeai-badge-border-radius` | `--ha-border-radius-pill` | severity badges |
+| `--homeai-message-border-radius` | `--ha-border-radius-xl` | chat messages |
+| `--homeai-user-message-background` | `--homeai-accent-color` | your chat messages |
+| `--homeai-user-message-text-color` | `--homeai-on-accent-color` | your chat messages |
+| `--homeai-assistant-message-background` | `--homeai-surface-color` | HomeAI's chat messages |
+| `--homeai-assistant-message-text-color` | `--homeai-text-color` | HomeAI's chat messages |
+| `--homeai-font-family` | `--ha-font-family-body` | all text |
+| `--homeai-code-font-family` | `--ha-font-family-code` | prompts and JSON settings |
+| `--homeai-font-size` | `--ha-font-size-m` | text |
+| `--homeai-secondary-font-size` | `--ha-font-size-s` | secondary text, badges |
+| `--homeai-title-font-size` | `--ha-font-size-l` | card titles, headings |
+| `--homeai-title-font-weight` | `--ha-font-weight-medium` | card titles, headings |
+| `--homeai-header-font-size` | `--ha-font-size-xl` | the panel's title |
+| `--homeai-header-font-weight` | `--ha-font-weight-normal` | the panel's title |
+| `--homeai-spacing` | `--ha-space-2` | the base step (gaps, list rows); smaller and larger steps follow it |
+| `--homeai-content-padding` | `--ha-content-gutter` | around the panel's content |
+| `--homeai-content-max-width` | 68em | width of the panel's content |
+| `--homeai-header-height` | `--header-height` | the panel's top bar |
+
+Parts, for `::part()` from the page the element is on (card-mod, a frontend module with your own CSS; Home
+Assistant theme files themselves only set variables). The panel passes its tabs' parts on, so
+`homeai-panel::part(card)` reaches the cards in every tab:
+
+| Part | What |
+|---|---|
+| `card`, `title`, `heading` | a card, its title, a heading between cards |
+| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | a severity badge (and the one for that severity) |
+| `button`, `button-primary` | every button, the main one |
+| `input` | fields, lists to choose from, checkboxes |
+| `list`, `empty`, `error` | a list in a card, the “nothing here” text, an error |
+| `log`, `message`, `message-user`, `message-assistant` | the chat: the conversation and its messages |
+| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | the panel only: top bar, its title, the tabs, the content |
+
+```css
+homeai-panel::part(card),
+homeai-situations-card::part(card) { backdrop-filter: blur(12px); }
+homeai-panel::part(tab-active) { font-weight: 700; }
+```
+
 ## On the phone
 
 <p>
@@ -331,7 +419,8 @@ sections:
 - Notifications go to each person's Companion app (found automatically; more targets per person in *Settings →
   Notifications*). They carry the buttons **Got it**, **I'll handle it** and **Snooze**; approval requests carry
   **Approve** and **Deny**.
-- Who gets what depends on the severity: critical goes to everyone at once and repeats (and may wake people), high
+- Who gets what depends on the severity: critical (safety only) goes to everyone at once as a critical alert and
+  repeats every 5 minutes (and may wake people), high
   goes to people at home (else everyone) and to everyone after 15 minutes, medium to people at home (else everyone),
   low only to the panel and the digest. Every ladder is a setting.
 - Sleeping people get only critical notifications. Daily limits, a pause switch and the digest keep it calm.
@@ -482,7 +571,7 @@ HomeAI creates these labels; put them on entities or devices in Home Assistant:
 | Label | Effect |
 |---|---|
 | **HomeAI: ignore** | HomeAI does not watch or touch it |
-| **HomeAI: critical** | Problems with it are more serious (e.g. a freezer plug, a sump pump) |
+| **HomeAI: critical** | Problems with it are always urgent, and critical when it is about safety (e.g. a freezer plug, a sump pump, a smoke detector) |
 | **HomeAI: protective action** | On a safety alarm HomeAI may switch it to the safe side at once (valves, heaters) |
 | **HomeAI: personal** | A personal device (phone, laptop): not reported when it goes offline |
 | **HomeAI: private** | Never sent to cloud AI |

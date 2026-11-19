@@ -25,6 +25,7 @@ model.</sub>
 - [Dashboard cards](#dashboard-cards)
 - [On the phone](#on-the-phone)
 - [Calendars](#calendars)
+- [Heating](#heating)
 - [Entities](#entities)
 - [Services and automations](#services-and-automations)
 - [How HomeAI decides what it may do](#how-homeai-decides-what-it-may-do)
@@ -58,13 +59,17 @@ model.</sub>
   Autonomous actions run as the dedicated `HomeAI` user, are verified, logged in the logbook and can be undone.
 - **Plans.** The home's plan (actions and reminders: once, daily, on weekdays, around sunrise and sunset), presence
   exceptions (trips, guests, working from home) and “tell me when …” requests.
+- **Heats with your thermostats' schedules.** Thermostats that speak HomeAI's schedule contract (such as Heat Zones)
+  keep their weekly schedule; HomeAI adds overrides for a while from presence (trips, guests, working from home,
+  sickness, an empty home, someone at the desk) and proposes schedule changes from habits, which an administrator
+  approves.
 - **Thinks, when you let it.** Three optional AI tiers: P1, a cheap or local everyday brain; P2, an investigator with
   tools; P3, an arbiter for the hardest decisions. Budgets, privacy levels and a hard rule that AI never acts
   outside the policy.
 - **Learns.** Norms for each hour of the week, habits proposed for the plan (saved only after approval), memory of
   facts and preferences, feedback from undo and refusals, and a weekly review.
 - **Configurable from the UI.** Every threshold, delay, limit, channel and model is a field in the HomeAI panel:
-  270+ settings, many of them per floor, room, device, entity or person. See [docs/settings.md](docs/settings.md).
+  300+ settings, many of them per floor, room, device, entity or person. See [docs/settings.md](docs/settings.md).
 
 ## Requirements
 
@@ -338,6 +343,40 @@ sections:
 `calendar.homeai_plan` shows the plan (create an event to add a reminder, delete an occurrence to skip it) and what
 other integrations plan. `calendar.homeai_presence` shows presence exceptions. Both work with calendar triggers.
 
+## Heating
+
+HomeAI works with any thermostat that speaks its **schedule contract** (attribute `homeai_schedule` on the `climate`
+entity, see [docs/integrations.md](docs/integrations.md#thermostat-schedule-contract)), for example Heat Zones. The
+thermostat keeps its own weekly schedule; HomeAI never has a heating plan of its own.
+
+- **Normal control does not change.** “Make it warmer in the living room” sets the temperature like on any device
+  (R2), and the thermostat keeps it until its next block.
+- **Overrides for a while, by HomeAI itself.** From `calendar.homeai_presence` and presence:
+
+  | When | Where | Preset (setting) |
+  |---|---|---|
+  | the household goes away (a household trip, or every resident's own trip at once), vacation mode | everywhere | `away` |
+  | guests | common spaces | `comfort` |
+  | working from home | the person's workplace | `comfort` |
+  | sickness | everywhere | `comfort` |
+  | nobody home for an hour (setting) | everywhere, until someone is back | `eco` |
+  | someone active in a room (an entity labelled *HomeAI: activity*, e.g. a desk's power above 20 W) | that room | `comfort`, or a lower valve limit |
+
+  Each override goes to the thermostat with `source: homeai` and a reason, through the policy as a device action
+  (R2): during the observation period HomeAI only notes it, and with the default level *propose and ask* residents
+  approve it on their phones. Calendar events are sent a few hours ahead so the room is warm in time. When the reason
+  is gone (the trip was cancelled, someone came home) HomeAI removes its override; when a person removes it on the
+  thermostat, HomeAI does not set it again for that reason.
+- **Schedule changes, only proposed.** When people keep warming up by hand before a block (or going to sleep earlier)
+  on most workdays or weekend days, HomeAI proposes moving that block. A new week is configuration (R4): it waits in
+  *Approvals* for an administrator.
+- **Room roles.** Guests warm the common spaces and working from home the person's workplace. Rooms get their roles
+  (bedroom, bathroom, common space, workplace) from the setting *Room roles* per room, from the labels *HomeAI:
+  bedroom*, *HomeAI: bathroom*, *HomeAI: common space* and *HomeAI: workplace* (on the room or on a device in it),
+  or from the room's icon and name. A person's workplace is their setting *Workplace* (section *People and sleep*).
+
+All presets and timings are in the HomeAI panel, section *Heating*.
+
 ## Entities
 
 | Entity | Purpose |
@@ -419,9 +458,9 @@ clock or on any notify entity (a TV, a tablet, a display).
 |---|---|---|---|
 | R0 read | states, history, logs | yes | yes |
 | R1 comfort | lights, scenes, fans, media, messages | act and tell (after the observation period) | yes |
-| R2 devices | switches, covers, heating targets, vacuum | propose and ask | yes, or confirm (setting) |
+| R2 devices | switches, covers, heating targets and overrides, vacuum | propose and ask | yes, or confirm (setting) |
 | R3 system | reload an integration, restart an add-on or a bridge, retry a backup | only from repair playbooks, within a daily limit (after the observation period) | administrators |
-| R4 configuration | automations, scripts, scenes, helpers, dashboards | propose; an administrator approves | administrators, with confirmation |
+| R4 configuration | automations, scripts, scenes, helpers, dashboards, a thermostat's weekly schedule | propose; an administrator approves | administrators, with confirmation |
 | R5 security | locks, alarm panels, garage doors and gates, cameras | never, except protective actions | with confirmation |
 | R6 destructive | deleting configuration, restarting Home Assistant | never | administrators, with confirmation |
 
@@ -446,6 +485,8 @@ HomeAI creates these labels; put them on entities or devices in Home Assistant:
 | **HomeAI: protective action** | On a safety alarm HomeAI may switch it to the safe side at once (valves, heaters) |
 | **HomeAI: personal** | A personal device (phone, laptop): not reported when it goes offline |
 | **HomeAI: private** | Never sent to cloud AI |
+| **HomeAI: bedroom**, **bathroom**, **common space**, **workplace** | The role of the room it is on (or of the room of the device it is on), for heating |
+| **HomeAI: activity** | Someone is busy in its room while it is active (a desk's power, a PC): the room's heating reacts |
 
 ## Privacy
 
@@ -466,6 +507,9 @@ API keys, tokens, passwords and camera addresses are never sent. Details: [docs/
   `{id, title, severity, category?, description?, need?, group?}`.
 - **Publish your plans**: an entity attribute `homeai_plan` with a list of `{start, title, end?}`; HomeAI shows them in
   its plan and calendar and never runs them.
+- **Thermostat schedule contract**: a `climate` entity with `homeai_schedule: {version: 1, domain}` and the services
+  `add_override`, `remove_override`, `get_schedule`, `set_schedule` and `estimate`; HomeAI sets overrides from
+  presence and proposes schedule changes.
 - **Events**: `homeai_situation`, `homeai_notification`, `homeai_action`, `homeai_approval`.
 - **LLM API “HomeAI”**: other assistants can read situations and act through HomeAI's policy.
 

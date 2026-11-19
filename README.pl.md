@@ -25,6 +25,7 @@ API OpenAI.</sub>
 - [Karty na pulpit](#karty-na-pulpit)
 - [Na telefonie](#na-telefonie)
 - [Kalendarze](#kalendarze)
+- [Ogrzewanie](#ogrzewanie)
 - [Encje](#encje)
 - [Usługi i automatyzacje](#usługi-i-automatyzacje)
 - [Co HomeAI może zrobić samo](#co-homeai-może-zrobić-samo)
@@ -60,12 +61,16 @@ API OpenAI.</sub>
   można je cofnąć.
 - **Planuje.** Plan domu (akcje i przypomnienia: raz, codziennie, w wybrane dni, według wschodu i zachodu słońca),
   wyjątki obecności (wyjazdy, goście, praca z domu) i prośby „powiedz mi, kiedy…”.
+- **Grzeje według harmonogramów termostatów.** Termostaty, które mówią kontraktem harmonogramu HomeAI (np. Heat
+  Zones), mają własny harmonogram tygodniowy; HomeAI dokłada nadpisania na czas z obecności (wyjazd, goście, praca z
+  domu, choroba, pusty dom, ktoś przy biurku) i proponuje zmiany harmonogramu z nawyków, które zatwierdza
+  administrator.
 - **Myśli, gdy mu pozwolisz.** Trzy opcjonalne poziomy AI: P1 – tani albo lokalny mózg na co dzień; P2 – śledczy z
   narzędziami; P3 – arbiter najtrudniejszych decyzji. Budżety, poziomy prywatności i twarda zasada, że AI nigdy nie
   działa poza polityką.
 - **Uczy się.** Normy dla każdej godziny tygodnia, nawyki proponowane do planu (zapisywane dopiero po akceptacji),
   pamięć faktów i preferencji, wnioski z cofnięć i odmów, przegląd tygodniowy.
-- **Konfigurowalne z interfejsu.** Każdy próg, opóźnienie, limit, kanał i model to pole w panelu HomeAI: ponad 270
+- **Konfigurowalne z interfejsu.** Każdy próg, opóźnienie, limit, kanał i model to pole w panelu HomeAI: ponad 300
   ustawień, wiele z nich osobno dla piętra, pomieszczenia, urządzenia, encji albo osoby. Zobacz
   [docs/settings.md](docs/settings.md).
 
@@ -345,6 +350,40 @@ sections:
 co planują inne integracje. `calendar.homeai_presence` pokazuje wyjątki obecności. Oba działają z wyzwalaczami
 kalendarza.
 
+## Ogrzewanie
+
+HomeAI współpracuje z każdym termostatem, który mówi jego **kontraktem harmonogramu** (atrybut `homeai_schedule` na
+encji `climate`, zob. [docs/integrations.md](docs/integrations.md#thermostat-schedule-contract), po angielsku), np. z
+Heat Zones. Termostat ma własny harmonogram tygodniowy; HomeAI nigdy nie ma własnego planu ogrzewania.
+
+- **Zwykłe sterowanie bez zmian.** „Zrób cieplej w salonie” ustawia temperaturę jak na każdym urządzeniu (R2), a
+  termostat trzyma ją do następnego bloku.
+- **Nadpisania na czas, przez samo HomeAI.** Z `calendar.homeai_presence` i obecności:
+
+  | Kiedy | Gdzie | Preset (ustawienie) |
+  |---|---|---|
+  | cały dom wyjeżdża (wyjazd domu albo wyjazdy wszystkich domowników naraz), tryb urlopu | wszędzie | `away` |
+  | goście | części wspólne | `comfort` |
+  | praca z domu | miejsce pracy osoby | `comfort` |
+  | choroba | wszędzie | `comfort` |
+  | nikogo w domu od godziny (ustawienie) | wszędzie, aż ktoś wróci | `eco` |
+  | ktoś aktywny w pokoju (encja z etykietą *HomeAI: activity*, np. moc przy biurku powyżej 20 W) | ten pokój | `comfort` albo niższy limit zaworu |
+
+  Każde nadpisanie trafia do termostatu ze `source: homeai` i powodem, przez politykę jako działanie na urządzeniu
+  (R2): w okresie obserwacji HomeAI tylko je zapisuje, a przy domyślnym poziomie *Zaproponuj i zapytaj* domownicy
+  zatwierdzają je na telefonach. Wydarzenia z kalendarza idą kilka godzin wcześniej, żeby pokój zdążył się nagrzać.
+  Gdy powód znika (wyjazd odwołany, ktoś wrócił), HomeAI zdejmuje swoje nadpisanie; gdy zdejmie je człowiek na
+  termostacie, HomeAI nie ustawi go ponownie z tego powodu.
+- **Zmiany harmonogramu tylko jako propozycje.** Gdy ludzie stale grzeją ręcznie przed blokiem (albo wcześniej
+  kładą się spać) w większość dni roboczych albo weekendowych, HomeAI proponuje przesunąć ten blok. Nowy tydzień to
+  konfiguracja (R4): czeka w *Zgodach* na administratora.
+- **Role pokoi.** Goście ogrzewają części wspólne, a praca z domu miejsce pracy osoby. Pokoje dostają role (sypialnia,
+  łazienka, część wspólna, miejsce pracy) z ustawienia *Rola pokoju* dla pokoju, z etykiet *HomeAI: bedroom*,
+  *HomeAI: bathroom*, *HomeAI: common space* i *HomeAI: workplace* (na pokoju albo na urządzeniu w nim), albo z ikony
+  i nazwy pokoju. Miejsce pracy osoby to ustawienie *Miejsce pracy* tej osoby (sekcja *Domownicy i sen*).
+
+Wszystkie presety i czasy są w panelu HomeAI, w sekcji *Ogrzewanie*.
+
 ## Encje
 
 | Encja | Do czego |
@@ -426,9 +465,9 @@ AWTRIX albo na dowolnej encji powiadomień (telewizor, tablet, wyświetlacz).
 |---|---|---|---|
 | R0 odczyt | stany, historia, logi | tak | tak |
 | R1 komfort | światła, sceny, wentylatory, media, wiadomości | działa i informuje (po okresie obserwacji) | tak |
-| R2 urządzenia | przełączniki, rolety, temperatura ogrzewania, odkurzacz | proponuje i pyta | tak albo z potwierdzeniem (ustawienie) |
+| R2 urządzenia | przełączniki, rolety, temperatura i nadpisania ogrzewania, odkurzacz | proponuje i pyta | tak albo z potwierdzeniem (ustawienie) |
 | R3 system | przeładowanie integracji, restart dodatku lub mostka, ponowienie kopii | tylko ze scenariuszy napraw, w dziennym limicie (po okresie obserwacji) | administratorzy |
-| R4 konfiguracja | automatyzacje, skrypty, sceny, pomocnicy, pulpity | proponuje; zatwierdza administrator | administratorzy, z potwierdzeniem |
+| R4 konfiguracja | automatyzacje, skrypty, sceny, pomocnicy, pulpity, harmonogram tygodniowy termostatu | proponuje; zatwierdza administrator | administratorzy, z potwierdzeniem |
 | R5 ochrona | zamki, alarmy, bramy i drzwi garażowe, kamery | nigdy, poza akcjami ochronnymi | z potwierdzeniem |
 | R6 nieodwracalne | usuwanie konfiguracji, restart Home Assistanta | nigdy | administratorzy, z potwierdzeniem |
 
@@ -454,6 +493,8 @@ HomeAI tworzy te etykiety; nadaj je encjom albo urządzeniom w Home Assistancie:
 | **HomeAI: protective action** | Przy alarmie bezpieczeństwa HomeAI może od razu przełączyć to w bezpieczny stan (zawory, grzałki) |
 | **HomeAI: personal** | Urządzenie osobiste (telefon, laptop): nie jest zgłaszane, gdy znika z sieci |
 | **HomeAI: private** | Nigdy nie trafia do AI w chmurze |
+| **HomeAI: bedroom**, **bathroom**, **common space**, **workplace** | Rola pokoju, na którym jest (albo pokoju urządzenia, na którym jest), dla ogrzewania |
+| **HomeAI: activity** | Gdy jest aktywna (moc przy biurku, komputer), ktoś jest zajęty w jej pokoju: ogrzewanie pokoju reaguje |
 
 ## Prywatność
 
@@ -475,6 +516,9 @@ Klucze API, tokeny, hasła i adresy kamer nigdy nie są wysyłane. Szczegóły: 
   `{id, title, severity, category?, description?, need?, group?}`.
 - **Publikowanie planów**: atrybut encji `homeai_plan` z listą `{start, title, end?}`; HomeAI pokazuje je w swoim
   planie i kalendarzu i nigdy ich nie wykonuje.
+- **Kontrakt harmonogramu termostatu**: encja `climate` z `homeai_schedule: {version: 1, domain}` i usługami
+  `add_override`, `remove_override`, `get_schedule`, `set_schedule` i `estimate`; HomeAI ustawia nadpisania z
+  obecności i proponuje zmiany harmonogramu.
 - **Zdarzenia**: `homeai_situation`, `homeai_notification`, `homeai_action`, `homeai_approval`.
 - **LLM API „HomeAI”**: inni asystenci mogą czytać sprawy i działać przez politykę HomeAI.
 

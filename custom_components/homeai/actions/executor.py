@@ -14,7 +14,7 @@ import json
 from typing import Any
 
 from homeassistant.const import ATTR_AREA_ID, ATTR_DEVICE_ID, ATTR_ENTITY_ID, ATTR_FLOOR_ID, ATTR_LABEL_ID
-from homeassistant.core import Context, Event, HomeAssistant, callback
+from homeassistant.core import Context, Event, HomeAssistant, SupportsResponse, callback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.target import TargetSelection, async_extract_referenced_entity_ids
 from homeassistant.util import dt as dt_util, ulid as ulid_util
@@ -235,7 +235,12 @@ class Executor:
         if request.domain == "config":
             return await self._run_config(request, decision, action_id, ctx)
         undo = False
-        if Risk.R1 <= decision.risk <= Risk.R2 and request.entity_ids and self.rt.settings.get("executor.undo"):
+        if (
+            Risk.R1 <= decision.risk <= Risk.R2
+            and request.entity_ids
+            and self.rt.settings.get("executor.undo")
+            and not self._schedule_contract(request)
+        ):
             undo = await self._snapshot(action_id, request.entity_ids, ctx)
         before = {e: s.state for e in request.entity_ids if (s := self.hass.states.get(e)) is not None}
         # call exactly what the policy judged: the resolved entities instead of device/area/floor/label targets
@@ -243,10 +248,18 @@ class Executor:
         if request.entity_ids:
             data[ATTR_ENTITY_ID] = list(request.entity_ids)
         timeout = float(self.rt.settings.get("executor.timeout"))
+        # a service that only works with a response (an override that returns its id, a forecast) is asked for one
+        respond = self.hass.services.supports_response(request.domain, request.service) is SupportsResponse.ONLY
+        response: Any = None
         try:
             async with asyncio.timeout(timeout):
-                await self.hass.services.async_call(
-                    request.domain, request.service, data, blocking=not request.background, context=ctx
+                response = await self.hass.services.async_call(
+                    request.domain,
+                    request.service,
+                    data,
+                    blocking=respond or not request.background,
+                    context=ctx,
+                    return_response=respond,
                 )
         except TimeoutError:
             return self._finish(
@@ -261,8 +274,16 @@ class Executor:
             self.rt.module("policy").count_repair()
         verified = await self._verify(request, before)
         status = "done" if verified is not False else "unverified"
-        result = ActionResult(status, risk, decision.reason, action_id, undo=undo, decision=decision.as_dict())
+        result = ActionResult(
+            status, risk, decision.reason, action_id, undo=undo, decision=decision.as_dict(), data=response
+        )
         return self._finish(request, result, ctx)
+
+    def _schedule_contract(self, request: ActionRequest) -> bool:
+        """A thermostat's schedule contract service: a scene snapshot cannot undo an override or a new week."""
+        from ..policy.risk import schedule_service
+
+        return any(schedule_service(self.rt.world, request.domain, request.service, e) for e in request.entity_ids)
 
     async def _run_config(
         self, request: ActionRequest, decision: Decision, action_id: str, ctx: Context

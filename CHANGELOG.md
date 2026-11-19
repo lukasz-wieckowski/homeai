@@ -3,6 +3,47 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0]
+
+HomeAI and heating: thermostats that speak HomeAI's schedule contract keep their own weekly schedule, and HomeAI
+changes it for a while from presence and proposes lasting changes.
+
+### Added
+- **Thermostat schedule contract** (version 1): a `climate` entity announces `homeai_schedule: {version, domain}` and
+  offers `add_override`, `remove_override`, `get_schedule`, `set_schedule` and `estimate` in that domain. Described in
+  [docs/integrations.md](docs/integrations.md#thermostat-schedule-contract); Heat Zones speaks it, any integration can.
+- **Overrides from presence**, set by HomeAI itself as device actions (R2) by the autonomy level, and only noted during
+  the observation period: a household trip or every resident's trip at once and vacation mode → `away`; guests →
+  `comfort` in common spaces; working from home → `comfort` at the person's workplace; sickness → `comfort`; nobody
+  home for a while → `eco` until someone is back. Each carries `source: homeai`, a reason and a stable id; calendar
+  events are sent ahead so rooms warm up in time; open-ended reasons are renewed; a higher reason trims a lower one.
+  HomeAI removes its override when the reason is gone and withdraws a request nobody answered yet. An override a
+  person removes on the thermostat is not set again for that reason and counts as an undo.
+- **Activity**: entities labelled *HomeAI: activity* (a desk's power above a threshold, a PC) warm their room with an
+  override, or lower the thermostat's valve limit (a `valve_limit` number) and put it back afterwards.
+- **Schedule proposals from habits**: when people change a thermostat by hand to what its next block would set, some
+  time before that block, on most workdays or weekend days, HomeAI proposes moving the block. A new week is
+  configuration (R4): an administrator approves it in *Approvals*, and a proposal is withdrawn and never runs when the
+  thermostat's week changed meanwhile.
+- **Room roles** in the world model: bedroom, bathroom, common space and workplace, from the setting *Room roles* per
+  room, from the labels *HomeAI: bedroom / bathroom / common space / workplace* on a room or on a device in it, or
+  from the room's icon and name. AI sees them in its description of the home. A person's *Workplace* is a setting.
+- The AI tool `get_heating`: thermostats' weeks, overrides with reasons, room roles and, with a temperature, the
+  estimate.
+- Settings section *Heating* (19 settings), room-role and activity settings, all in English and Polish.
+
+### Changed
+- `set_schedule` on a contract thermostat is at least R4, whatever labels or class overrides say; reading the
+  schedule and estimates is R0; overrides are R2.
+- A *follow-up* (HomeAI renewing, trimming or removing its own override, putting back a valve limit) runs up to R2
+  without a new decision: it continues or undoes what was allowed or approved.
+- People's refusals and undo of a thermostat override are remembered per preset: refusing comfort for guests does not
+  silence away for a vacation on the same thermostat.
+- The executor asks for a response when a service only works with one, and returns it with the result.
+- Contract services are not snapshotted for undo (a scene cannot undo an override).
+- Approvals can be withdrawn by the module that asked (status *withdrawn*), and modules can check before an approved
+  request runs that it still fits.
+
 ## [1.2.1]
 
 Fixes from a second review of the whole code.

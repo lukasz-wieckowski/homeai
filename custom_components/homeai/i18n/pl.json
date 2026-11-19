@@ -23,7 +23,11 @@
       "turn_off": "Wyłącz: {targets}",
       "turn_on": "Włącz: {targets}",
       "valve.close_valve": "Zamknij zawór: {targets}",
-      "valve.open_valve": "Otwórz zawór: {targets}"
+      "valve.open_valve": "Otwórz zawór: {targets}",
+      "add_override": "Nadpisanie ogrzewania {targets}: {preset_mode}",
+      "remove_override": "Zdjęcie nadpisania ogrzewania: {targets}",
+      "set_schedule": "Nowy tygodniowy harmonogram ogrzewania: {targets}",
+      "number.set_value": "Ustaw {targets} na {value}"
     },
     "yes_words": "tak, ta, no tak, ok, okej, dobrze, jasne, pewnie, potwierdzam, zgoda, zgadzam się, dawaj, zrób to, śmiało, oczywiście, proszę",
     "no_words": "nie, nie rób, anuluj, stop, czekaj, poczekaj, wstrzymaj, nigdy, przerwij"
@@ -77,7 +81,8 @@
     "situation_opened": "Sprawa: {title}",
     "situation_resolved": "Ustąpiło: {title}",
     "watch_added": "Pilnuję: {what}",
-    "watch_met": "Powiedziano, jak obiecano: {what}"
+    "watch_met": "Powiedziano, jak obiecano: {what}",
+    "approval_withdrawn": "Prośba wycofana: {what}"
   },
   "learning": {
     "habit_title": "{what}: {action} o {time} w {days}",
@@ -145,6 +150,11 @@
       "auto": "Auto",
       "en": "English",
       "pl": "Polski"
+    },
+    "heating.activity_action": {
+      "off": "Nic",
+      "override": "Nadpisanie presetem",
+      "valve_limit": "Niższy limit zaworu"
     },
     "learning.review_weekday": {
       "0": "Poniedziałek",
@@ -362,6 +372,13 @@
       "residents": "Domownicy",
       "admins": "Administratorzy"
     },
+    "world.room_roles": {
+      "none": "Brak",
+      "bedroom": "Sypialnia",
+      "bathroom": "Łazienka",
+      "common": "Część wspólna",
+      "workplace": "Miejsce pracy"
+    },
     "world.scope": {
       "all": "Wszystkie encje",
       "exposed": "Udostępnione asystentom",
@@ -444,6 +461,10 @@
     "world": {
       "description": "Które encje HomeAI obserwuje i jakie etykiety rozumie.",
       "label": "Model domu"
+    },
+    "heating": {
+      "label": "Ogrzewanie",
+      "description": "Termostaty, które mówią kontraktem harmonogramu HomeAI: nadpisania, które HomeAI ustawia samo z obecności, i zmiany harmonogramu tygodniowego, które proponuje."
     }
   },
   "settings": {
@@ -1031,6 +1052,82 @@
       "description": "Jak często działają sprawdzenia zależne od czasu (niedostępność, terminy, harmonogram).",
       "label": "Co ile sprawdzać"
     },
+    "heating.activity_action": {
+      "label": "Gdy ktoś jest aktywny",
+      "description": "Co aktywna encja z etykietą „HomeAI: aktywność” robi z ogrzewaniem swojego pokoju: nic, nadpisanie presetem poniżej albo niższy limit zaworu (termostaty z encją limitu zaworu; pozostałe dostają nadpisanie)."
+    },
+    "heating.activity_minutes": {
+      "label": "Aktywność: po",
+      "description": "Encja musi być aktywna tak długo, zanim ogrzewanie zareaguje."
+    },
+    "heating.activity_off_minutes": {
+      "label": "Aktywność: koniec po",
+      "description": "Reakcja kończy się, gdy encja jest nieaktywna tak długo."
+    },
+    "heating.activity_power": {
+      "label": "Aktywność: moc powyżej",
+      "description": "Czujnik mocy jest aktywny powyżej tylu watów."
+    },
+    "heating.activity_preset": {
+      "label": "Preset przy aktywności",
+      "description": "Preset, gdy ktoś jest aktywny w pokoju."
+    },
+    "heating.activity_valve": {
+      "label": "Aktywność: limit zaworu",
+      "description": "Limit zaworu, gdy ktoś jest aktywny (dla „niższy limit zaworu”); potem wraca poprzedni limit."
+    },
+    "heating.away_preset": {
+      "label": "Preset na wyjazd",
+      "description": "Preset, gdy cały dom wyjechał według kalendarza obecności albo włączony jest tryb urlopu."
+    },
+    "heating.enabled": {
+      "label": "Ogrzewanie z HomeAI",
+      "description": "Używaj termostatów, które mówią kontraktem harmonogramu HomeAI (atrybut homeai_schedule): nadpisania z obecności i propozycje zmian harmonogramu. Wyłączone: HomeAI zdejmuje swoje nadpisania i nie rusza harmonogramów."
+    },
+    "heating.guests_preset": {
+      "label": "Preset na gości",
+      "description": "Preset w częściach wspólnych, gdy są goście (według kalendarza obecności)."
+    },
+    "heating.home_office_preset": {
+      "label": "Preset na pracę z domu",
+      "description": "Preset w miejscu pracy osoby, gdy pracuje z domu."
+    },
+    "heating.lead_hours": {
+      "label": "Wysyłaj nadpisania wcześniej",
+      "description": "Ile przed wydarzeniem z kalendarza (goście, wyjazd) HomeAI wysyła swoje nadpisanie, żeby termostat zdążył nagrzać. 0: gdy wydarzenie się zaczyna."
+    },
+    "heating.nobody_home_minutes": {
+      "label": "Nikogo w domu po",
+      "description": "Gdy żadnego domownika nie ma tak długo, ogrzewanie przechodzi na preset poniżej, aż ktoś wróci. 0: wyłączone."
+    },
+    "heating.nobody_home_preset": {
+      "label": "Preset, gdy nikogo nie ma",
+      "description": "Preset, gdy nikogo nie ma w domu."
+    },
+    "heating.presence_overrides": {
+      "label": "Nadpisania z obecności",
+      "description": "Wyjazdy, goście, praca z domu, choroba i pusty dom zmieniają ogrzewanie na jakiś czas. HomeAI ustawia te nadpisania samo, jako działania na urządzeniach (R2), według poziomu autonomii; w okresie obserwacji tylko je zapisuje."
+    },
+    "heating.proposal_max_shift": {
+      "label": "Największe przesunięcie",
+      "description": "Jak długo przed blokiem ręczna zmiana wciąż liczy się jako jego uprzedzenie."
+    },
+    "heating.rolling_hours": {
+      "label": "Długość nadpisań bez końca",
+      "description": "Nadpisania bez znanego końca (nikogo w domu, tryb urlopu, aktywność) sięgają tyle do przodu i są odnawiane, póki powód trwa, więc kończą się same, gdyby HomeAI stanęło."
+    },
+    "heating.schedule_proposals": {
+      "label": "Proponuj zmiany harmonogramu",
+      "description": "Gdy ludzie stale robią ręcznie to, co i tak zrobi następny blok harmonogramu (wcześniejsze grzanie, wcześniejszy sen), HomeAI proponuje przesunąć ten blok. Nowy harmonogram to konfiguracja (R4): zatwierdza go administrator."
+    },
+    "heating.sick_preset": {
+      "label": "Preset na chorobę",
+      "description": "Preset w całym domu, gdy ktoś choruje."
+    },
+    "heating.valve_limit_entity": {
+      "label": "Encja limitu zaworu",
+      "description": "Encja number, która ogranicza zawór tego termostatu. Puste: number tego samego urządzenia z valve_limit w kluczu albo identyfikatorze."
+    },
     "learning.anomaly_minutes": {
       "description": "Jak długo wartość musi być nietypowa, zanim zostanie zgłoszona.",
       "label": "Nietypowe przez"
@@ -1367,6 +1464,10 @@
       "description": "Zwykła pora snu w piątek i sobotę.",
       "label": "Początek nocy (weekend)"
     },
+    "presence.workplace_areas": {
+      "label": "Miejsce pracy",
+      "description": "Pokoje, w których ta osoba pracuje z domu. Bez nich: jedyny pokój z rolą miejsca pracy."
+    },
     "privacy.level": {
       "description": "Standardowy wysyła nazwy urządzeń, pokoi i osób. Minimalny zastępuje osoby i pokoje neutralnymi etykietami. Pełny wysyła też tytuły z kalendarzy.",
       "label": "Dane wysyłane do AI w chmurze"
@@ -1539,6 +1640,22 @@
       "description": "Obserwuj też encje ukryte w Home Assistancie.",
       "label": "Uwzględniaj ukryte encje"
     },
+    "world.label_activity": {
+      "label": "Etykieta: aktywność",
+      "description": "Encje z tą etykietą pokazują, że ktoś jest zajęty w swoim pokoju: czujnik mocy przy biurku, komputer, telewizor. Gdy któraś jest aktywna, ogrzewanie pokoju działa według ustawienia „Gdy ktoś jest aktywny”."
+    },
+    "world.label_bathroom": {
+      "label": "Etykieta: łazienka",
+      "description": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to łazienka."
+    },
+    "world.label_bedroom": {
+      "label": "Etykieta: sypialnia",
+      "description": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to sypialnia."
+    },
+    "world.label_common": {
+      "label": "Etykieta: część wspólna",
+      "description": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to część wspólna (salon, kuchnia, jadalnia). Goście ogrzewają te pokoje."
+    },
     "world.label_critical": {
       "description": "Problemy z tymi urządzeniami mają zawsze najwyższą wagę.",
       "label": "Etykieta: krytyczne"
@@ -1558,6 +1675,18 @@
     "world.label_protective": {
       "description": "Akcje na tych encjach mogą działać automatycznie, by chronić dom (np. zamknięcie zaworu wody przy zalaniu).",
       "label": "Etykieta: akcja ochronna"
+    },
+    "world.label_workplace": {
+      "label": "Etykieta: miejsce pracy",
+      "description": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą (gniazdko przy biurku) to czyjeś miejsce pracy. Praca z domu je ogrzewa."
+    },
+    "world.room_roles": {
+      "label": "Rola pokoju",
+      "description": "Do czego służy pokój: sypialnia, łazienka, część wspólna, miejsce pracy (może mieć kilka). Ustaw dla pokoju; puste znaczy: z etykiet HomeAI, a bez nich z ikony i nazwy pokoju. Brak znaczy: bez roli."
+    },
+    "world.room_roles_auto": {
+      "label": "Odgaduj role pokoi",
+      "description": "Pokój bez ustawionej roli i bez etykiety dostaje ją z ikony (łóżko, kanapa, biurko…) albo z nazwy (sypialnia, salon, biuro…)."
     },
     "world.scope": {
       "description": "Wszystkie encje, tylko udostępnione asystentom głosowym albo tylko wybrane pomieszczenia.",
@@ -1762,5 +1891,16 @@
     "open": "otwarte",
     "running": "pracuje",
     "unlocked": "otwarte"
+  },
+  "heating": {
+    "reason_everyone_away": "Wszyscy wyjechali",
+    "reason_vacation_mode": "Tryb urlopu",
+    "reason_nobody_home": "Nikogo w domu",
+    "reason_activity": "Aktywność: {names}",
+    "reason_gone": "Już niepotrzebne: {reason}",
+    "override_removed": "Ktoś zdjął nadpisanie ogrzewania HomeAI ({name}: {reason}); z tego powodu HomeAI go już nie ustawi.",
+    "proposal_reason": "{days}, {name}: ogrzewanie jest zmieniane ręcznie około {to}, przed blokiem o {from} (w {seen} z {possible} dni). Przesuń ten blok na {to}.",
+    "days_workday": "W dni robocze",
+    "days_weekend": "W weekendy"
   }
 }

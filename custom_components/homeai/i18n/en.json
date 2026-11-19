@@ -23,7 +23,11 @@
       "turn_off": "Turn off: {targets}",
       "turn_on": "Turn on: {targets}",
       "valve.close_valve": "Close the valve: {targets}",
-      "valve.open_valve": "Open the valve: {targets}"
+      "valve.open_valve": "Open the valve: {targets}",
+      "add_override": "Heating override for {targets}: {preset_mode}",
+      "remove_override": "Remove the heating override: {targets}",
+      "set_schedule": "New weekly heating schedule: {targets}",
+      "number.set_value": "Set {targets} to {value}"
     },
     "yes_words": "yes, yeah, yep, yup, ok, okay, sure, confirm, confirmed, i confirm, go ahead, do it, please do, of course, correct, right, affirmative",
     "no_words": "no, nope, not, don't, do not, cancel, stop, wait, never, abort"
@@ -77,7 +81,8 @@
     "situation_opened": "Situation: {title}",
     "situation_resolved": "Resolved: {title}",
     "watch_added": "Watching: {what}",
-    "watch_met": "Told as promised: {what}"
+    "watch_met": "Told as promised: {what}",
+    "approval_withdrawn": "Request withdrawn: {what}"
   },
   "learning": {
     "habit_title": "{what}: {action} at {time} on {days}",
@@ -145,6 +150,11 @@
       "auto": "Auto",
       "en": "English",
       "pl": "Polski"
+    },
+    "heating.activity_action": {
+      "off": "Nothing",
+      "override": "Override with a preset",
+      "valve_limit": "Lower valve limit"
     },
     "learning.review_weekday": {
       "0": "Monday",
@@ -362,6 +372,13 @@
       "residents": "Residents",
       "admins": "Administrators"
     },
+    "world.room_roles": {
+      "none": "None",
+      "bedroom": "Bedroom",
+      "bathroom": "Bathroom",
+      "common": "Common space",
+      "workplace": "Workplace"
+    },
     "world.scope": {
       "all": "All entities",
       "exposed": "Exposed to assistants",
@@ -444,6 +461,10 @@
     "world": {
       "description": "Which entities HomeAI watches and the labels it understands.",
       "label": "Home model"
+    },
+    "heating": {
+      "label": "Heating",
+      "description": "Thermostats that speak HomeAI's schedule contract: overrides HomeAI sets by itself from presence, and weekly schedule changes it proposes."
     }
   },
   "settings": {
@@ -1031,6 +1052,82 @@
       "description": "How often time-based checks run (unavailability, deadlines, schedules).",
       "label": "Evaluation interval"
     },
+    "heating.activity_action": {
+      "label": "When someone is active",
+      "description": "What an active entity labelled “HomeAI: activity” does to the heating of its room: nothing, an override with the preset below, or a lower valve limit (thermostats with a valve-limit number; others get the override)."
+    },
+    "heating.activity_minutes": {
+      "label": "Activity: after",
+      "description": "An entity must be active this long before the heating reacts."
+    },
+    "heating.activity_off_minutes": {
+      "label": "Activity: ends after",
+      "description": "The reaction ends when the entity has been inactive this long."
+    },
+    "heating.activity_power": {
+      "label": "Activity: power above",
+      "description": "A power sensor counts as active above this many watts."
+    },
+    "heating.activity_preset": {
+      "label": "Preset for activity",
+      "description": "Preset while someone is active in the room."
+    },
+    "heating.activity_valve": {
+      "label": "Activity: valve limit",
+      "description": "Valve limit while someone is active (for “lower valve limit”); the previous limit comes back afterwards."
+    },
+    "heating.away_preset": {
+      "label": "Preset for trips",
+      "description": "Preset while the whole household is away by the presence calendar, or vacation mode is on."
+    },
+    "heating.enabled": {
+      "label": "Heating with HomeAI",
+      "description": "Use thermostats that speak HomeAI's schedule contract (attribute homeai_schedule): overrides from presence and proposals for the weekly schedule. Off: HomeAI removes its overrides and leaves the schedules alone."
+    },
+    "heating.guests_preset": {
+      "label": "Preset for guests",
+      "description": "Preset in common spaces while guests are here (by the presence calendar)."
+    },
+    "heating.home_office_preset": {
+      "label": "Preset for working from home",
+      "description": "Preset at the person's workplace while they work from home."
+    },
+    "heating.lead_hours": {
+      "label": "Send overrides ahead",
+      "description": "How long before a calendar event (guests, a trip) HomeAI sends its override, so the thermostat can heat up in time. 0: when the event starts."
+    },
+    "heating.nobody_home_minutes": {
+      "label": "Nobody home after",
+      "description": "When no resident has been home this long, the heating goes to the preset below until someone is back. 0: off."
+    },
+    "heating.nobody_home_preset": {
+      "label": "Preset when nobody is home",
+      "description": "Preset while nobody is home."
+    },
+    "heating.presence_overrides": {
+      "label": "Overrides from presence",
+      "description": "Trips, guests, working from home, sickness and an empty home change the heating for a while. HomeAI sets these overrides by itself as device actions (R2), by the autonomy level; during the observation period it only notes them."
+    },
+    "heating.proposal_max_shift": {
+      "label": "Furthest move",
+      "description": "How far ahead of a block a manual change still counts as anticipating it."
+    },
+    "heating.rolling_hours": {
+      "label": "Length of open-ended overrides",
+      "description": "Overrides without a known end (nobody home, vacation mode, activity) run this far ahead and are renewed while the reason lasts, so they end on their own if HomeAI stops."
+    },
+    "heating.schedule_proposals": {
+      "label": "Propose schedule changes",
+      "description": "When people keep doing by hand what the next block of a schedule would do (warming up earlier, going to sleep earlier), HomeAI proposes moving that block. A new schedule is configuration (R4): an administrator approves it."
+    },
+    "heating.sick_preset": {
+      "label": "Preset for sickness",
+      "description": "Preset in the whole home while someone is sick."
+    },
+    "heating.valve_limit_entity": {
+      "label": "Valve-limit entity",
+      "description": "The number entity that limits this thermostat's valve. Empty: a number of the same device whose key or id says valve_limit."
+    },
     "learning.anomaly_minutes": {
       "description": "How long a value must stay unusual before it is reported.",
       "label": "Unusual for"
@@ -1367,6 +1464,10 @@
       "description": "Usual bedtime on Friday and Saturday.",
       "label": "Night starts (weekends)"
     },
+    "presence.workplace_areas": {
+      "label": "Workplace",
+      "description": "The rooms where this person works from home. Without one, the home's only workplace room is used."
+    },
     "privacy.level": {
       "description": "Standard sends names of devices, rooms and people. Minimal replaces people and rooms with neutral labels. Full also sends calendar titles.",
       "label": "Data sent to cloud AI"
@@ -1539,6 +1640,22 @@
       "description": "Also watch entities hidden in Home Assistant.",
       "label": "Include hidden entities"
     },
+    "world.label_activity": {
+      "label": "Label: activity",
+      "description": "Entities with this label show that someone is busy in their room: a desk's power sensor, a PC, a TV. While one is active, the heating of that room follows “Heating: when someone is active”."
+    },
+    "world.label_bathroom": {
+      "label": "Label: bathroom",
+      "description": "A room with this label, or with a device or entity labelled so, is a bathroom."
+    },
+    "world.label_bedroom": {
+      "label": "Label: bedroom",
+      "description": "A room with this label, or with a device or entity labelled so, is a bedroom."
+    },
+    "world.label_common": {
+      "label": "Label: common space",
+      "description": "A room with this label, or with a device or entity labelled so, is a common space (living room, kitchen, dining room). Guests warm these rooms."
+    },
     "world.label_critical": {
       "description": "Problems with these devices are always treated as the highest severity.",
       "label": "Label: critical"
@@ -1558,6 +1675,18 @@
     "world.label_protective": {
       "description": "Actions on these entities may run automatically to protect the home (for example closing a water valve during a leak).",
       "label": "Label: protective action"
+    },
+    "world.label_workplace": {
+      "label": "Label: workplace",
+      "description": "A room with this label, or with a device or entity labelled so (a desk plug), is someone's workplace. Working from home warms it."
+    },
+    "world.room_roles": {
+      "label": "Room roles",
+      "description": "What this room is for: bedroom, bathroom, common space, workplace (a room may have several). Set it per room; empty means from HomeAI's labels, else from the room's icon and name. None means no role."
+    },
+    "world.room_roles_auto": {
+      "label": "Guess room roles",
+      "description": "Rooms without a role set or labelled get one from their icon (a bed, a sofa, a desk…) or their name (bedroom, living room, office…)."
     },
     "world.scope": {
       "description": "All entities, only those exposed to voice assistants, or only selected areas.",
@@ -1762,5 +1891,16 @@
     "open": "open",
     "running": "running",
     "unlocked": "unlocked"
+  },
+  "heating": {
+    "reason_everyone_away": "Everyone away",
+    "reason_vacation_mode": "Vacation mode",
+    "reason_nobody_home": "Nobody home",
+    "reason_activity": "Activity: {names}",
+    "reason_gone": "No longer needed: {reason}",
+    "override_removed": "Someone removed HomeAI's heating override ({name}: {reason}); HomeAI will not set it again for this reason.",
+    "proposal_reason": "{days}, {name}: the heating is changed by hand at about {to}, before the block at {from} (on {seen} of {possible} days). Move that block to {to}.",
+    "days_workday": "On workdays",
+    "days_weekend": "At weekends"
   }
 }

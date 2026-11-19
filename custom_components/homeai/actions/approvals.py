@@ -11,7 +11,7 @@ becomes an approval addressed to that person (`approver: requester`); their Appr
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -38,6 +38,8 @@ class Approvals:
         self.items: dict[str, dict[str, Any]] = {}
         self._unsubs: list[Callable[[], None]] = []
         self._listeners: list[Callable[[dict[str, Any]], None]] = []
+        # Modules that know when their own request no longer fits (a schedule proposal after the schedule changed).
+        self._checks: list[Callable[[dict[str, Any]], Awaitable[bool]]] = []
 
     async def async_setup(self) -> None:
         data = await self._store.async_load() or {}
@@ -74,6 +76,12 @@ class Approvals:
                 cb(item)
             except Exception:
                 LOGGER.exception("Approval listener failed")
+
+    @callback
+    def add_check(self, check: Callable[[dict[str, Any]], Awaitable[bool]]) -> Callable[[], None]:
+        """`check(item)` → True when the request is out of date and must not run on approval."""
+        self._checks.append(check)
+        return lambda: self._checks.remove(check) if check in self._checks else None
 
     def pending(self) -> list[dict[str, Any]]:
         return sorted((a for a in self.items.values() if a["status"] == "pending"), key=lambda a: a["created"])
@@ -201,7 +209,14 @@ class Approvals:
         probe.entity_ids = executor.targets(probe)
         risk_now = int(self.rt.module("policy").risk(probe))
         if (expires is None or expires > dt_util.utcnow()) and risk_now <= int(item["risk"]):
-            return False
+            stale = False
+            for check in list(self._checks):
+                try:
+                    stale = stale or await check(item)
+                except Exception:
+                    LOGGER.exception("Approval check failed")
+            if not stale:
+                return False
         item["status"] = "expired"
         self.rt.journal.add("approval", self.rt.text("journal|approval_expired", what=item["what"]))
         await self._clear(item)
@@ -228,6 +243,17 @@ class Approvals:
         await self._clear(item)
         self._changed(item)
         return item
+
+    async def withdraw(self, approval_id: str) -> bool:
+        """HomeAI no longer needs the request (the reason for it is gone or it was replaced): stop asking."""
+        item = self.items.get(approval_id)
+        if item is None or item["status"] != "pending":
+            return False
+        item.update(status="withdrawn", decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
+        self.rt.journal.add("approval", self.rt.text("journal|approval_withdrawn", what=item["what"]))
+        await self._clear(item)
+        self._changed(item)
+        return True
 
     def note(self, item: dict[str, Any]) -> None:
         """Something was added to a request (e.g. the arbiter's recommendation)."""

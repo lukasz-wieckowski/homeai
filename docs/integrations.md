@@ -7,7 +7,8 @@ Other integrations and automations can talk to HomeAI through stable contracts.
 **Service** `homeai.report_signal`: `id`, `title`, optional `description`, `severity` 0–4, `category` (safety,
 security, damage, system, energy, comfort, maintenance, info), `need` (nobody, member, admin, service),
 `entities`, `group` (signals with the same group form one situation), `expires_minutes`. `homeai.clear_signal`
-with the same `id` clears it.
+with the same `id` clears it. Severity 4 (critical) is for danger to people and counts only with category
+`safety`; with any other category HomeAI treats it as 3 (urgent).
 
 **Entity attribute** `homeai_signals`: any entity may expose a list of
 `{id, title, severity, category?, description?, need?, group?}`; HomeAI reads it on every evaluation and

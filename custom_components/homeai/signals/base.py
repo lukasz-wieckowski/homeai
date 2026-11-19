@@ -39,8 +39,20 @@ class Severity(IntEnum):
     LOG = 0  # journal only
     NOTICE = 1  # today: screen, digest
     ATTENTION = 2  # now: one push
-    URGENT = 3  # now, escalating
-    CRITICAL = 4  # people or property at risk: everyone, repeated until acknowledged
+    URGENT = 3  # now, escalating (property at risk, a home left open while everyone is away)
+    CRITICAL = 4  # people at risk (safety only): everyone, critical alerts, repeated until acknowledged
+
+
+# Critical alerts wake people up and repeat until someone reacts: only for danger to people (leak, smoke, gas,
+# carbon monoxide, other safety sensors). Every other matter is at most urgent, whatever raised it (a detector,
+# presence, a label, an override, a rule, another integration or an AI tier).
+CRITICAL_CATEGORIES = frozenset({Category.SAFETY})
+
+
+def limit_severity(category: Category | str, severity: int) -> int:
+    """`severity` within 0–4, and at most urgent (3) outside the categories that may be critical."""
+    top = Severity.CRITICAL if category in CRITICAL_CATEGORIES else Severity.URGENT
+    return max(0, min(int(top), int(severity)))
 
 
 @dataclass(slots=True, frozen=True)

@@ -485,7 +485,7 @@
       "label": "Przeładuj integrację huba"
     },
     "adapters.bridge_severity": {
-      "description": "Waga 0–4 huba offline.",
+      "description": "Waga 0–3 huba offline (3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Hub offline: waga"
     },
     "adapters.zigbee2mqtt_addon": {
@@ -645,7 +645,7 @@
       "label": "Brak łączności po"
     },
     "detectors.availability.severity": {
-      "description": "Waga 0–4 dla: urządzenie bez łączności (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: urządzenie bez łączności (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Urządzenie bez łączności: waga"
     },
     "detectors.backups.enabled": {
@@ -657,7 +657,7 @@
       "label": "Kopia za stara po"
     },
     "detectors.backups.severity": {
-      "description": "Waga 0–4 dla: problem z kopią (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: problem z kopią (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Problem z kopią: waga"
     },
     "detectors.battery.enabled": {
@@ -669,11 +669,11 @@
       "label": "Grupuj baterie"
     },
     "detectors.battery.safety_severity": {
-      "description": "Waga 0–4 dla: słaba bateria w czujniku bezpieczeństwa (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: słaba bateria w czujniku bezpieczeństwa (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Słaba bateria w czujniku bezpieczeństwa: waga"
     },
     "detectors.battery.severity": {
-      "description": "Waga 0–4 dla: słaba bateria (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: słaba bateria (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Słaba bateria: waga"
     },
     "detectors.battery.threshold": {
@@ -693,7 +693,7 @@
       "label": "Próg materiałów"
     },
     "detectors.consumables.severity": {
-      "description": "Waga 0–4 dla: materiał eksploatacyjny (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: materiał eksploatacyjny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Materiał eksploatacyjny: waga"
     },
     "detectors.consumables.used_up_entities": {
@@ -717,7 +717,7 @@
       "label": "Rozbieżne czujniki: obserwuj"
     },
     "detectors.divergence.severity": {
-      "description": "Waga 0–4 dla: rozbieżne czujniki (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: rozbieżne czujniki (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Rozbieżne czujniki: waga"
     },
     "detectors.environment.appliance_words": {
@@ -733,7 +733,7 @@
       "label": "Wysokie CO₂: obserwuj"
     },
     "detectors.environment.co2_max_severity": {
-      "description": "Waga 0–4 dla: wysokie co₂ (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: wysokie co₂ (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Wysokie CO₂: waga"
     },
     "detectors.environment.enabled": {
@@ -749,7 +749,7 @@
       "label": "Wysoka wilgotność: obserwuj"
     },
     "detectors.environment.humidity_max_severity": {
-      "description": "Waga 0–4 dla: wysoka wilgotność (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: wysoka wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Wysoka wilgotność: waga"
     },
     "detectors.environment.humidity_min": {
@@ -761,7 +761,7 @@
       "label": "Niska wilgotność: obserwuj"
     },
     "detectors.environment.humidity_min_severity": {
-      "description": "Waga 0–4 dla: niska wilgotność (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: niska wilgotność (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Niska wilgotność: waga"
     },
     "detectors.environment.minutes": {
@@ -777,7 +777,7 @@
       "label": "Wysokie PM2,5: obserwuj"
     },
     "detectors.environment.pm25_max_severity": {
-      "description": "Waga 0–4 dla: wysokie pm2,5 (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: wysokie pm2,5 (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Wysokie PM2,5: waga"
     },
     "detectors.environment.temperature_max": {
@@ -789,7 +789,7 @@
       "label": "Wysoka temperatura: obserwuj"
     },
     "detectors.environment.temperature_max_severity": {
-      "description": "Waga 0–4 dla: wysoka temperatura (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: wysoka temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Wysoka temperatura: waga"
     },
     "detectors.environment.temperature_min": {
@@ -801,7 +801,7 @@
       "label": "Niska temperatura: obserwuj"
     },
     "detectors.environment.temperature_min_severity": {
-      "description": "Waga 0–4 dla: niska temperatura (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: niska temperatura (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Niska temperatura: waga"
     },
     "detectors.external.attributes": {
@@ -821,11 +821,11 @@
       "label": "Zgłoszenia w Naprawach"
     },
     "detectors.integrations.repairs_severity": {
-      "description": "Waga 0–4 dla: zgłoszenia w naprawach (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: zgłoszenia w naprawach (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Zgłoszenia w Naprawach: waga"
     },
     "detectors.integrations.severity": {
-      "description": "Waga 0–4 dla: problem integracji (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: problem integracji (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Problem integracji: waga"
     },
     "detectors.internet.enabled": {
@@ -841,7 +841,7 @@
       "label": "Brak internetu: czekaj"
     },
     "detectors.internet.severity": {
-      "description": "Waga 0–4 dla: brak internetu (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: brak internetu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Brak internetu: waga"
     },
     "detectors.lights_away.enabled": {
@@ -853,11 +853,11 @@
       "label": "Światło świeci przez"
     },
     "detectors.lights_away.severity": {
-      "description": "Waga 0–4 dla: światła w pustym domu (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: światła w pustym domu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Światła w pustym domu: waga"
     },
     "detectors.log.automation_severity": {
-      "description": "Waga 0–4 dla: nieudana automatyzacja (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: nieudana automatyzacja (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Nieudana automatyzacja: waga"
     },
     "detectors.log.automations": {
@@ -873,7 +873,7 @@
       "label": "Minimum błędów w logu"
     },
     "detectors.log.severity": {
-      "description": "Waga 0–4 dla: błędy w logu (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: błędy w logu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Błędy w logu: waga"
     },
     "detectors.log.window_hours": {
@@ -885,11 +885,11 @@
       "label": "Urządzenia zgłaszające problem: obserwuj"
     },
     "detectors.problems.plant_severity": {
-      "description": "Waga 0–4 dla: problem rośliny (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: problem rośliny (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Problem rośliny: waga"
     },
     "detectors.problems.severity": {
-      "description": "Waga 0–4 dla: problem urządzenia (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: problem urządzenia (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Problem urządzenia: waga"
     },
     "detectors.safety.enabled": {
@@ -917,7 +917,7 @@
       "label": "Dym: waga"
     },
     "detectors.safety.severity_tamper": {
-      "description": "Waga 0–4 dla: sabotaż (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: sabotaż (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Sabotaż: waga"
     },
     "detectors.security.away_minutes": {
@@ -945,7 +945,7 @@
       "label": "Milczy po"
     },
     "detectors.stale.severity": {
-      "description": "Waga 0–4 dla: milczący czujnik (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: milczący czujnik (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Milczący czujnik: waga"
     },
     "detectors.system_refresh": {
@@ -957,7 +957,7 @@
       "label": "Aktualizacje: obserwuj"
     },
     "detectors.updates.severity": {
-      "description": "Waga 0–4 dla: aktualizacje (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: aktualizacje (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Aktualizacje: waga"
     },
     "detectors.watering.enabled": {
@@ -969,7 +969,7 @@
       "label": "Próg wilgotności gleby"
     },
     "detectors.watering.severity": {
-      "description": "Waga 0–4 rośliny, która potrzebuje wody (0 tylko dziennik, 4 krytyczna).",
+      "description": "Waga 0–3 rośliny, która potrzebuje wody (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Podlewanie roślin: waga"
     },
     "detectors.window_heating.enabled": {
@@ -981,7 +981,7 @@
       "label": "Okno otwarte przez"
     },
     "detectors.window_heating.severity": {
-      "description": "Waga 0–4 dla: okno otwarte przy grzaniu (0 tylko dziennik, 4 krytyczne).",
+      "description": "Waga 0–3 dla: okno otwarte przy grzaniu (0 tylko dziennik, 3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Okno otwarte przy grzaniu: waga"
     },
     "executor.block_cloud_offline": {
@@ -1133,7 +1133,7 @@
       "label": "Nietypowe przez"
     },
     "learning.anomaly_severity": {
-      "description": "Waga 0–4 nietypowej wartości.",
+      "description": "Waga 0–3 nietypowej wartości (3 pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Anomalia: waga"
     },
     "learning.anomaly_sigma": {
@@ -1613,11 +1613,11 @@
       "label": "Uczenie: minimum spraw"
     },
     "triage.raise_when_away": {
-      "description": "Sprawy bezpieczeństwa, zabezpieczeń i szkód są o stopień poważniejsze, gdy nikogo nie ma.",
+      "description": "Sprawy bezpieczeństwa, zabezpieczeń i szkód są o stopień poważniejsze, gdy nikogo nie ma (najwyżej pilne; krytyczne jest tylko bezpieczeństwo).",
       "label": "Podnoś, gdy nikogo nie ma"
     },
     "triage.severity_overrides": {
-      "description": "Stała waga dla rodzaju sprawy, np. {\"updates\": 1}.",
+      "description": "Stała waga dla rodzaju sprawy, np. {\"updates\": 1}. Waga 4 (krytyczna) działa tylko dla spraw bezpieczeństwa; dla innych oznacza 3 (pilna).",
       "label": "Wagi na sztywno"
     },
     "world.create_labels": {
@@ -1657,7 +1657,7 @@
       "description": "Pokój z tą etykietą albo z urządzeniem lub encją z tą etykietą to część wspólna (salon, kuchnia, jadalnia). Goście ogrzewają te pokoje."
     },
     "world.label_critical": {
-      "description": "Problemy z tymi urządzeniami mają zawsze najwyższą wagę.",
+      "description": "Problemy z tymi urządzeniami są zawsze pilne, a krytyczne, gdy dotyczą bezpieczeństwa (zalanie, dym, gaz, czad).",
       "label": "Etykieta: krytyczne"
     },
     "world.label_ignore": {

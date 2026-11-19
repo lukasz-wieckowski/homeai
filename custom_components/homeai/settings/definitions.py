@@ -95,8 +95,11 @@ def _risk_table(pattern: re.Pattern[str], what: str) -> Any:
     return validate
 
 
-def _sev(key: str, default: int, section: str, scopes: frozenset = G, advanced: bool = True) -> Setting:
-    return Setting(key, T.INT, default, section, scopes=scopes, min=0, max=4, advanced=advanced)
+def _sev(
+    key: str, default: int, section: str, scopes: frozenset = G, advanced: bool = True, *, safety: bool = False
+) -> Setting:
+    """A severity setting: 0–4 for safety matters, 0–3 for everything else (only safety can be critical)."""
+    return Setting(key, T.INT, default, section, scopes=scopes, min=0, max=4 if safety else 3, advanced=advanced)
 
 
 def _general() -> list[Setting]:
@@ -217,11 +220,11 @@ def _detectors() -> list[Setting]:
             )
         )
     out += [
-        _sev("detectors.safety.severity_leak", 4, s, THING),
-        _sev("detectors.safety.severity_smoke", 4, s, THING),
-        _sev("detectors.safety.severity_gas", 4, s, THING),
-        _sev("detectors.safety.severity_carbon_monoxide", 4, s, THING),
-        _sev("detectors.safety.severity_safety", 3, s, THING),
+        _sev("detectors.safety.severity_leak", 4, s, THING, safety=True),
+        _sev("detectors.safety.severity_smoke", 4, s, THING, safety=True),
+        _sev("detectors.safety.severity_gas", 4, s, THING, safety=True),
+        _sev("detectors.safety.severity_carbon_monoxide", 4, s, THING, safety=True),
+        _sev("detectors.safety.severity_safety", 3, s, THING, safety=True),
         _sev("detectors.safety.severity_tamper", 2, s, THING),
         Setting("detectors.security.away_minutes", T.INT, 10, s, scopes=THING, min=0, max=720, unit="min"),
         Setting("detectors.security.night_minutes", T.INT, 30, s, scopes=THING, min=0, max=720, unit="min"),

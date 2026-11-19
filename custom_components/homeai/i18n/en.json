@@ -485,7 +485,7 @@
       "label": "Reload hub integration"
     },
     "adapters.bridge_severity": {
-      "description": "Severity 0–4 of a hub that is offline.",
+      "description": "Severity 0–3 of a hub that is offline (3 urgent; only safety can be critical).",
       "label": "Hub offline: severity"
     },
     "adapters.zigbee2mqtt_addon": {
@@ -645,7 +645,7 @@
       "label": "Unresponsive after"
     },
     "detectors.availability.severity": {
-      "description": "Severity 0–4 of unresponsive device (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of unresponsive device (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Unresponsive device: severity"
     },
     "detectors.backups.enabled": {
@@ -657,7 +657,7 @@
       "label": "Backup too old after"
     },
     "detectors.backups.severity": {
-      "description": "Severity 0–4 of backup problem (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of backup problem (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Backup problem: severity"
     },
     "detectors.battery.enabled": {
@@ -669,11 +669,11 @@
       "label": "Group batteries"
     },
     "detectors.battery.safety_severity": {
-      "description": "Severity 0–4 of low battery in a safety device (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of low battery in a safety device (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Low battery in a safety device: severity"
     },
     "detectors.battery.severity": {
-      "description": "Severity 0–4 of low battery (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of low battery (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Low battery: severity"
     },
     "detectors.battery.threshold": {
@@ -693,7 +693,7 @@
       "label": "Consumable threshold"
     },
     "detectors.consumables.severity": {
-      "description": "Severity 0–4 of consumable (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of consumable (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Consumable: severity"
     },
     "detectors.consumables.used_up_entities": {
@@ -717,7 +717,7 @@
       "label": "Disagreeing sensors: watch"
     },
     "detectors.divergence.severity": {
-      "description": "Severity 0–4 of disagreeing sensors (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of disagreeing sensors (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Disagreeing sensors: severity"
     },
     "detectors.environment.appliance_words": {
@@ -733,7 +733,7 @@
       "label": "High CO₂: watch"
     },
     "detectors.environment.co2_max_severity": {
-      "description": "Severity 0–4 of high co₂ (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of high co₂ (0 journal only, 3 urgent; only safety can be critical).",
       "label": "High CO₂: severity"
     },
     "detectors.environment.enabled": {
@@ -749,7 +749,7 @@
       "label": "High humidity: watch"
     },
     "detectors.environment.humidity_max_severity": {
-      "description": "Severity 0–4 of high humidity (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of high humidity (0 journal only, 3 urgent; only safety can be critical).",
       "label": "High humidity: severity"
     },
     "detectors.environment.humidity_min": {
@@ -761,7 +761,7 @@
       "label": "Low humidity: watch"
     },
     "detectors.environment.humidity_min_severity": {
-      "description": "Severity 0–4 of low humidity (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of low humidity (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Low humidity: severity"
     },
     "detectors.environment.minutes": {
@@ -777,7 +777,7 @@
       "label": "High PM2.5: watch"
     },
     "detectors.environment.pm25_max_severity": {
-      "description": "Severity 0–4 of high pm2.5 (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of high pm2.5 (0 journal only, 3 urgent; only safety can be critical).",
       "label": "High PM2.5: severity"
     },
     "detectors.environment.temperature_max": {
@@ -789,7 +789,7 @@
       "label": "High temperature: watch"
     },
     "detectors.environment.temperature_max_severity": {
-      "description": "Severity 0–4 of high temperature (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of high temperature (0 journal only, 3 urgent; only safety can be critical).",
       "label": "High temperature: severity"
     },
     "detectors.environment.temperature_min": {
@@ -801,7 +801,7 @@
       "label": "Low temperature: watch"
     },
     "detectors.environment.temperature_min_severity": {
-      "description": "Severity 0–4 of low temperature (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of low temperature (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Low temperature: severity"
     },
     "detectors.external.attributes": {
@@ -821,11 +821,11 @@
       "label": "Repairs issues"
     },
     "detectors.integrations.repairs_severity": {
-      "description": "Severity 0–4 of repairs issues (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of repairs issues (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Repairs issues: severity"
     },
     "detectors.integrations.severity": {
-      "description": "Severity 0–4 of integration problem (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of integration problem (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Integration problem: severity"
     },
     "detectors.internet.enabled": {
@@ -841,7 +841,7 @@
       "label": "Internet down: wait"
     },
     "detectors.internet.severity": {
-      "description": "Severity 0–4 of internet down (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of internet down (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Internet down: severity"
     },
     "detectors.lights_away.enabled": {
@@ -853,11 +853,11 @@
       "label": "Lights on for"
     },
     "detectors.lights_away.severity": {
-      "description": "Severity 0–4 of lights in an empty home (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of lights in an empty home (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Lights in an empty home: severity"
     },
     "detectors.log.automation_severity": {
-      "description": "Severity 0–4 of failed automation (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of failed automation (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Failed automation: severity"
     },
     "detectors.log.automations": {
@@ -873,7 +873,7 @@
       "label": "Minimum log errors"
     },
     "detectors.log.severity": {
-      "description": "Severity 0–4 of log errors (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of log errors (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Log errors: severity"
     },
     "detectors.log.window_hours": {
@@ -885,11 +885,11 @@
       "label": "Devices reporting problems: watch"
     },
     "detectors.problems.plant_severity": {
-      "description": "Severity 0–4 of plant problem (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of plant problem (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Plant problem: severity"
     },
     "detectors.problems.severity": {
-      "description": "Severity 0–4 of device problem (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of device problem (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Device problem: severity"
     },
     "detectors.safety.enabled": {
@@ -917,7 +917,7 @@
       "label": "Smoke: severity"
     },
     "detectors.safety.severity_tamper": {
-      "description": "Severity 0–4 of tampering (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of tampering (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Tampering: severity"
     },
     "detectors.security.away_minutes": {
@@ -945,7 +945,7 @@
       "label": "Silent after"
     },
     "detectors.stale.severity": {
-      "description": "Severity 0–4 of silent sensor (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of silent sensor (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Silent sensor: severity"
     },
     "detectors.system_refresh": {
@@ -957,7 +957,7 @@
       "label": "Updates: watch"
     },
     "detectors.updates.severity": {
-      "description": "Severity 0–4 of updates (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of updates (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Updates: severity"
     },
     "detectors.watering.enabled": {
@@ -969,7 +969,7 @@
       "label": "Soil moisture limit"
     },
     "detectors.watering.severity": {
-      "description": "Severity 0–4 of a plant that needs water (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of a plant that needs water (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Plant watering: severity"
     },
     "detectors.window_heating.enabled": {
@@ -981,7 +981,7 @@
       "label": "Window open for"
     },
     "detectors.window_heating.severity": {
-      "description": "Severity 0–4 of window open while heating (0 journal only, 4 critical).",
+      "description": "Severity 0–3 of window open while heating (0 journal only, 3 urgent; only safety can be critical).",
       "label": "Window open while heating: severity"
     },
     "executor.block_cloud_offline": {
@@ -1133,7 +1133,7 @@
       "label": "Unusual for"
     },
     "learning.anomaly_severity": {
-      "description": "Severity 0–4 of an unusual value.",
+      "description": "Severity 0–3 of an unusual value (3 urgent; only safety can be critical).",
       "label": "Anomaly: severity"
     },
     "learning.anomaly_sigma": {
@@ -1613,11 +1613,11 @@
       "label": "Learning: minimum situations"
     },
     "triage.raise_when_away": {
-      "description": "Safety, security and damage situations are one step more serious while everyone is away.",
+      "description": "Safety, security and damage situations are one step more serious while everyone is away (up to urgent; only safety can be critical).",
       "label": "Raise when nobody is home"
     },
     "triage.severity_overrides": {
-      "description": "Fixed severity per kind of situation, for example {\"updates\": 1}.",
+      "description": "Fixed severity per kind of situation, for example {\"updates\": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent).",
       "label": "Severity overrides"
     },
     "world.create_labels": {
@@ -1657,7 +1657,7 @@
       "description": "A room with this label, or with a device or entity labelled so, is a common space (living room, kitchen, dining room). Guests warm these rooms."
     },
     "world.label_critical": {
-      "description": "Problems with these devices are always treated as the highest severity.",
+      "description": "Problems with these devices are always treated as urgent, and as critical when they are about safety (a leak, smoke, gas, carbon monoxide).",
       "label": "Label: critical"
     },
     "world.label_ignore": {

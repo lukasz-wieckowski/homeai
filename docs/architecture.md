@@ -58,10 +58,13 @@ Processors run on every lifecycle event in order: repair, triage, notifications;
 
 ## Triage
 
-Code decides first: overrides per kind, the *HomeAI: critical* label (severity 4), raised severity for
-safety, security and damage when everyone is away, lowered severity for kinds that are often dismissed (never
-safety). While a repair playbook is trying, nobody is needed unless the situation is critical. AI tiers can
-refine the assessment later; guards keep safety severity, require a person for critical matters, and accept
+Code decides first: overrides per kind, the *HomeAI: critical* label (as serious as possible), raised severity
+for safety, security and damage when everyone is away, lowered severity for kinds that are often dismissed (never
+safety). Only safety can be critical (4: critical alerts, everyone, repeated until someone reacts): every other
+category stops at urgent (3), whatever raised it — a detector, presence, the label, an override, a rule, another
+integration or an AI tier (`limit_severity` in `signals/base.py`). A window left open while everyone is away is
+urgent, not critical. While a repair playbook is trying, nobody is needed unless the situation is critical. AI tiers
+can refine the assessment later; guards keep safety severity, require a person for critical matters, and accept
 “nobody needed” only below high severity.
 
 ## Repair

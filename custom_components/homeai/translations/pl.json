@@ -342,7 +342,7 @@
         },
         "severity": {
           "name": "Waga",
-          "description": "0 informacja, 1 niska, 2 średnia, 3 wysoka, 4 krytyczna."
+          "description": "0 informacja, 1 niska, 2 średnia, 3 wysoka, 4 krytyczna (tylko z kategorią safety; inaczej liczy się jako 3)."
         },
         "category": {
           "name": "Kategoria",

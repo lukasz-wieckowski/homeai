@@ -213,6 +213,32 @@ async def get_plan(ctx: ToolContext, args: dict[str, Any]) -> Any:
     ][:100]
 
 
+async def get_heating(ctx: ToolContext, args: dict[str, Any]) -> Any:
+    """Thermostats that speak the schedule contract: week, overrides (with HomeAI's reasons), optional estimate."""
+    module = ctx.rt.module("thermostats")
+    if module is None:
+        return {"error": "heating is not available"}
+    temperature = args.get("temperature")
+    try:
+        temperature = float(temperature) if temperature is not None else None
+    except TypeError, ValueError:
+        return {"error": "temperature must be a number"}
+    entity_id = args.get("entity_id") or None
+    if entity_id and not ctx.privacy.allowed(str(entity_id)):
+        return {"error": "not allowed"}
+    out = []
+    for item in await module.overview(entity_id, temperature):
+        if not ctx.privacy.allowed(item["entity_id"]):
+            continue
+        item["name"] = ctx.privacy.entity_name(item["entity_id"])
+        item["rooms"] = [{"area": ctx.privacy.area(r["area"]), "roles": r["roles"]} for r in item["rooms"]]
+        if ctx.privacy.level == "minimal":  # reasons name people and rooms
+            for override in [*item["homeai_overrides"], *((item.get("schedule") or {}).get("overrides") or [])]:
+                override.pop("reason", None)
+        out.append(_clean_value(item, 200))
+    return out
+
+
 # ——— Changing (through the executor) ———
 async def _execute(ctx: ToolContext, request: ActionRequest, confirmation_id: Any = None) -> dict[str, Any]:
     """Run an action for a tool. A model can never confirm on the person's behalf: `confirmed` is set only when a
@@ -411,6 +437,15 @@ TOOLS: dict[str, Tool] = {
         ),
         Tool("get_plan", "Upcoming entries of the home's plan.", _obj({"days": {"type": "integer"}}), get_plan),
         Tool(
+            "get_heating",
+            "Thermostats with a weekly schedule: their blocks (days, time, preset or temperature), overrides for a "
+            "while (from people, automations or HomeAI, with reasons) and room roles. With temperature: how many "
+            "minutes they need to reach it. A temperature or preset you set lasts until the thermostat's next block; "
+            "an override (service <domain>.add_override with end) lasts until its end.",
+            _obj({"entity_id": STR, "temperature": {"type": "number"}}),
+            get_heating,
+        ),
+        Tool(
             "call_service",
             "Run a Home Assistant action (service) through HomeAI's policy. The result status is done, unverified, "
             "needs_confirmation (ask the person and end your turn; when they answer yes in their next message, call "
@@ -514,6 +549,7 @@ READ_TOOLS = (
     "get_system_log",
     "get_plan",
     "recall",
+    "get_heating",
 )
 SETS = {
     "p1": READ_TOOLS[:5],

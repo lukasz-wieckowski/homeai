@@ -94,6 +94,12 @@ def _learning(rt: Any) -> Any:
     return Learning(rt)
 
 
+def _thermostats(rt: Any) -> Any:
+    from .thermostats.module import Thermostats
+
+    return Thermostats(rt)
+
+
 def _checks(rt: Any) -> Any:
     from .checks import SetupChecks
 
@@ -128,6 +134,7 @@ STAGE_MODULES: tuple[str, ...] = (
     "ai.arbiter",
     "memory.store",
     "learning.module",
+    "thermostats.module",
     "checks",
     "triage.engine",
     "notify.router",
@@ -151,5 +158,6 @@ STAGES: list[tuple[str, Callable[[Any], Any]]] = [
     ("arbiter", _arbiter),
     ("memory", _memory),
     ("learning", _learning),
+    ("thermostats", _thermostats),
     ("checks", _checks),
 ]

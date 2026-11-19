@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ..const import ROOM_ROLES
 from .registry import Scope, Setting, SettingError, SettingsRegistry, SettingType as T
 
 G = frozenset({Scope.GLOBAL})
@@ -129,6 +130,14 @@ def _world() -> list[Setting]:
         Setting("world.label_critical", T.STRING, "homeai_critical", s, selector="label", advanced=True),
         Setting("world.label_protective", T.STRING, "homeai_protective_action", s, selector="label", advanced=True),
         Setting("world.label_private", T.STRING, "homeai_private", s, selector="label", advanced=True),
+        # Room roles: what each room is for (heating uses them). Set per area; empty = from labels, icon and name.
+        Setting("world.room_roles", T.MULTISELECT, [], s, scopes=PLACE, options=("none", *ROOM_ROLES)),
+        Setting("world.room_roles_auto", T.BOOL, True, s),
+        Setting("world.label_bedroom", T.STRING, "homeai_bedroom", s, selector="label", advanced=True),
+        Setting("world.label_bathroom", T.STRING, "homeai_bathroom", s, selector="label", advanced=True),
+        Setting("world.label_common", T.STRING, "homeai_common_space", s, selector="label", advanced=True),
+        Setting("world.label_workplace", T.STRING, "homeai_workplace", s, selector="label", advanced=True),
+        Setting("world.label_activity", T.STRING, "homeai_activity", s, selector="label", advanced=True),
     ]
 
 
@@ -155,6 +164,7 @@ def _presence() -> list[Setting]:
         Setting("presence.charging_entities", T.ENTITIES, [], s, scopes=PERSON, selector="entity"),
         Setting("presence.bed_entities", T.ENTITIES, [], s, scopes=PERSON, selector="entity"),
         Setting("presence.quiet_minutes", T.INT, 30, s, min=5, max=240, unit="min", advanced=True),
+        Setting("presence.workplace_areas", T.STRINGS, [], s, scopes=PERSON, selector="area"),
     ]
 
 
@@ -515,6 +525,33 @@ def _schedule() -> list[Setting]:
     ]
 
 
+def _heating() -> list[Setting]:
+    """Thermostats that speak the schedule contract (`homeai_schedule`): overrides HomeAI sets by itself and
+    schedule changes it proposes."""
+    s = "heating"
+    return [
+        Setting("heating.enabled", T.BOOL, True, s),
+        Setting("heating.presence_overrides", T.BOOL, True, s, scopes=THING),
+        Setting("heating.lead_hours", T.INT, 12, s, min=0, max=72, unit="h", advanced=True),
+        Setting("heating.away_preset", T.STRING, "away", s, scopes=THING, max=40),
+        Setting("heating.guests_preset", T.STRING, "comfort", s, scopes=THING, max=40),
+        Setting("heating.home_office_preset", T.STRING, "comfort", s, scopes=THING, max=40),
+        Setting("heating.sick_preset", T.STRING, "comfort", s, scopes=THING, max=40),
+        Setting("heating.nobody_home_minutes", T.INT, 60, s, min=0, max=1440, unit="min"),
+        Setting("heating.nobody_home_preset", T.STRING, "eco", s, scopes=THING, max=40),
+        Setting("heating.rolling_hours", T.INT, 4, s, min=1, max=24, unit="h", advanced=True),
+        Setting("heating.activity_action", T.SELECT, "override", s, options=("off", "override", "valve_limit")),
+        Setting("heating.activity_preset", T.STRING, "comfort", s, scopes=THING, max=40),
+        Setting("heating.activity_power", T.FLOAT, 20.0, s, scopes=DEVICE_ENTITY, min=0, max=10000, unit="W"),
+        Setting("heating.activity_minutes", T.INT, 10, s, min=0, max=240, unit="min"),
+        Setting("heating.activity_off_minutes", T.INT, 15, s, min=1, max=240, unit="min", advanced=True),
+        Setting("heating.activity_valve", T.INT, 30, s, scopes=DEVICE_ENTITY, min=0, max=100, unit="%"),
+        Setting("heating.valve_limit_entity", T.ENTITY, "", s, scopes=DEVICE_ENTITY, selector="entity", advanced=True),
+        Setting("heating.schedule_proposals", T.BOOL, True, s),
+        Setting("heating.proposal_max_shift", T.INT, 120, s, min=15, max=360, unit="min", advanced=True),
+    ]
+
+
 def _ai() -> list[Setting]:
     s = "ai"
     return [
@@ -594,6 +631,7 @@ SECTIONS = [
     _repair,
     _adapters,
     _schedule,
+    _heating,
     _ai,
     _learning,
 ]

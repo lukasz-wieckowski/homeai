@@ -46,6 +46,71 @@ homeai_plan:
     title: "Dishwasher: eco program"
 ```
 
+## Thermostat schedule contract
+
+A heating integration lets HomeAI work with its thermostats' schedules by speaking this contract (version 1).
+HomeAI then sets overrides for a while from presence by itself (by its policy) and proposes changes of the weekly
+schedule, which an administrator approves. Heat Zones (`heat_zones`) speaks it; any integration can.
+
+**Announce it** with an attribute on the `climate` entity:
+
+```yaml
+homeai_schedule:
+  version: 1
+  domain: heat_zones   # the domain of the services below
+```
+
+**Services** in that domain, each with a target on the climate entity (`entity_id`):
+
+| Service | Fields | Response |
+|---|---|---|
+| `add_override` | `end` (required, ISO time), `start` (optional, now when left out), exactly one of `preset_mode` / `temperature`, `reason` (up to 200 characters), `source`, `override_id` (optional: an override with this id is replaced) | `{override_id}` |
+| `remove_override` | `override_id` or `source` | — |
+| `get_schedule` | — | `{<entity_id>: {enabled, weekly: [{days, time, preset_mode \| temperature}], overrides: [...]}}` |
+| `set_schedule` | `weekly`: the whole week, blocks as in `get_schedule` | — |
+| `estimate` | `temperature` | `{<entity_id>: {minutes \| null, confidence}}` |
+
+- `weekly` is a list of blocks `{days: [mon, tue, wed, thu, fri, sat, sun], time: "HH:MM", preset_mode | temperature}`.
+  A block lasts until the next one.
+- `overrides` lists `{override_id, start, end, preset_mode | temperature, reason, source}`.
+- An override takes precedence over the weekly schedule from `start` to `end`, then ends on its own.
+- A temperature or preset set with the usual `climate` services is a manual change that lasts until the next
+  block, as on any programmable thermostat.
+- `add_override` should accept being called without asking for a response (`SupportsResponse.OPTIONAL`), so
+  automations can use it too; HomeAI asks for the response only when the service requires it.
+
+**How HomeAI uses it**
+
+- **Policy.** `get_schedule` and `estimate` are R0. `add_override` and `remove_override` are R2, like any change of
+  the thermostat: HomeAI sets its overrides by the autonomy level for R2, only observes them during the observation
+  period, and people approve them when the level is *propose and ask*. `set_schedule` is configuration, at least R4
+  whatever labels or overrides say: HomeAI only proposes a new week and an administrator approves it.
+- **Its overrides** carry `source: homeai`, a reason people can read (“Vacation”, “Guests”, “Nobody home”) and a stable
+  `override_id` per reason and thermostat, so HomeAI replaces, renews and removes them after a restart. HomeAI
+  removes its override when the reason is gone (the trip was cancelled, someone came home). When a person removes
+  HomeAI's override on the thermostat, HomeAI does not set it again for the same reason and treats it like an undo.
+- **Reasons**: a household trip or every resident's own trip at once (`away`), guests (common spaces), working from
+  home (the person's workplace), sickness (the whole home), nobody home for a while (`eco`, until someone is back),
+  vacation mode, and activity in a room (an entity labelled *HomeAI: activity*). Presets and timings are settings
+  (section *Heating*). Calendar reasons are sent ahead (*Send overrides ahead*), so the thermostat can heat up in
+  time; reasons without a known end (nobody home, vacation mode, activity) run a few hours ahead and are renewed.
+- **Rooms.** The thermostat's room comes from its entity or device area. Optionally, a thermostat that heats several
+  rooms lists their area ids in the attribute: `homeai_schedule: {version: 1, domain: …, areas: [living_room,
+  kitchen]}`; HomeAI then treats it as heating all of them.
+- **Valve limit.** For activity, HomeAI can lower a valve limit instead of setting an override: a `number` of the
+  thermostat's device whose translation key is `valve_limit` (or whose id ends with `_valve_limit`, or the entity
+  in the setting *Valve-limit entity*). HomeAI puts the previous value back afterwards.
+- **Proposals.** HomeAI notices people changing the target by hand before a block that would do the same (warming
+  up earlier, going to sleep earlier) on most workdays or weekend days, and proposes moving that block with
+  `set_schedule`. Manual changes are told apart by the change's context: a person's account, or an automation a
+  button or remote started; the thermostat's own schedule changes it without either. A proposal is withdrawn when the
+  thermostat's week changes before it is approved.
+- **Plan and signals.** Publish the next 36 hours of the schedule and overrides as `homeai_plan` and the zone's
+  problems as `homeai_signals` (both above); HomeAI shows them in `calendar.homeai_plan` and handles the signals as
+  situations.
+- **Reading.** The AI tool `get_heating` reads the week, the overrides with their reasons, the room roles and, with
+  a temperature, the estimate.
+
 ## “Tell me when”
 
 **Service** `homeai.watch`: `entity_id`, `condition` (state, not_state, above, below, changes), `value`,

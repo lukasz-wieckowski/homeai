@@ -28,8 +28,17 @@ STORAGE_KEY = f"{DOMAIN}.learning"
 KEEP_REVIEWS = 8
 
 
-def action_key(domain: str, service: str, entity_ids: list[str] | tuple[str, ...]) -> str:
-    return f"{domain}.{service}:{','.join(sorted(entity_ids))}"
+def action_key(
+    domain: str, service: str, entity_ids: list[str] | tuple[str, ...], data: dict[str, Any] | None = None
+) -> str:
+    """What people's feedback is remembered for. A thermostat override also names its preset or temperature, so a
+    refused “comfort for guests” does not silence “away for the vacation” on the same thermostat."""
+    key = f"{domain}.{service}:{','.join(sorted(entity_ids))}"
+    if service == "add_override" and isinstance(data, dict):
+        what = data.get("preset_mode") if data.get("preset_mode") is not None else data.get("temperature")
+        if what is not None:
+            key += f"|{what}"
+    return key
 
 
 class Learning:
@@ -203,7 +212,7 @@ class Learning:
         request = record.get("request") or {}
         if not request.get("domain"):
             return
-        key = action_key(request["domain"], request["service"], request.get("entity_ids") or [])
+        key = action_key(request["domain"], request["service"], request.get("entity_ids") or [], request.get("data"))
         counts = self.feedback_counts.setdefault(key, {})
         counts[kind] = counts.get(kind, 0) + 1
         if kind == "deny":
@@ -213,12 +222,14 @@ class Learning:
 
     def restricted(self, request: ActionRequest) -> bool:
         """An automatic action people undid too often goes back to “propose”."""
-        counts = self.feedback_counts.get(action_key(request.domain, request.service, request.entity_ids), {})
+        counts = self.feedback_counts.get(
+            action_key(request.domain, request.service, request.entity_ids, request.data), {}
+        )
         return counts.get("undo", 0) >= int(self.rt.settings.get("learning.undo_limit"))
 
     def quiet(self, request: ActionRequest) -> bool:
         """Recently refused: do not ask again yet."""
-        until = self.quiet_until.get(action_key(request.domain, request.service, request.entity_ids))
+        until = self.quiet_until.get(action_key(request.domain, request.service, request.entity_ids, request.data))
         return bool(until and (t := dt_util.parse_datetime(until)) and t > dt_util.utcnow())
 
     # ——— Weekly review ———

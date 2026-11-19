@@ -28,7 +28,18 @@ from ..const import DOMAIN, LOGGER
 from ..settings import SettingsManager, Target
 from .roles import Role, classify
 
-LABEL_SETTINGS = ("label_ignore", "label_personal", "label_critical", "label_protective", "label_private")
+LABEL_SETTINGS = (
+    "label_ignore",
+    "label_personal",
+    "label_critical",
+    "label_protective",
+    "label_private",
+    "label_bedroom",
+    "label_bathroom",
+    "label_common",
+    "label_workplace",
+    "label_activity",
+)
 
 
 @dataclass(slots=True)
@@ -75,6 +86,8 @@ class AreaInfo:
     floor_id: str | None
     temperature_entity_id: str | None
     humidity_entity_id: str | None
+    labels: frozenset[str] = frozenset()
+    icon: str | None = None
 
 
 @dataclass(slots=True)
@@ -162,6 +175,11 @@ class WorldModel:
             "label_critical": ("HomeAI: critical", "mdi:alert-octagon-outline"),
             "label_protective": ("HomeAI: protective action", "mdi:shield-check-outline"),
             "label_private": ("HomeAI: private", "mdi:incognito"),
+            "label_bedroom": ("HomeAI: bedroom", "mdi:bed-outline"),
+            "label_bathroom": ("HomeAI: bathroom", "mdi:shower"),
+            "label_common": ("HomeAI: common space", "mdi:sofa-outline"),
+            "label_workplace": ("HomeAI: workplace", "mdi:desk"),
+            "label_activity": ("HomeAI: activity", "mdi:account-clock-outline"),
         }
         for which, (name, icon) in names.items():
             label_id = self.label(which)
@@ -178,7 +196,15 @@ class WorldModel:
             f.floor_id: FloorInfo(f.floor_id, f.name, f.level) for f in fr.async_get(self.hass).async_list_floors()
         }
         self.areas = {
-            a.id: AreaInfo(a.id, a.name, a.floor_id, a.temperature_entity_id, a.humidity_entity_id)
+            a.id: AreaInfo(
+                a.id,
+                a.name,
+                a.floor_id,
+                a.temperature_entity_id,
+                a.humidity_entity_id,
+                frozenset(a.labels),
+                a.icon,
+            )
             for a in ar.async_get(self.hass).async_list_areas()
         }
         self.devices = {}
@@ -412,6 +438,15 @@ class WorldModel:
     def device_has_label(self, device_id: str, which: str) -> bool:
         device = self.devices.get(device_id)
         return bool(device and self.label(which) in device.labels)
+
+    def room_roles(self, area_id: str | None) -> frozenset[str]:
+        """What a room is for: bedroom, bathroom, common, workplace (see `world/rooms.py`)."""
+        from .rooms import room_roles
+
+        return room_roles(self, area_id)
+
+    def areas_with_role(self, role: str) -> set[str]:
+        return {area_id for area_id in self.areas if role in self.room_roles(area_id)}
 
     def area_name(self, area_id: str | None) -> str:
         return self.areas[area_id].name if area_id in self.areas else ""

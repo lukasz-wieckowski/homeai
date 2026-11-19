@@ -9,6 +9,11 @@ floor (`policy.risk_override`). The highest class among the targets wins.
 A control entity (number, select, switch, button, text, time…) is never lighter than the device it belongs to:
 the valve position of a thermostat counts as the thermostat, a lock's auto-relock time as the lock. A device's
 own configuration entities (`entity_category: config`) are at least R2.
+
+Thermostats that speak the schedule contract (`homeai_schedule`, see `thermostats/contract.py`): reading the
+schedule or an estimate is R0, an override for a while is R2 like any change of the thermostat, and a new weekly
+schedule (`set_schedule`) is configuration: at least R4 whatever a label or override says, so HomeAI only ever
+proposes it and an administrator approves.
 """
 
 from __future__ import annotations
@@ -156,6 +161,15 @@ SERVICE_RISK: dict[tuple[str, str], Risk] = {
     ("todo", "remove_completed_items"): Risk.R2,
 }
 
+# Services of the thermostat schedule contract, on a climate entity that announces it.
+SCHEDULE_SERVICE_RISK: dict[str, Risk] = {
+    "get_schedule": Risk.R0,
+    "estimate": Risk.R0,
+    "add_override": Risk.R2,
+    "remove_override": Risk.R2,
+    "set_schedule": Risk.R4,
+}
+
 SECURITY_COVER_CLASSES = frozenset({"garage", "gate", "door"})
 
 # Entities that adjust a device rather than being the device: they take the class of the device's main entities.
@@ -228,7 +242,11 @@ def classify(
     for entity_id in entity_ids:
         e_domain = entity_id.split(".", 1)[0]
         risk = _configured(e_domain, service, by_service) if domain == "homeassistant" and service in _GENERIC else base
-        if domain not in ("homeassistant", e_domain):
+        contract = schedule_service(world, domain, service, entity_id)
+        configured = Risk.parse(by_service.get(f"{domain}.{service}")) if contract else None
+        if contract:
+            risk = configured if configured is not None else SCHEDULE_SERVICE_RISK[service]
+        elif domain not in ("homeassistant", e_domain):
             # an integration's own service on another domain's entity (`zwave_js.set_lock_usercode` on a lock) is
             # never lighter than that entity's domain
             risk = max(risk, _configured(e_domain, service, by_service))
@@ -249,8 +267,21 @@ def classify(
             override = Risk.parse(settings.get("policy.risk_override", world.target(entity_id)))
             if override is not None:
                 risk = override
+        if contract and service == "set_schedule":
+            risk = max(risk, Risk.R4)  # a new week is configuration: never lowered by a label or an override
+        elif contract and configured is None and SCHEDULE_SERVICE_RISK[service] == Risk.R0:
+            risk = Risk.R0  # reading the schedule or an estimate changes nothing
         risks.append(risk)
     return max(risks)
+
+
+def schedule_service(world: WorldModel | None, domain: str, service: str, entity_id: str) -> bool:
+    """`domain.service` is a schedule-contract service and `entity_id` announces the contract in `domain`."""
+    if service not in SCHEDULE_SERVICE_RISK or world is None or not entity_id.startswith("climate."):
+        return False
+    from ..thermostats.contract import speaks_contract
+
+    return speaks_contract(world.hass, domain, entity_id)
 
 
 def _configured(domain: str, service: str, by_service: dict[str, str]) -> Risk:

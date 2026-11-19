@@ -30,7 +30,9 @@ def home_card(rt: Any, privacy: Privacy) -> str:
     floors: dict[str, list[str]] = {}
     for area in sorted(world.areas.values(), key=lambda a: a.name):
         floor = world.floors.get(area.floor_id).name if area.floor_id and area.floor_id in world.floors else ""
-        floors.setdefault(floor, []).append(privacy.area(area.name))
+        roles = sorted(world.room_roles(area.area_id))
+        name = privacy.area(area.name)
+        floors.setdefault(floor, []).append(f"{name} ({', '.join(roles)})" if roles else name)
     lines = ["<home>"]
     for floor, areas in floors.items():
         lines.append(f"{privacy.area(floor) or 'Rooms'}: {', '.join(areas)}")

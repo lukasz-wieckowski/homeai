@@ -29,6 +29,11 @@ numbers are its settings (R4). Administrators can change it at three levels, eac
 2. *Risk class by label*: a class for everything with a label; with several labels the highest wins.
 3. *Risk class* per entity, device, area or floor.
 
+Thermostats that speak the schedule contract (see [integrations.md](integrations.md#thermostat-schedule-contract)):
+reading the schedule or an estimate is R0, an override for a while (`add_override`, `remove_override`) is R2 like
+any change of the thermostat, and a new weekly schedule (`set_schedule`) is configuration: at least R4 even when a
+label or an override sets a lower class for the thermostat, so HomeAI only proposes it.
+
 When an action targets several entities the highest class counts. Targets are resolved the way Home Assistant
 resolves a service call — entities, devices, areas, floors and labels, groups expanded, every entity counted even
 if HomeAI does not watch it — and the action then runs on exactly that list. A target with nothing behind it, and
@@ -39,7 +44,12 @@ if HomeAI does not watch it — and the action then runs on exactly that list. A
 For R1–R4 each class has a level: *never*, *only observe* (journal only), *propose and ask* (an approval
 request), *act and tell*, *act*. During the observation period (default 14 days after installation) R1–R3
 autonomy only observes, system repairs included; set the period to 0 to let HomeAI act at once. An automatic action that people undo too often goes back to *propose*; a request that
-was refused is not asked again for a while.
+was refused is not asked again for a while (for a thermostat override: the same preset on the same thermostat).
+
+A **follow-up** continues or undoes something HomeAI already did: renewing its own thermostat override with fresh
+times, trimming it, or removing it when the reason is gone, and putting back a valve limit. It runs up to R2 without
+a new decision, because the change itself was allowed or approved; anything new goes through the levels above.
+HomeAI withdraws a request it no longer needs (the reason is gone) and the request disappears from phones.
 
 The **autonomy slider** (`select.homeai_autonomy`) moves every level at once: *only observe*, *cautious* (at most
 propose, system repairs still run), *balanced* (the levels as set) and *bold* (comfort and device actions run).

@@ -12,6 +12,8 @@ Actors:
   repairs included; set the period to 0 to start acting at once).
   The actor × class matrix (`policy.actor_<actor>_r<n>`) gives one actor its own level for a class, e.g. AI
   only proposes device actions while HomeAI's own rules act on them; schedule entries then follow that level.
+  A follow-up (HomeAI renewing, shortening or removing a change it already made, such as its own thermostat
+  override) runs up to R2 without asking again: it only continues or undoes what was allowed or approved.
 """
 
 from __future__ import annotations
@@ -59,6 +61,9 @@ class ActionRequest:
     # Start the service and do not wait for it to finish (a backup takes longer than any sensible timeout); the
     # result is then judged by what follows, not by the call.
     background: bool = False
+    # HomeAI continues or undoes a change it already made (renews or removes its own override). Set only by HomeAI's
+    # own modules for changes they made, never from a request of a person or a model.
+    follow_up: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -179,6 +184,8 @@ class Policy:
             return Decision(Verdict.ALLOW, risk, "approved", tell=True)
         if risk == Risk.R0:
             return Decision(Verdict.ALLOW, risk, "read")
+        if request.follow_up and request.actor == "homeai" and risk <= Risk.R2:
+            return Decision(Verdict.ALLOW, risk, "follow_up")
         if is_protective(request.domain, request.service, request.entity_ids, world) and self.rt.settings.get(
             "policy.protective_actions"
         ):

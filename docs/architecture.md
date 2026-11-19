@@ -19,6 +19,10 @@ translation key (light, outlet, leak, smoke, battery, temperature, connectivityâ
 device and entities, entities with the *HomeAI: ignore* label, disabled entities and (by default) hidden
 ones. The scope can be limited to selected areas or to entities exposed to assistants.
 
+Rooms (areas) get *room roles*: bedroom, bathroom, common space, workplace. They come from the administrator's
+choice per area, from HomeAI's role labels on the area or on a device or entity in it, else from the area's icon
+and name.
+
 Presence comes from `person` entities; roles (administrator, member, guest, ignore) are settings per person.
 Sleep comes from up to four sources in order: a helper per person, bed or charging sensors, an AI guess, and
 night hours (with weekend hours for Friday and Saturday nights).
@@ -88,6 +92,19 @@ The scheduler stores entries with their author and the risk class approved when 
 them through the executor as `schedule`. Missed entries run if they are only slightly late. Presence exceptions
 make the household or a person expected away; they feed presence (vacation) and the presence calendar.
 
+## Thermostats
+
+`thermostats/` speaks the thermostat schedule contract
+([integrations.md](integrations.md#thermostat-schedule-contract)). On every tick it discovers climate entities with
+`homeai_schedule`, computes what overrides it wants from the presence calendar, live presence and activity
+(`intents.py`, a pure function with priorities: guests, away, vacation mode, nobody home, activity, sickness, working
+from home; a higher reason trims a lower one), and reconciles that with what it asked for before: new reasons go
+through the executor and the policy (R2), changes of an applied override are follow-ups, gone reasons are removed,
+and pending requests are withdrawn. Every five minutes it compares its applied overrides with `get_schedule`, so an
+override a person removed is not set again. Manual changes (told apart by the change's context) and what each preset
+means are recorded; once a day, at the weekly review's time of day, `habits.py` looks for blocks people anticipate
+by hand and proposes a new week (R4).
+
 ## AI
 
 See [ai.md](ai.md). AI tiers never act directly: they return assessments and texts, and their tools change
@@ -102,4 +119,4 @@ A weekly review summarises the week for administrators.
 ## Storage
 
 Everything lives in Home Assistant's `.storage` (settings, journal, situations, approvals, plan, presence
-exceptions, AI ledger, dossiers, memory, learning). Diagnostics export the state with secrets redacted.
+exceptions, AI ledger, dossiers, memory, learning, thermostat overrides and proposals). Diagnostics export the state with secrets redacted.

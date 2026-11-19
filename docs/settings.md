@@ -42,6 +42,13 @@ Which entities HomeAI watches and the labels it understands.
 | **Label: critical** — Problems with these devices are always treated as the highest severity. | `world.label_critical` | `homeai_critical` |  | home | advanced |
 | **Label: protective action** — Actions on these entities may run automatically to protect the home (for example closing a water valve during a leak). | `world.label_protective` | `homeai_protective_action` |  | home | advanced |
 | **Label: private** — Data of these entities is never sent to cloud AI. | `world.label_private` | `homeai_private` |  | home | advanced |
+| **Room roles** — What this room is for: bedroom, bathroom, common space, workplace (a room may have several). Set it per room; empty means from HomeAI's labels, else from the room's icon and name. None means no role. | `world.room_roles` | [] | None (`none`), Bedroom (`bedroom`), Bathroom (`bathroom`), Common space (`common`), Workplace (`workplace`) | area, floor, home |  |
+| **Guess room roles** — Rooms without a role set or labelled get one from their icon (a bed, a sofa, a desk…) or their name (bedroom, living room, office…). | `world.room_roles_auto` | true |  | home |  |
+| **Label: bedroom** — A room with this label, or with a device or entity labelled so, is a bedroom. | `world.label_bedroom` | `homeai_bedroom` |  | home | advanced |
+| **Label: bathroom** — A room with this label, or with a device or entity labelled so, is a bathroom. | `world.label_bathroom` | `homeai_bathroom` |  | home | advanced |
+| **Label: common space** — A room with this label, or with a device or entity labelled so, is a common space (living room, kitchen, dining room). Guests warm these rooms. | `world.label_common` | `homeai_common_space` |  | home | advanced |
+| **Label: workplace** — A room with this label, or with a device or entity labelled so (a desk plug), is someone's workplace. Working from home warms it. | `world.label_workplace` | `homeai_workplace` |  | home | advanced |
+| **Label: activity** — Entities with this label show that someone is busy in their room: a desk's power sensor, a PC, a TV. While one is active, the heating of that room follows “Heating: when someone is active”. | `world.label_activity` | `homeai_activity` |  | home | advanced |
 
 ## People and sleep
 
@@ -63,6 +70,7 @@ Roles, house mode and how HomeAI knows who sleeps.
 | **Phone charging sensors** — Charging sensors of the person's phone; charging at night suggests sleep. | `presence.charging_entities` | [] |  | home, person |  |
 | **Bed sensors** — Bed occupancy sensors of the person. | `presence.bed_entities` | [] |  | home, person |  |
 | **Settling time** — How long a change in presence must last before HomeAI reacts. | `presence.quiet_minutes` | 30 | 5–240 min | home | advanced |
+| **Workplace** — The rooms where this person works from home. Without one, the home's only workplace room is used. | `presence.workplace_areas` | [] |  | home, person |  |
 
 ## Privacy
 
@@ -322,6 +330,32 @@ The home's plan and presence exceptions.
 | **“Tell me when”: longest watch** — How long HomeAI keeps watching for a “tell me when” request before giving up. | `schedule.watch_hours` | 24 | 1–168 h | home |  |
 | **“Tell me when”: per person** — Most “tell me when” requests one person may have at a time. | `schedule.watch_max` | 20 | 1–100 | home | advanced |
 | **Plans from other integrations** — Show what other integrations plan (a homeai_plan attribute on their entities) in the plan calendar and panel. HomeAI never runs them. | `schedule.external_plans` | true |  | home |  |
+
+## Heating
+
+Thermostats that speak HomeAI's schedule contract: overrides HomeAI sets by itself from presence, and weekly schedule changes it proposes.
+
+| Setting | Key | Default | Range / options | Scope | Notes |
+|---|---|---|---|---|---|
+| **Heating with HomeAI** — Use thermostats that speak HomeAI's schedule contract (attribute homeai_schedule): overrides from presence and proposals for the weekly schedule. Off: HomeAI removes its overrides and leaves the schedules alone. | `heating.enabled` | true |  | home |  |
+| **Overrides from presence** — Trips, guests, working from home, sickness and an empty home change the heating for a while. HomeAI sets these overrides by itself as device actions (R2), by the autonomy level; during the observation period it only notes them. | `heating.presence_overrides` | true |  | area, device, entity, floor, home |  |
+| **Send overrides ahead** — How long before a calendar event (guests, a trip) HomeAI sends its override, so the thermostat can heat up in time. 0: when the event starts. | `heating.lead_hours` | 12 | 0–72 h | home | advanced |
+| **Preset for trips** — Preset while the whole household is away by the presence calendar, or vacation mode is on. | `heating.away_preset` | `away` | up to 40 characters | area, device, entity, floor, home |  |
+| **Preset for guests** — Preset in common spaces while guests are here (by the presence calendar). | `heating.guests_preset` | `comfort` | up to 40 characters | area, device, entity, floor, home |  |
+| **Preset for working from home** — Preset at the person's workplace while they work from home. | `heating.home_office_preset` | `comfort` | up to 40 characters | area, device, entity, floor, home |  |
+| **Preset for sickness** — Preset in the whole home while someone is sick. | `heating.sick_preset` | `comfort` | up to 40 characters | area, device, entity, floor, home |  |
+| **Nobody home after** — When no resident has been home this long, the heating goes to the preset below until someone is back. 0: off. | `heating.nobody_home_minutes` | 60 | 0–1440 min | home |  |
+| **Preset when nobody is home** — Preset while nobody is home. | `heating.nobody_home_preset` | `eco` | up to 40 characters | area, device, entity, floor, home |  |
+| **Length of open-ended overrides** — Overrides without a known end (nobody home, vacation mode, activity) run this far ahead and are renewed while the reason lasts, so they end on their own if HomeAI stops. | `heating.rolling_hours` | 4 | 1–24 h | home | advanced |
+| **When someone is active** — What an active entity labelled “HomeAI: activity” does to the heating of its room: nothing, an override with the preset below, or a lower valve limit (thermostats with a valve-limit number; others get the override). | `heating.activity_action` | `override` | Nothing (`off`), Override with a preset (`override`), Lower valve limit (`valve_limit`) | home |  |
+| **Preset for activity** — Preset while someone is active in the room. | `heating.activity_preset` | `comfort` | up to 40 characters | area, device, entity, floor, home |  |
+| **Activity: power above** — A power sensor counts as active above this many watts. | `heating.activity_power` | 20.0 | 0–10000 W | device, entity, home |  |
+| **Activity: after** — An entity must be active this long before the heating reacts. | `heating.activity_minutes` | 10 | 0–240 min | home |  |
+| **Activity: ends after** — The reaction ends when the entity has been inactive this long. | `heating.activity_off_minutes` | 15 | 1–240 min | home | advanced |
+| **Activity: valve limit** — Valve limit while someone is active (for “lower valve limit”); the previous limit comes back afterwards. | `heating.activity_valve` | 30 | 0–100 % | device, entity, home |  |
+| **Valve-limit entity** — The number entity that limits this thermostat's valve. Empty: a number of the same device whose key or id says valve_limit. | `heating.valve_limit_entity` | `` |  | device, entity, home | advanced |
+| **Propose schedule changes** — When people keep doing by hand what the next block of a schedule would do (warming up earlier, going to sleep earlier), HomeAI proposes moving that block. A new schedule is configuration (R4): an administrator approves it. | `heating.schedule_proposals` | true |  | home |  |
+| **Furthest move** — How far ahead of a block a manual change still counts as anticipating it. | `heating.proposal_max_shift` | 120 | 15–360 min | home | advanced |
 
 ## AI
 

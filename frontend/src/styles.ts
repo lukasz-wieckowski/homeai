@@ -256,6 +256,7 @@ export const shared = [
       border: var(--_border-width) solid var(--_input-border-color); border-radius: var(--_input-radius);
       padding: var(--_input-padding); box-sizing: border-box; min-height: 2.75em; }
     input[type="checkbox"] { accent-color: var(--_accent); min-height: auto; width: 1.25em; height: 1.25em; }
+    input[type="range"] { width: 100%; padding: 0; border: none; background: transparent; accent-color: var(--_accent); }
     textarea { width: 100%; min-height: 6em; font-family: var(--_code-font-family); font-size: var(--_secondary-font-size); }
     .empty { padding: var(--_section-spacing) var(--_card-padding); text-align: center; color: var(--_secondary-text); }
     /* Reduce transparency: the material becomes solid; increase contrast: clear edges; browsers without

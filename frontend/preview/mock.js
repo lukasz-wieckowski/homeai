@@ -123,7 +123,11 @@ export const hass = {
   language,
   config: { time_zone: "Europe/Warsaw" },
   user: { id: "u1", name: "Anna", is_admin: true },
-  areas: { kitchen: { area_id: "kitchen", name: "Kitchen" } },
+  areas: { kitchen: { area_id: "kitchen", name: "Kitchen" }, living: { area_id: "living", name: "Living room" } },
+  entities: {
+    "light.living_lamp": { entity_id: "light.living_lamp", area_id: "living" },
+    "switch.kitchen_plug": { entity_id: "switch.kitchen_plug", area_id: "kitchen" },
+  },
   states: {
     "sensor.homeai_situations": {
       entity_id: "sensor.homeai_situations",
@@ -136,6 +140,11 @@ export const hass = {
       },
     },
     "climate.living": { entity_id: "climate.living", state: "heat", attributes: { friendly_name: "Living room" } },
+    "light.living_lamp": { entity_id: "light.living_lamp", state: "on", attributes: { friendly_name: "Floor lamp" } },
+    "light.balcony": { entity_id: "light.balcony", state: "off", attributes: { friendly_name: "Balcony lights" } },
+    "scene.evening": { entity_id: "scene.evening", state: "scening", attributes: { friendly_name: "Evening" } },
+    "switch.kitchen_plug": { entity_id: "switch.kitchen_plug", state: "off", attributes: { friendly_name: "Coffee machine plug" } },
+    "cover.bedroom": { entity_id: "cover.bedroom", state: "open", attributes: { friendly_name: "Bedroom blind" } },
     "person.anna": { entity_id: "person.anna", state: "not_home", attributes: { friendly_name: "Anna" } },
   },
   async callWS(msg) {

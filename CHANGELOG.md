@@ -22,6 +22,10 @@ HomeAI's screens are split into panels and read as lists instead of a stack of c
 - **The plan by day.** What comes next is grouped under Today, Tomorrow and the following days, with the time in its
   own column; a row of the plan's own entries opens to skip it this time or edit the entry. On a wide screen the
   timeline and the entries sit side by side. The journal is grouped by day the same way.
+- **Plan entries in people's words.** An action is a thing picked by its name (grouped by kind, with its room) and
+  what should happen to it: turn on or off, brightness, open, close, position, temperature, run a scene or a
+  script — a slider for the one value, no action names, entity ids or JSON. The name is optional (it is made from the
+  action). Actions this editor cannot express stay as a custom action that only an administrator changes.
 - **Editors are sheets.** Adding or changing a plan entry, a presence exception or a rule opens a modal sheet above
   the list (from the bottom on a phone) with the fields one under another; removing is in the sheet. Weekdays are
   toggles.

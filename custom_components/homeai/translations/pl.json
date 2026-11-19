@@ -217,6 +217,9 @@
     },
     "watch_invalid": {
       "message": "HomeAI nie może tego pilnować: {reason}."
+    },
+    "residents_only": {
+      "message": "To mogą zrobić tylko domownicy."
     }
   },
   "entity": {

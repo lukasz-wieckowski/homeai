@@ -271,7 +271,9 @@ class Executor:
         try:
             async with asyncio.timeout(float(self.rt.settings.get("executor.timeout"))):
                 outcome = await self.config.run(request.service, request.data)
-        except (ConfigError, TimeoutError) as err:
+        except Exception as err:
+            if not isinstance(err, (ConfigError, TimeoutError)):
+                LOGGER.warning("HomeAI configuration change %s failed: %r", request.service, err)
             return self._finish(
                 request,
                 ActionResult("failed", risk, str(err)[:300] or "timeout", action_id, decision=decision.as_dict()),

@@ -74,6 +74,15 @@ class Presence:
                 return "admin"
         return str(self.settings.get("presence.role", target))
 
+    def user_role(self, user_id: str | None) -> str | None:
+        """The role of the person behind a Home Assistant user; None for a user without a person."""
+        person = next((p for p in self.world.persons.values() if user_id and p.user_id == user_id), None)
+        return self.role(person.entity_id) if person is not None else None
+
+    def resident_user(self, user_id: str | None) -> bool:
+        """A Home Assistant administrator, or the user of an administrator or member of the household."""
+        return bool(user_id) and (user_id in self.admin_users or self.user_role(user_id) in ("admin", "member"))
+
     def people(self, now: datetime | None = None) -> list[PersonState]:
         now = now or dt_util.now()
         result = []

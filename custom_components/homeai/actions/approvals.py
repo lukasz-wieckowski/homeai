@@ -175,14 +175,15 @@ class Approvals:
         if item is None or item["status"] != "pending" or not await self.can_decide(item, user_id):
             return None
         who = await self._name(user_id)
-        item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request = ActionRequest.from_dict(item["request"])
+        if await self._outdated(item, request):
+            return None
+        item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request.approved_by = who
         request.approved_by_user = user_id
         if item["approver"] == "requester" and user_id == item.get("requester"):
             request.confirmed = True  # the requester's own Approve is their explicit yes
-        result = await self.rt.module("executor").execute(request)
-        item["result"] = result.as_dict()
+        item["result"] = await self._execute(request)
         self.rt.journal.add("approval", self.rt.text("journal|approval_granted", what=item["what"], who=who))
         learning = self.rt.module("learning")
         if learning is not None:
@@ -190,6 +191,29 @@ class Approvals:
         await self._clear(item)
         self._changed(item)
         return item
+
+    async def _outdated(self, item: dict[str, Any], request: ActionRequest) -> bool:
+        """The request can no longer be approved as it was asked: its time ran out, or what it would touch became
+        riskier than the class people were asked about (an entity joined the area or label, a class was changed)."""
+        expires = dt_util.parse_datetime(item["expires"])
+        executor = self.rt.module("executor")
+        probe = ActionRequest.from_dict(item["request"])
+        probe.entity_ids = executor.targets(probe)
+        risk_now = int(self.rt.module("policy").risk(probe))
+        if (expires is None or expires > dt_util.utcnow()) and risk_now <= int(item["risk"]):
+            return False
+        item["status"] = "expired"
+        self.rt.journal.add("approval", self.rt.text("journal|approval_expired", what=item["what"]))
+        await self._clear(item)
+        self._changed(item)
+        return True
+
+    async def _execute(self, request: ActionRequest) -> dict[str, Any]:
+        try:
+            return (await self.rt.module("executor").execute(request)).as_dict()
+        except Exception as err:
+            LOGGER.exception("Approved action %s.%s crashed", request.domain, request.service)
+            return {"status": "failed", "risk": 0, "message": str(err)[:300]}
 
     async def deny(self, approval_id: str, user_id: str | None) -> dict[str, Any] | None:
         item = self.items.get(approval_id)
@@ -217,11 +241,12 @@ class Approvals:
         if item["request"].get("actor") == "person" or item["approver"] == "requester":
             return None  # a person's request waits for a person: the arbiter only advises
         who = self.rt.text("ai|arbiter_name")
-        item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request = ActionRequest.from_dict(item["request"])
+        if await self._outdated(item, request):
+            return None
+        item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request.approved_by = who
-        result = await self.rt.module("executor").execute(request)
-        item["result"] = result.as_dict()
+        item["result"] = await self._execute(request)
         self.rt.journal.add("approval", self.rt.text("journal|approval_granted", what=item["what"], who=who))
         await self._clear(item)
         self._changed(item)

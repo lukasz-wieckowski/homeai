@@ -23,7 +23,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
-from .risk import Risk, classify, is_protective
+from .risk import Risk, carried_entities, classify, is_protective
 
 ACTORS = ("person", "homeai", "ai", "repair", "schedule")
 MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule")  # actors with their own row in the actor × class matrix
@@ -98,9 +98,14 @@ class Policy:
 
     # ——— Classification ———
     def risk(self, request: ActionRequest) -> Risk:
-        return classify(
+        risk = classify(
             request.domain, request.service, request.entity_ids, world=self.rt.world, settings=self.rt.settings
         )
+        carried = carried_entities(self.rt.hass, request.domain, request.service, request.data, request.entity_ids)
+        if carried:
+            inside = classify("homeassistant", "turn_on", carried, world=self.rt.world, settings=self.rt.settings)
+            risk = max(risk, inside)
+        return risk
 
     def observing(self, now: datetime | None = None) -> bool:
         days = int(self.rt.settings.get("policy.observation_days"))
@@ -133,7 +138,7 @@ class Policy:
 
     async def _person(self, request: ActionRequest, risk: Risk) -> Decision:
         user = await self.rt.hass.auth.async_get_user(request.user_id) if request.user_id else None
-        if user is None and not request.user_id and risk <= Risk.R1:
+        if user is None and not request.user_id and risk <= Risk.R1 and request.domain != "config":
             return Decision(Verdict.ALLOW, risk, "anonymous")  # e.g. a voice satellite without a user
         if user is None or not user.is_active:
             return Decision(Verdict.DENY, risk, "no_user")

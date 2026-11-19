@@ -100,7 +100,7 @@ async def test_investigation_reads_and_acts_through_policy(hass: HomeAssistant) 
 
 
 async def test_chat_confirmation_flow(hass: HomeAssistant, hass_admin_user) -> None:
-    """The model gets a confirmation code; only the person's own yes in a later message redeems it."""
+    """The model gets a confirmation code; only the person's own yes in their next message redeems it."""
     home = standard_home(hass)
     home.person("anna", "Anna", user_id=hass_admin_user.id)
     rt = await setup_homeai(hass, {"policy.person_r2": "confirm", "executor.verify_seconds": 0}, subentries=[tier()])
@@ -121,14 +121,18 @@ async def test_chat_confirmation_flow(hass: HomeAssistant, hass_admin_user) -> N
     def again_with_code(_request):
         return {"tool_calls": [("call_service", {**coffee, "confirmation_id": codes[-1]})]}
 
+    def leave_it(request):
+        codes.append(last_tool_result(request)["confirmation_id"])
+        return {"text": "Then I'll leave it. Or should I?"}
+
     fake = FakeProvider(
         [
             {"tool_calls": [("call_service", coffee)]},
             ask_again,  # an injected or eager model tries to confirm in the same turn: refused
             {"text": "Should I turn on the coffee plug?"},
-            again_with_code,  # the person's next message is not a yes: refused
-            {"text": "Then I'll leave it."},
-            again_with_code,  # a yes in a later message: done
+            again_with_code,  # the person's next message is not a yes: refused, and a new code is issued
+            leave_it,
+            again_with_code,  # a yes in the message right after the question: done
             {"text": "Done, the coffee plug is on."},
         ]
     )
@@ -138,8 +142,20 @@ async def test_chat_confirmation_flow(hass: HomeAssistant, hass_admin_user) -> N
     assert reply == "Should I turn on the coffee plug?"
     assert [a["status"] for a in actions] == ["needs_confirmation", "needs_confirmation"] and not switched
     assert codes and codes[0]
+    first_code = codes[-1]
     reply, actions = await ai.chat("What's the weather like?", "conv1", hass_admin_user.id)
     assert actions[0]["status"] == "needs_confirmation" and not switched
+    assert codes[-1] != first_code
+    # the first question's code does not wait for a yes to some later question
+    assert not rt.module("executor").confirmations.redeem(
+        first_code,
+        rt.module("executor").fingerprint(ActionRequest("switch", "turn_on", entity_ids=["switch.coffee"])),
+        user_id=hass_admin_user.id,
+        conversation_id="conv1",
+        turn=3,
+        said="yes",
+        lang="en",
+    )
     reply, actions = await ai.chat("Yes, please do", "conv1", hass_admin_user.id)
     assert reply == "Done, the coffee plug is on."
     assert switched and switched[0].context.user_id == hass_admin_user.id

@@ -21,7 +21,10 @@ def test_base_classes() -> None:
     assert classify("lock", "unlock", ["lock.door"]) == Risk.R5
     assert classify("homeassistant", "restart", []) == Risk.R6
     assert classify("homeassistant", "turn_on", ["light.a", "lock.b"]) == Risk.R5
-    assert classify("some_new_domain", "do", []) == Risk.R2  # unknown: careful default
+    assert classify("some_new_domain", "do", []) == Risk.R3  # unknown, nothing to judge it by: a system action
+    assert classify("some_new_domain", "do", ["light.ceiling"]) == Risk.R2  # unknown on an entity: careful default
+    assert classify("zwave_js", "set_lock_usercode", ["lock.front_door"]) == Risk.R5  # never lighter than the lock
+    assert classify("shell_command", "anything", []) == Risk.R4
     assert Risk.parse("R3") == Risk.R3 and Risk.parse("auto") is None
 
 

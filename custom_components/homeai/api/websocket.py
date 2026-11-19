@@ -80,6 +80,21 @@ def user_name(hass: HomeAssistant, connection: websocket_api.ActiveConnection) -
     return connection.user.name or connection.user.id
 
 
+def resident(rt: Any, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> bool:
+    """True for administrators and members of the household; otherwise answers `unauthorized`.
+
+    Hiding the panel does not protect a command: guests and accounts without a person can still send it."""
+    if connection.user.is_admin or rt.presence.resident_user(connection.user.id):
+        return True
+    connection.send_error(msg["id"], "unauthorized", "Only people who live here can do this")
+    return False
+
+
+def person_of(rt: Any, user_id: str | None) -> str | None:
+    """The person entity of a Home Assistant user."""
+    return next((p.entity_id for p in rt.world.persons.values() if user_id and p.user_id == user_id), None)
+
+
 def lang_of(rt: Any, msg: dict[str, Any]) -> str:
     requested = msg.get("language")
     return requested if requested in i18n.SUPPORTED else rt.language

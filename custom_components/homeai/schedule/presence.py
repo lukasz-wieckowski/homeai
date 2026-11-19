@@ -108,6 +108,13 @@ class PresenceExceptions:
         self._changed()
         return item
 
+    def may_change(self, item: dict[str, Any], user_id: str | None, admin: bool) -> bool:
+        """Administrators and automations change any exception; a resident their own or one about themselves."""
+        if admin or not user_id or item.get("author") == user_id:
+            return True
+        person = next((p.entity_id for p in self.rt.world.persons.values() if p.user_id == user_id), None)
+        return person is not None and item.get("person") == person
+
     def remove(self, item_id: str) -> bool:
         if self.items.pop(item_id, None) is None:
             return False

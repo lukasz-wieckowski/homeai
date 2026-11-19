@@ -48,6 +48,7 @@ async def run_agent(
         )
         response = await ai.ask(tier, request, situation_id=ctx.situation_id, only=result.source or None)
         if response is None:
+            result.actions = ctx.actions  # what already ran is reported even when the loop breaks off
             return result if step else None
         result.source = response.source
         result.cost += response.cost
@@ -61,7 +62,7 @@ async def run_agent(
             break
         outputs = []
         for call in response.tool_calls:  # sequentially: actions may depend on each other
-            text, is_error = await run_tool(ctx, call.name, call.input)
+            text, is_error = await run_tool(ctx, call.name, call.input, SETS[toolset])
             outputs.append((call, text, is_error))
         result.messages.extend(provider.tool_results(outputs))
     result.actions = ctx.actions

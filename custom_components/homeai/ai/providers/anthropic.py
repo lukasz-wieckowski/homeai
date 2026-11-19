@@ -19,6 +19,7 @@ from ..pricing import Price
 from .base import AIError, AIRequest, AIResponse, ToolCall
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
+NO_EFFORT_MODELS = ("claude-haiku-4-5",)  # these reject `output_config.effort`
 FALLBACK_MODELS = ("claude-fable-5-2", "claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5")
 
 
@@ -56,7 +57,7 @@ class AnthropicProvider:
             "messages": request.messages,
         }
         output_config: dict[str, Any] = {}
-        if request.effort:
+        if request.effort and self.model not in NO_EFFORT_MODELS:
             output_config["effort"] = request.effort
         if request.schema is not None:
             output_config["format"] = {"type": "json_schema", "schema": request.schema}
@@ -105,7 +106,7 @@ class AnthropicProvider:
         )
         out.cost = self.price.cost(out.input_tokens, out.output_tokens, out.cache_read_tokens, out.cache_write_tokens)
         if out.stop_reason == "refusal":
-            raise AIError("refusal", retryable=True, refusal=True)
+            raise AIError("refusal", retryable=True, refusal=True, billed=out)
         texts: list[str] = []
         for block in message.content:
             if block.type == "text":
@@ -119,9 +120,10 @@ class AnthropicProvider:
             try:
                 out.data = json.loads(out.text)
             except ValueError as err:
-                raise AIError("bad_json") from err
-        if out.stop_reason == "max_tokens" and request.schema is not None and out.data is None:
-            raise AIError("max_tokens")
+                raise AIError("bad_json", billed=out) from err
+        if out.stop_reason == "max_tokens" and (out.tool_calls or (request.schema is not None and out.data is None)):
+            # cut off mid-answer: a tool call may be incomplete and must not run
+            raise AIError("max_tokens", billed=out)
         return out
 
     def tool_results(self, results: list[tuple[ToolCall, str, bool]]) -> list[dict[str, Any]]:

@@ -103,7 +103,11 @@ class PlanCalendar(_Calendar):
         if not isinstance(start, datetime):
             raise HomeAssistantError("A reminder needs a start time")
         local = dt_util.as_local(start if start.tzinfo else start.replace(tzinfo=dt_util.get_default_time_zone()))
-        user_id = self._context.user_id if self._context else None
+        # Home Assistant's calendar commands do not say who is asking, so the calendar acts for nobody in
+        # particular: it adds reminders only where everyone may add to the plan.
+        if str(self.rt.settings.get("schedule.who_may_add")) != "everyone":
+            raise HomeAssistantError("Add this entry in the HomeAI panel")
+        user_id = None
         await self.rt.module("scheduler").save(
             {
                 "title": kwargs.get("summary") or "",
@@ -120,10 +124,14 @@ class PlanCalendar(_Calendar):
         entry = scheduler.entries.get(uid)
         if entry is None:
             raise HomeAssistantError("Unknown plan entry")
+        if entry.get("author"):
+            # the calendar cannot tell who is asking: a person's entry is removed or skipped by that person or an
+            # administrator in the panel; entries without an author (added here or by an automation) here too
+            raise HomeAssistantError("Remove or skip this entry in the HomeAI panel")
         if recurrence_id and entry["when"]["kind"] != "once" and recurrence_range != "THISANDFUTURE":
             scheduler.skip(uid, date.fromisoformat(recurrence_id[:10]))
             return
-        await scheduler.remove(uid, self._context.user_id if self._context else None)
+        await scheduler.remove(uid, None)
 
 
 class PresenceCalendar(_Calendar):

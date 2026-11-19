@@ -89,10 +89,28 @@ async def plan_remove(rt: Any, call: ServiceCall) -> ServiceResponse | None:
 
 
 async def plan_skip(rt: Any, call: ServiceCall) -> ServiceResponse | None:
-    return {"skipped": _module(rt, "scheduler").skip(call.data["entry_id"], call.data["date"])}
+    scheduler = _module(rt, "scheduler")
+    entry = scheduler.entries.get(call.data["entry_id"])
+    if entry is not None and not await scheduler.may_change(entry, call.context.user_id):
+        raise _error("plan_invalid", reason="not_author")
+    return {"skipped": scheduler.skip(call.data["entry_id"], call.data["date"])}
+
+
+async def _presence_allowed(rt: Any, call: ServiceCall, item: dict[str, Any] | None = None) -> None:
+    """Presence exceptions change how the home is guarded: residents only (automations have no user and may)."""
+    user_id = call.context.user_id
+    if not user_id:
+        return
+    user = await rt.hass.auth.async_get_user(user_id)
+    admin = bool(user and user.is_admin)
+    if not admin and not rt.presence.resident_user(user_id):
+        raise _error("residents_only")
+    if item is not None and not _module(rt, "presence_exceptions").may_change(item, user_id, admin):
+        raise _error("admin_required")
 
 
 async def presence_add(rt: Any, call: ServiceCall) -> ServiceResponse | None:
+    await _presence_allowed(rt, call)
     try:
         item = _module(rt, "presence_exceptions").save(
             {k: call.data.get(k) for k in ("kind", "person", "start", "end", "note")}, author=call.context.user_id
@@ -103,6 +121,7 @@ async def presence_add(rt: Any, call: ServiceCall) -> ServiceResponse | None:
 
 
 async def presence_remove(rt: Any, call: ServiceCall) -> ServiceResponse | None:
+    await _presence_allowed(rt, call, _module(rt, "presence_exceptions").items.get(call.data["exception_id"]))
     return {"removed": _module(rt, "presence_exceptions").remove(call.data["exception_id"])}
 
 

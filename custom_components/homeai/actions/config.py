@@ -124,9 +124,10 @@ class ConfigEditor:
         if not isinstance(fields, dict):
             raise ConfigError("fields must be an object")
         if data.get("item_id"):
-            result = await self.api.ws({"type": f"{domain}/update", f"{domain}_id": data["item_id"], **fields})
+            # the command and the item come last: nothing in `fields` may replace them
+            result = await self.api.ws({**fields, "type": f"{domain}/update", f"{domain}_id": data["item_id"]})
         else:
-            result = await self.api.ws({"type": f"{domain}/create", **fields})
+            result = await self.api.ws({**fields, "type": f"{domain}/create"})
         return {"result": result, "previous": None}
 
     # ——— Labels and areas (registries) ———

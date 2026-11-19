@@ -43,7 +43,10 @@ if HomeAI does not watch it — and the action then runs on exactly that list. A
 
 For R1–R4 each class has a level: *never*, *only observe* (journal only), *propose and ask* (an approval
 request), *act and tell*, *act*. During the observation period (default 14 days after installation) R1–R3
-autonomy only observes, system repairs included; set the period to 0 to let HomeAI act at once. An automatic action that people undo too often goes back to *propose*; a request that
+autonomy only observes, system repairs included: HomeAI neither acts nor asks anyone, even where the level is
+*propose and ask*, and the journal shows what it would have done or proposed. A level of *never* stays never, and
+configuration (R4) is still proposed to an administrator. Set the period to 0 to let HomeAI start at once. An
+automatic action that people undo too often goes back to *propose*; a request that
 was refused is not asked again for a while (for a thermostat override: the same preset on the same thermostat).
 
 A **follow-up** continues or undoes something HomeAI already did: renewing its own thermostat override with fresh

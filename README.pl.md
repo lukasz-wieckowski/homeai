@@ -108,8 +108,8 @@ Po kreatorze:
 - W pasku bocznym pojawia się panel **HomeAI**: sprawy, zgody, rozmowa, plan, obecność, uczenie, reguły, dziennik,
   wszystkie ustawienia i stan AI.
 - Przez pierwsze **14 dni** (ustawienie *Okres obserwacji*) HomeAI tylko *obserwuje* akcje komfortu, urządzeń
-  i napraw systemu, które wykonałoby samo: dziennik pokazuje, co by zrobiło. Wykrywanie spraw, powiadomienia
-  i akcje ochronne na oznaczonych encjach działają od pierwszego dnia.
+  i napraw systemu, które wykonałoby albo zaproponowało samo: dziennik pokazuje, co by zrobiło, i nikt nie dostaje
+  próśb o zgodę. Wykrywanie spraw, powiadomienia i akcje ochronne na oznaczonych encjach działają od pierwszego dnia.
 - HomeAI tworzy [etykiety](#etykiety), którymi oznaczasz encje i urządzenia, żeby powiedzieć mu, co jest ważne.
 
 ## Dodanie AI (opcjonalnie)

@@ -151,6 +151,12 @@
       "en": "English",
       "pl": "Polski"
     },
+    "general.panels": {
+      "chat": "Rozmowa",
+      "manage": "Uczenie, dziennik, reguły i ustawienia",
+      "plan": "Plan domu i obecność",
+      "situations": "Sprawy i zgody"
+    },
     "heating.activity_action": {
       "off": "Nic",
       "override": "Nadpisanie presetem",
@@ -384,6 +390,12 @@
       "exposed": "Udostępnione asystentom",
       "selected": "Wybrane pomieszczenia"
     }
+  },
+  "panels": {
+    "chat": "Rozmowa",
+    "manage": "Zarządzanie {name}",
+    "plan": "Plan domu",
+    "situations": "{name}"
   },
   "presence": {
     "away": "Poza domem",
@@ -1037,12 +1049,16 @@
       "label": "Początek nocy"
     },
     "general.panel_admin_only": {
-      "description": "Ukryj panel HomeAI przed osobami bez uprawnień administratora.",
-      "label": "Panel tylko dla administratorów"
+      "description": "Ukryj panele HomeAI przed osobami bez uprawnień administratora.",
+      "label": "Panele tylko dla administratorów"
     },
     "general.panel_sidebar": {
-      "description": "Pokazuj panel HomeAI w pasku bocznym Home Assistanta.",
-      "label": "Panel w pasku bocznym"
+      "description": "Pokazuj panele HomeAI w pasku bocznym Home Assistanta.",
+      "label": "Panele w pasku bocznym"
+    },
+    "general.panels": {
+      "description": "Panele, które HomeAI dodaje do paska bocznego. Każdy i tak może ukryć dowolny z nich w swoim pasku.",
+      "label": "Które panele"
     },
     "general.startup_grace": {
       "description": "Po starcie Home Assistanta integracje potrzebują czasu. W tym czasie HomeAI nie ogłasza spraw i nie działa.",

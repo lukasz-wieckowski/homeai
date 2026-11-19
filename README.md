@@ -103,8 +103,10 @@ model.</sub>
 
 After the wizard:
 
-- The **HomeAI** panel appears in the sidebar. Situations, approvals, chat, the plan, presence, learning, rules, the
-  journal, all settings and the AI status are there.
+- Four panels appear in the sidebar: **HomeAI** (situations and approvals; notifications open here), **Home plan**
+  (the plan and presence), **Chat**, and **Manage HomeAI** (learning, the journal and, for administrators, rules, all
+  settings and the AI status). Setting *Which panels* chooses which of them HomeAI adds; each person can also hide
+  any of them in their own sidebar.
 - For the first **14 days** (setting *Observation period*) HomeAI only *observes* the comfort, device and system
   repair actions it would take or propose on its own: the journal shows what it would have done, and nobody is asked
   to approve anything. Detecting situations, notifications and protective actions on labelled entities work from day
@@ -134,11 +136,15 @@ next one answers. Daily and monthly budgets for all of HomeAI are in the panel's
 
 ## User manual: the HomeAI panel
 
+Lists are one surface per group, with a row for each item: what, where and when. Tap a row to see why and what you
+can do; editors open as a sheet above the list (from the bottom on a phone).
+
 ### Situations
 
 ![Situations](docs/images/en/02-situations.jpg)
 
-Everything that needs attention, most serious first. Each situation shows:
+The **HomeAI** panel: approvals waiting for you first, then everything that needs attention, most serious first,
+and what is only for your information. Each situation shows:
 
 - the **severity** badge: 0 information (journal only), 1 low (a summary is enough), 2 medium (someone today),
   3 high (someone now), 4 critical (safety only, danger to people: a leak, smoke, gas, carbon monoxide; wakes people
@@ -160,6 +166,8 @@ A situation resolves by itself when its signals are gone; recently resolved ones
 ### Approvals
 
 ![Approvals](docs/images/en/03-approvals.jpg)
+
+Requests waiting for you are at the top of the **HomeAI** panel; recent decisions are at its bottom.
 
 When an action is above what the requester or HomeAI may do alone, an approval request is created: comfort and
 device actions (R1–R2) can be approved by any resident, system and configuration (R3+) only by administrators.
@@ -416,21 +424,29 @@ My home:
 | `--homeai-content-padding` | `--ha-content-gutter` | around the panel's content |
 | `--homeai-content-max-width` | 68em | width of the panel's content |
 | `--homeai-header-height` | `--header-height` | the panel's top bar |
+| `--homeai-reading-width` | 48em | width of views that are one column of text (situations, presence, chat, learning, journal, rules) |
+| `--homeai-section-spacing` | `--ha-space-6` | between sections |
+| `--homeai-row-padding-x`, `--homeai-row-padding-y` | `--ha-space-4`, `--ha-space-3` | inside a list row |
+| `--homeai-row-hover-background` | `--homeai-text-color` at 4 % | a list row under the pointer |
+| `--homeai-dot-size` | 0.625em | the severity dot at the start of a row |
+| `--homeai-scrim-color` | `--primary-text-color` at 32 % | behind an open sheet |
 
 Parts, for `::part()` from the page the element is on (card-mod, a frontend module with your own CSS; Home
-Assistant theme files themselves only set variables). The panel passes its tabs' parts on, so
-`homeai-panel::part(card)` reaches the cards in every tab:
+Assistant theme files themselves only set variables). Every HomeAI panel is the same element, `homeai-panel`, and
+passes its views' parts on, so `homeai-panel::part(card)` reaches the cards and lists in every panel and tab:
 
 | Part | What |
 |---|---|
 | `card`, `title`, `heading` | a card, its title, a heading between cards |
-| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | a severity badge (and the one for that severity) |
-| `button`, `button-primary` | every button, the main one |
+| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | a severity dot or badge (and the one for that severity) |
+| `button`, `button-primary`, `button-quiet` | every button, the main one (also a chosen option or weekday), a quiet one (cancel, remove, show more) |
 | `segmented`, `sheet`, `composer` | the settings sections' capsule, an editor (sheet), the chat composer |
 | `input` | fields, lists to choose from, checkboxes |
-| `list`, `empty`, `error` | a list in a card, the “nothing here” text, an error |
+| `list`, `row`, `row-title`, `row-meta`, `time`, `day` | a list, a row, its title, its details line and its time, a day's heading in the plan and the journal |
+| `pager` | the pages under a long list (previous, where you are, next) |
+| `empty`, `error` | the “nothing here” text, an error |
 | `log`, `message`, `message-user`, `message-assistant` | the chat: the conversation and its messages |
-| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | the panel only: top bar, its title, the tabs, the content |
+| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `tab-icon`, `tab-label`, `content` | the panel only: top bar, its title, the tabs (a tab's icon shows on a phone when there are many), the content |
 
 ```css
 homeai-panel::part(sheet) { backdrop-filter: blur(32px) saturate(2); }

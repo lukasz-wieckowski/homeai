@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { t } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -39,6 +40,7 @@ export class HomeAIRules extends LitElement {
   @state() private editing?: Rule;
   @state() private preview?: { covered: { entity_id: string; name: string }[]; meeting: string[] };
   @state() private error = "";
+  @state() pages: Record<string, number> = {};
 
   static styles = shared;
 
@@ -96,7 +98,23 @@ export class HomeAIRules extends LitElement {
   }
 
   private field(label: string, input: unknown) {
-    return html`<label class="row field"><span class="label">${label}</span><span class="grow">${input}</span></label>`;
+    return html`<label class="field"><span class="label">${label}</span>${input}</label>`;
+  }
+
+  private close(): void {
+    this.editing = undefined;
+    this.preview = undefined;
+    this.error = "";
+  }
+
+  protected updated(): void {
+    const dialog = this.renderRoot.querySelector("dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+  }
+
+  private async removeRule(rule: Rule): Promise<void> {
+    if (!confirm(`${rule.name}\n\n${t(this.hass.language, "remove_confirm")}`)) return;
+    await this.saveAll(this.rules.filter((x) => x.id !== rule.id));
   }
 
   private select(path: string, value: string, options: string[]) {
@@ -108,51 +126,70 @@ export class HomeAIRules extends LitElement {
     const lang = this.hass.language;
     const r = this.editing!;
     const areas = Object.values((this.hass as any).areas ?? {}) as { area_id: string; name: string }[];
-    return html`<div part="card sheet" class="card sheet" role="dialog">
-      ${this.field(t(lang, "rule_name"), html`<input part="input" class="grow" .value=${r.name} @input=${(e: Event) => this.set("name", (e.target as HTMLInputElement).value)} />`)}
-      ${this.field(t(lang, "rule_entities"), html`<textarea part="input" .value=${r.target.entities.join("\n")} placeholder="sensor.freezer"
-        @change=${(e: Event) => this.set("target.entities", (e.target as HTMLTextAreaElement).value.split(/[\n,]/).map((x) => x.trim()).filter(Boolean))}></textarea>`)}
-      ${this.field(t(lang, "rule_label"), html`<input part="input" .value=${r.target.label ?? ""} @input=${(e: Event) => this.set("target.label", (e.target as HTMLInputElement).value || null)} />`)}
-      ${this.field(t(lang, "rule_area"), html`<select part="input" @change=${(e: Event) => this.set("target.area", (e.target as HTMLSelectElement).value || null)}>
-        <option value="">—</option>${areas.map((a) => html`<option value=${a.area_id} ?selected=${a.area_id === r.target.area}>${a.name}</option>`)}</select>`)}
-      ${this.field(t(lang, "rule_domain"), html`<input part="input" .value=${r.target.domain ?? ""} placeholder="sensor" @input=${(e: Event) => this.set("target.domain", (e.target as HTMLInputElement).value || null)} />`)}
-      ${this.field(t(lang, "rule_condition"), html`${this.select("condition.type", r.condition.type, CONDITIONS)}
-        ${r.condition.type === "unavailable" ? nothing : html`<input part="input" class="w-m" .value=${String(r.condition.value ?? "")}
-          @input=${(e: Event) => this.set("condition.value", (e.target as HTMLInputElement).value)} />`}`)}
-      ${this.field(t(lang, "rule_minutes"), html`<input part="input" type="number" min="0" max="10080" class="w-s" .value=${String(r.minutes)}
-        @change=${(e: Event) => this.set("minutes", Number((e.target as HTMLInputElement).value))} /> min`)}
-      ${this.field(t(lang, "rule_when"), this.select("when", r.when, WHEN))}
-      ${this.field(t(lang, "rule_mode"), this.select("mode", r.mode, ["each", "all"]))}
-      ${this.field(t(lang, "severity"), html`<input part="input" type="number" min="0" max=${r.category === "safety" ? 4 : 3} class="w-xs" .value=${String(r.severity)}
-        @change=${(e: Event) => this.set("severity", Number((e.target as HTMLInputElement).value))} />`)}
-      ${this.field(t(lang, "rule_category"), this.select("category", r.category, CATEGORIES))}
-      ${this.field(t(lang, "who"), this.select("need", r.need, NEEDS))}
-      ${this.field(t(lang, "rule_advice"), html`<textarea part="input" .value=${r.advice} @change=${(e: Event) => this.set("advice", (e.target as HTMLTextAreaElement).value)}></textarea>`)}
-      ${this.field(t(lang, "rule_enabled"), html`<input part="input" type="checkbox" .checked=${r.enabled} @change=${(e: Event) => this.set("enabled", (e.target as HTMLInputElement).checked)} />`)}
-      ${this.preview ? html`<p class="muted">${t(lang, "rule_covers")}: ${this.preview.covered.length} · ${t(lang, "rule_meeting")}: ${this.preview.meeting.map((id) => this.preview!.covered.find((c) => c.entity_id === id)?.name ?? id).join(", ") || "—"}</p>` : nothing}
-      <div class="row">
-        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
-        <button part="button" @click=${this.previewRule}>${t(lang, "rule_preview")}</button>
-        <button part="button" @click=${() => { this.editing = undefined; this.preview = undefined; }}>${t(lang, "cancel")}</button>
+    const known = this.rules.some((x) => x.id === r.id);
+    return html`<dialog part="sheet" class="card sheet" aria-labelledby="sheet-title" @close=${this.close}>
+      <div class="sheet-head"><h2 id="sheet-title" part="title" class="title">${t(lang, known ? "rule_change" : "rule_new")}</h2></div>
+      <div class="sheet-body fields">
+        ${this.field(t(lang, "rule_name"), html`<input part="input" .value=${r.name} @input=${(e: Event) => this.set("name", (e.target as HTMLInputElement).value)} />`)}
+        ${this.field(t(lang, "rule_entities"), html`<textarea part="input" .value=${r.target.entities.join("\n")} placeholder="sensor.freezer"
+          @change=${(e: Event) => this.set("target.entities", (e.target as HTMLTextAreaElement).value.split(/[\n,]/).map((x) => x.trim()).filter(Boolean))}></textarea>`)}
+        <div class="pair">
+          ${this.field(t(lang, "rule_area"), html`<select part="input" @change=${(e: Event) => this.set("target.area", (e.target as HTMLSelectElement).value || null)}>
+            <option value="">—</option>${areas.map((a) => html`<option value=${a.area_id} ?selected=${a.area_id === r.target.area}>${a.name}</option>`)}</select>`)}
+          ${this.field(t(lang, "rule_label"), html`<input part="input" .value=${r.target.label ?? ""} @input=${(e: Event) => this.set("target.label", (e.target as HTMLInputElement).value || null)} />`)}
+          ${this.field(t(lang, "rule_domain"), html`<input part="input" .value=${r.target.domain ?? ""} placeholder="sensor" @input=${(e: Event) => this.set("target.domain", (e.target as HTMLInputElement).value || null)} />`)}
+        </div>
+        <div class="pair">
+          ${this.field(t(lang, "rule_condition"), this.select("condition.type", r.condition.type, CONDITIONS))}
+          ${r.condition.type === "unavailable" ? nothing : this.field("\u00a0", html`<input part="input" .value=${String(r.condition.value ?? "")}
+            @input=${(e: Event) => this.set("condition.value", (e.target as HTMLInputElement).value)} />`)}
+          ${this.field(`${t(lang, "rule_minutes")} (min)`, html`<input part="input" type="number" min="0" max="10080" .value=${String(r.minutes)}
+            @change=${(e: Event) => this.set("minutes", Number((e.target as HTMLInputElement).value))} />`)}
+        </div>
+        <div class="pair">
+          ${this.field(t(lang, "rule_when"), this.select("when", r.when, WHEN))}
+          ${this.field(t(lang, "rule_mode"), this.select("mode", r.mode, ["each", "all"]))}
+        </div>
+        <div class="pair">
+          ${this.field(t(lang, "rule_category"), this.select("category", r.category, CATEGORIES))}
+          ${this.field(t(lang, "severity"), html`<input part="input" type="number" min="0" max=${r.category === "safety" ? 4 : 3} .value=${String(r.severity)}
+            @change=${(e: Event) => this.set("severity", Number((e.target as HTMLInputElement).value))} />`)}
+          ${this.field(t(lang, "who"), this.select("need", r.need, NEEDS))}
+        </div>
+        ${this.field(t(lang, "rule_advice"), html`<textarea part="input" .value=${r.advice} @change=${(e: Event) => this.set("advice", (e.target as HTMLTextAreaElement).value)}></textarea>`)}
+        <label class="check"><input part="input" type="checkbox" .checked=${r.enabled} @change=${(e: Event) => this.set("enabled", (e.target as HTMLInputElement).checked)} />${t(lang, "rule_enabled")}</label>
+        ${this.preview ? html`<p class="muted">${t(lang, "rule_covers")}: ${this.preview.covered.length} · ${t(lang, "rule_meeting")}: ${this.preview.meeting.map((id) => this.preview!.covered.find((c) => c.entity_id === id)?.name ?? id).join(", ") || "—"}</p>` : nothing}
+        ${this.error ? html`<div part="error" class="error">${this.error}</div>` : nothing}
       </div>
-    </div>`;
+      <div class="sheet-foot">
+        ${known ? html`<button part="button button-quiet" class="quiet danger" @click=${() => this.removeRule(r)}>${t(lang, "remove")}</button>` : nothing}
+        <button part="button button-quiet" class="quiet" @click=${this.previewRule}>${t(lang, "rule_preview")}</button>
+        <span class="grow"></span>
+        <button part="button" @click=${this.close}>${t(lang, "cancel")}</button>
+        <button part="button button-primary" class="primary" @click=${this.save}>${t(lang, "save")}</button>
+      </div>
+    </dialog>`;
   }
 
   render() {
     const lang = this.hass.language;
     if (!this.hass.user.is_admin) return html`<div part="empty" class="empty">${t(lang, "admin_only")}</div>`;
     return html`
-      ${this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
-      ${this.editing ? this.renderEditor() : html`<div class="row toolbar-row">
-        <button part="button button-primary" class="primary" @click=${() => (this.editing = structuredClone(EMPTY))}>${t(lang, "rule_add")}</button></div>`}
-      ${this.rules.length
-        ? html`<div part="card" class="card"><ul part="list" class="plain">${this.rules.map(
-            (r) => html`<li class="row"><span part="badge badge-${r.severity}" class="sev sev-${r.severity}">${r.severity}</span>
-              <span class="grow">${r.name}${r.firing ? html` <b>●</b>` : nothing}<br /><span class="muted">${t(lang, `rule_${r.condition.type}`)}${r.condition.type === "unavailable" ? "" : ` ${r.condition.value ?? ""}`} · ${r.minutes} min · ${t(lang, `rule_${r.when}`)}${r.enabled ? "" : ` · ${t(lang, "rule_off")}`}</span></span>
-              <button part="button" @click=${() => { this.editing = structuredClone(r); this.preview = undefined; }}>${t(lang, "edit")}</button>
-              <button part="button" @click=${() => confirm(`${r.name}\n\n${t(lang, "remove_confirm")}`) && this.saveAll(this.rules.filter((x) => x.id !== r.id))}>${t(lang, "remove")}</button></li>`,
-          )}</ul></div>`
-        : html`<div part="empty" class="empty">${t(lang, "no_rules")}</div>`}
+      ${this.editing ? this.renderEditor() : nothing}
+      <section class="section">
+        <div class="section-head"><h2 part="heading" class="heading">${t(lang, "rules")}${this.rules.length ? html` <span class="count">${this.rules.length}</span>` : nothing}</h2>
+          <button part="button button-primary" class="primary" @click=${() => { this.editing = structuredClone(EMPTY); this.preview = undefined; }}>${t(lang, "rule_add")}</button></div>
+        ${!this.editing && this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
+        ${this.rules.length
+          ? html`<ul part="card list" class="list">${paged(this, "rules", this.rules, lang, 15).items.map((r) => html`<li part="row">
+              <button class="item-main" @click=${() => { this.editing = structuredClone(r); this.preview = undefined; }}>
+                <span part="badge badge-${r.severity}" class="dot sev-${r.severity}"></span>
+                <span class="item-text"><span part="row-title" class="item-title ${r.enabled ? "" : "off"}">${r.name}</span>
+                  <span part="row-meta" class="item-meta">${t(lang, `rule_${r.condition.type}`)}${r.condition.type === "unavailable" ? "" : ` ${r.condition.value ?? ""}`} · ${r.minutes} min · ${t(lang, `rule_${r.when}`)}${r.enabled ? "" : ` · ${t(lang, "rule_off")}`}${r.firing ? ` · ${t(lang, "rule_firing")}` : ""}</span></span>
+                <span class="chevron">›</span>
+              </button></li>`)}</ul>${paged(this, "rules", this.rules, lang, 15).nav}`
+          : html`<div part="empty" class="empty">${t(lang, "no_rules")}</div>`}
+      </section>
     `;
   }
 }

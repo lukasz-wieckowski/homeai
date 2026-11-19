@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "./define";
-import { t, when } from "./i18n";
+import { clock, dayLabel, homeDay, shortWhen, t } from "./i18n";
 import { PARTS, shared } from "./styles";
 import type { HomeAssistant } from "./types";
 import "./views/chat";
@@ -29,6 +29,8 @@ export class HomeAISituationsCard extends LitElement {
     return { type: "custom:homeai-situations-card" };
   }
 
+  @state() private expanded: string | null = null;
+
   private act(service: string, id: string): void {
     this.hass.callService("homeai", service, { situation_id: id });
   }
@@ -36,23 +38,31 @@ export class HomeAISituationsCard extends LitElement {
   render() {
     if (!this.hass) return nothing;
     const lang = this.hass.language;
+    const tz = this.hass.config?.time_zone;
     const entity = this.hass.states[this.config.entity ?? "sensor.homeai_situations"];
     const items = ((entity?.attributes.situations ?? []) as Item[]).filter((s) => s.severity >= (this.config.min_severity ?? 1));
-    return html`<div part="card" class="card">
-      ${this.config.title ? html`<div part="title" class="title spaced">${this.config.title}</div>` : nothing}
+    return html`<div part="card" class="card flush">
+      ${this.config.title ? html`<div part="title" class="title card-title">${this.config.title}</div>` : nothing}
       ${items.length
-        ? html`<ul part="list" class="plain">${items.map(
-            (s) => html`<li>
-              <div class="row"><span part="badge badge-${s.severity}" class="sev sev-${s.severity}">${s.severity}</span><span class="grow">${s.title}</span>
-                <span class="muted">${when(s.since, lang)}</span></div>
-              ${s.repairing ? html`<div class="muted">${t(lang, "repairing")}</div>` : nothing}
-              <div class="row actions">
-                <button part="button" @click=${() => this.act("acknowledge", s.id)} ?disabled=${s.acknowledged}>${t(lang, "ack")}</button>
-                <button part="button" @click=${() => this.act("handle", s.id)}>${t(lang, "handle")}</button>
-                <button part="button" @click=${() => this.act("snooze", s.id)}>${t(lang, "snooze")}</button>
-              </div></li>`,
-          )}</ul>`
-        : html`<div class="muted">${t(lang, "nothing_open")}</div>`}
+        ? html`<ul part="list" class="list bare">${items.map((s) => {
+            const open = this.expanded === s.id;
+            return html`<li part="row" class=${open ? "open" : ""}>
+              <button class="item-main" aria-expanded=${open ? "true" : "false"} @click=${() => (this.expanded = open ? null : s.id)}>
+                <span part="badge badge-${s.severity}" class="dot sev-${s.severity}"></span>
+                <span class="item-text"><span part="row-title" class="item-title">${s.title}</span>
+                  ${s.repairing ? html`<span part="row-meta" class="item-meta">${t(lang, "repairing")}</span>` : nothing}</span>
+                <span part="time" class="item-aside">${shortWhen(s.since, lang, tz)}</span>
+              </button>
+              ${open
+                ? html`<div class="item-more"><div class="item-actions">
+                    <button part="button button-primary" class="primary" @click=${() => this.act("handle", s.id)}>${t(lang, "handle")}</button>
+                    <button part="button" @click=${() => this.act("acknowledge", s.id)} ?disabled=${s.acknowledged}>${t(lang, "ack")}</button>
+                    <button part="button" @click=${() => this.act("snooze", s.id)}>${t(lang, "snooze")}</button>
+                  </div></div>`
+                : nothing}
+            </li>`;
+          })}</ul>`
+        : html`<div part="empty" class="empty">${t(lang, "nothing_open")}</div>`}
     </div>`;
   }
 }
@@ -108,12 +118,22 @@ export class HomeAIPlanCard extends LitElement {
   render() {
     if (!this.hass) return nothing;
     const lang = this.hass.language;
+    const tz = this.hass.config?.time_zone;
     const items = this.occurrences.slice(0, this.config.limit ?? 6);
-    return html`<div part="card" class="card">
-      <div part="title" class="title spaced">${this.config.title ?? t(lang, "plan_next")}</div>
-      ${items.length
-        ? html`<ul part="list" class="plain">${items.map((o) => html`<li class="row"><span class="muted">${when(o.at, lang)}</span><span class="grow">${o.title}</span></li>`)}</ul>`
-        : html`<div class="muted">${t(lang, "no_plan")}</div>`}
+    const rows: unknown[] = [];
+    let last = homeDay(Date.now(), tz);
+    for (const o of items) {
+      const day = homeDay(o.at, tz);
+      if (day !== last) {
+        rows.push(html`<li part="day" class="day">${dayLabel(o.at, lang, tz)}</li>`);
+        last = day;
+      }
+      rows.push(html`<li part="row"><div class="item-main timed"><span part="time" class="time">${clock(o.at, lang, tz)}</span>
+        <span class="item-text"><span part="row-title" class="item-title">${o.title}</span></span><span></span></div></li>`);
+    }
+    return html`<div part="card" class="card flush">
+      <div part="title" class="title card-title">${this.config.title ?? t(lang, "plan_next")}</div>
+      ${items.length ? html`<ul part="list" class="list bare">${rows}</ul>` : html`<div part="empty" class="empty">${t(lang, "no_plan")}</div>`}
     </div>`;
   }
 }

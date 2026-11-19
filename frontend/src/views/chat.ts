@@ -30,6 +30,8 @@ export class HomeAIChat extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: "storage-key" }) storageKey = STORAGE_KEY;
   @property({ type: Boolean }) compact = false;
+  // In a panel: the conversation fills the page and the composer floats at the bottom.
+  @property({ type: Boolean, reflect: true }) fill = false;
   @state() private messages: ChatMessage[] = [];
   @state() private busy = false;
   @state() private error = "";
@@ -53,6 +55,10 @@ export class HomeAIChat extends LitElement {
       .composer textarea { border: none; background: transparent; resize: none; min-height: 2.5em; }
       .composer textarea:focus { outline: none; }
       .composer:focus-within { border-color: var(--_accent); }
+      :host([fill]) { display: flex; flex-direction: column; }
+      :host([fill]) .log { max-height: none; flex: 1 1 auto; justify-content: flex-end; }
+      :host([fill]) .bottom { position: sticky; bottom: 0; z-index: 1; padding-bottom: var(--_sheet-foot-padding); }
+      .hint-block { margin: auto 0; max-width: 32em; align-self: center; text-align: center; }
     `,
   ];
 
@@ -69,7 +75,10 @@ export class HomeAIChat extends LitElement {
   }
 
   private scrollDown(): void {
-    this.updateComplete.then(() => this.log?.scrollTo({ top: this.log.scrollHeight }));
+    this.updateComplete.then(() => {
+      if (this.fill) this.renderRoot.querySelector(".composer")?.scrollIntoView({ block: "end" });
+      else this.log?.scrollTo({ top: this.log.scrollHeight });
+    });
   }
 
   private async send(): Promise<void> {
@@ -112,19 +121,23 @@ export class HomeAIChat extends LitElement {
 
   render() {
     const lang = this.hass.language;
+    const restart = this.messages.length
+      ? html`<div class="item-actions end"><button part="button button-quiet" class="quiet" @click=${this.restart}>${t(lang, "chat_new")}</button></div>`
+      : nothing;
     return html`
+      ${this.fill ? restart : nothing}
       <div part="log" class="log" aria-live="polite">
-        ${this.messages.length ? nothing : html`<div class="muted">${t(lang, "chat_hint")}</div>`}
+        ${this.messages.length ? nothing : html`<div class="muted hint-block">${t(lang, "chat_hint")}</div>`}
         ${this.messages.map((m) => html`<div part="message message-${m.role}" class="msg ${m.role}">${m.text}</div>`)}
         ${this.busy ? html`<div part="message message-assistant" class="msg assistant muted">…</div>` : nothing}
       </div>
       ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
-      <div part="composer" class="composer glass">
-        <textarea part="input" class="grow" placeholder=${t(lang, "chat_placeholder")} @keydown=${this.keydown} ?disabled=${this.busy}></textarea>
-        <button part="button button-primary" class="primary" @click=${this.send} ?disabled=${this.busy}>${t(lang, "send")}</button>
+      <div class="bottom">
+        <div part="composer" class="composer glass">
+          <textarea part="input" class="grow" rows="1" placeholder=${t(lang, "chat_placeholder")} aria-label=${t(lang, "chat_placeholder")} @keydown=${this.keydown} ?disabled=${this.busy}></textarea>
+          <button part="button button-primary" class="primary" @click=${this.send} ?disabled=${this.busy}>${t(lang, "send")}</button>
+        </div>
       </div>
-      ${this.messages.length
-        ? html`<div class="row actions"><span class="grow"></span><button part="button" @click=${this.restart}>${t(lang, "chat_new")}</button></div>`
-        : nothing}`;
+      ${this.fill ? nothing : restart}`;
   }
 }

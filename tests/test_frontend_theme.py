@@ -17,7 +17,7 @@ THEMED = re.compile(
     r"border-radius|box-shadow|font(-(family|size|weight))?|margin(-\w+)?|padding(-\w+)?|gap|row-gap|column-gap)$"
 )
 KEYWORDS = {"0", "auto", "none", "solid", "transparent", "inherit"}
-PANEL_PARTS = {"header", "header-title", "tabs", "tab", "tab-active", "content"}
+PANEL_PARTS = {"header", "header-title", "tabs", "tab", "tab-active", "tab-icon", "tab-label", "content"}
 
 
 def strip_vars(value: str) -> str:
@@ -104,7 +104,7 @@ def test_parts_are_exported_and_documented() -> None:
         assert f"`{part}`" in README, part
         assert f"`{part}`" in README_PL, part
     panel = (ROOT / "frontend/src/panel.ts").read_text()
-    assert panel.count("exportparts=${PARTS}") == 10  # every tab passes its parts on
+    assert panel.count("exportparts=${PARTS}") == 9  # every view passes its parts on
     assert "exportparts=${PARTS}" in (ROOT / "frontend/src/card.ts").read_text()  # the chat card too
 
 

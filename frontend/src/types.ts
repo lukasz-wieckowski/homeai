@@ -18,6 +18,7 @@ export interface HomeAssistant {
   areas?: Record<string, { area_id: string; name: string; floor_id?: string | null }>;
   floors?: Record<string, { floor_id: string; name: string }>;
   devices?: Record<string, { id: string; name: string | null; name_by_user: string | null; area_id: string | null }>;
+  entities?: Record<string, { entity_id: string; device_id?: string | null; area_id?: string | null; hidden?: boolean; entity_category?: string | null }>;
   callWS<T>(msg: Record<string, unknown>): Promise<T>;
   callService(domain: string, service: string, data?: Record<string, unknown>): Promise<unknown>;
   connection: {

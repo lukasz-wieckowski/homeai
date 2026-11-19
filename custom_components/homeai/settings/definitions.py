@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ..const import ROOM_ROLES
+from ..const import PANELS, ROOM_ROLES
 from .registry import Scope, Setting, SettingError, SettingsRegistry, SettingType as T
 
 G = frozenset({Scope.GLOBAL})
@@ -115,6 +115,7 @@ def _general() -> list[Setting]:
         Setting("general.evening_start", T.TIME, "18:00", s),
         Setting("general.journal_retention_days", T.INT, 30, s, min=1, max=365, unit="d"),
         Setting("general.panel_sidebar", T.BOOL, True, s, live=False),
+        Setting("general.panels", T.MULTISELECT, list(PANELS), s, options=PANELS, live=False),
         Setting("general.panel_admin_only", T.BOOL, False, s, live=False),
     ]
 

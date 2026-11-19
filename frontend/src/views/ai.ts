@@ -65,7 +65,7 @@ export class HomeAIAI extends LitElement {
   private promptCard(p: Prompt) {
     const lang = this.hass.language;
     const draft = this.drafts[p.mission] ?? (p.custom || p.default);
-    return html`<details part="card" class="card"><summary class="row"><span part="title" class="title grow">${t(lang, `prompt_${p.mission}`)}</span>
+    return html`<details part="card" class="card"><summary class="row"><span part="row-title" class="item-title grow">${t(lang, `prompt_${p.mission}`)}</span>
         <span class="muted">${p.custom ? t(lang, "prompt_custom") : t(lang, "prompt_default")}</span></summary>
       <p class="muted">${t(lang, "prompt_hint")}</p>
       <textarea part="input" class="tall" .value=${live(draft)} @input=${(e: Event) => (this.drafts = { ...this.drafts, [p.mission]: (e.target as HTMLTextAreaElement).value })}></textarea>
@@ -83,25 +83,39 @@ export class HomeAIAI extends LitElement {
     const s = this.status;
     if (!s) return nothing;
     const tiers = Object.entries(s.tiers ?? {});
+    const stat = (label: string, value: string) => html`<li part="row"><div class="item-main plain">
+      <span class="item-text"><span part="row-meta" class="item-meta">${label}</span><span part="row-title" class="item-title title">${value}</span></span></div></li>`;
     return html`
-      <div part="card" class="card row">
-        <div class="grow"><div class="muted">${t(lang, "cost_today")}</div><div part="title" class="title">$${(s.ledger?.today ?? 0).toFixed(3)}</div></div>
-        <div class="grow"><div class="muted">${t(lang, "cost_month")}</div><div part="title" class="title">$${(s.ledger?.month ?? 0).toFixed(2)}</div></div>
-        ${(s.ledger?.limits ?? []).map((l) => html`<div class="grow"><div class="muted">${t(lang, `limit_${l.period}`)}</div><div>$${l.spent.toFixed(2)} / $${l.limit}</div></div>`)}
-      </div>
-      <div part="card" class="card">
-        <div part="title" class="title">${t(lang, "tiers")}</div>
+      <section class="section">
+        <ul part="card list" class="list">
+          ${stat(t(lang, "cost_today"), `$${(s.ledger?.today ?? 0).toFixed(3)}`)}
+          ${stat(t(lang, "cost_month"), `$${(s.ledger?.month ?? 0).toFixed(2)}`)}
+          ${(s.ledger?.limits ?? []).map((l) => stat(t(lang, `limit_${l.period}`), `$${l.spent.toFixed(2)} / $${l.limit}`))}
+        </ul>
+      </section>
+      <section class="section">
+        <div class="section-head"><h2 part="heading" class="heading">${t(lang, "tiers")}</h2></div>
         ${tiers.length
-          ? html`<ul part="list" class="plain">${tiers.flatMap(([tier, list]) => list.map((c) => html`<li class="row"><b>${tier.toUpperCase()}</b>
-              <span class="grow">${c.model} <span class="muted">(${c.provider}, ${c.priority})</span></span><span class="muted">${c.status ?? "—"}</span></li>`))}</ul>`
-          : html`<p class="muted">${t(lang, "no_tiers")}</p>`}
-      </div>
-      <div part="heading" class="heading">${t(lang, "prompts")}</div>
-      ${this.message ? html`<div part="card" class="card muted">${this.message}</div>` : nothing}
-      ${this.prompts.map((p) => this.promptCard(p))}
-      ${Object.entries(s.last_prompts ?? {}).map(
-        ([tier, p]) => html`<div part="card" class="card"><div part="title" class="title">${t(lang, "last_prompt")} · ${tier.toUpperCase()} · ${p.model} · ${p.purpose} · $${p.cost.toFixed(4)}</div>
-          <details><summary class="muted">${p.ts}</summary><textarea part="input" readonly>${JSON.stringify(p.messages, null, 2)}</textarea><textarea part="input" readonly>${p.answer}</textarea></details></div>`,
-      )}`;
+          ? html`<ul part="card list" class="list">${tiers.flatMap(([tier, list]) => list.map((c) => html`<li part="row"><div class="item-main">
+              <b>${tier.toUpperCase()}</b>
+              <span class="item-text"><span part="row-title" class="item-title">${c.model}</span><span part="row-meta" class="item-meta">${c.provider} · ${c.priority}</span></span>
+              <span part="time" class="item-aside">${c.status ?? "—"}</span></div></li>`))}</ul>`
+          : html`<p class="hint">${t(lang, "no_tiers")}</p>`}
+      </section>
+      <section class="section">
+        <div class="section-head"><h2 part="heading" class="heading">${t(lang, "prompts")}</h2></div>
+        ${this.message ? html`<p class="hint">${this.message}</p>` : nothing}
+        ${this.prompts.map((p) => this.promptCard(p))}
+      </section>
+      ${Object.keys(s.last_prompts ?? {}).length
+        ? html`<section class="section">
+            <div class="section-head"><h2 part="heading" class="heading">${t(lang, "last_prompt")}</h2></div>
+            ${Object.entries(s.last_prompts ?? {}).map(
+              ([tier, p]) => html`<details part="card" class="card"><summary class="row"><span part="row-title" class="item-title grow">${tier.toUpperCase()} · ${p.model} · ${p.purpose}</span>
+                <span class="muted">$${p.cost.toFixed(4)}</span></summary>
+                <p class="muted">${p.ts}</p><textarea part="input" readonly>${JSON.stringify(p.messages, null, 2)}</textarea><textarea part="input" readonly>${p.answer}</textarea></details>`,
+            )}
+          </section>`
+        : nothing}`;
   }
 }

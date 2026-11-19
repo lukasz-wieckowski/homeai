@@ -94,7 +94,7 @@ export class HomeAIPresence extends LitElement {
     const d = this.draft!;
     const set = (patch: Partial<Draft>) => (this.draft = { ...d, ...patch });
     const field = (label: string, content: unknown) => html`<label class="row field"><span class="label">${label}</span>${content}</label>`;
-    return html`<div part="card" class="card">
+    return html`<div part="card sheet" class="card sheet" role="dialog">
       ${field(t(lang, "presence_kind"), html`<select part="input" @change=${(e: Event) => set({ kind: (e.target as HTMLSelectElement).value })}>
         ${KINDS.map((k) => html`<option value=${k} ?selected=${k === d.kind}>${t(lang, `presence_${k}`)}</option>`)}</select>`)}
       ${field(t(lang, "presence_person"), html`<select part="input" @change=${(e: Event) => set({ person: (e.target as HTMLSelectElement).value })}>

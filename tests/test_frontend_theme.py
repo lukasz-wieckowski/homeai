@@ -106,3 +106,24 @@ def test_parts_are_exported_and_documented() -> None:
     panel = (ROOT / "frontend/src/panel.ts").read_text()
     assert panel.count("exportparts=${PARTS}") == 10  # every tab passes its parts on
     assert "exportparts=${PARTS}" in (ROOT / "frontend/src/card.ts").read_text()  # the chat card too
+
+
+def test_liquid_glass_only_on_the_navigation_layer() -> None:
+    """Glass (a backdrop filter) only on the top bar, the glass groups and sheets, never on content; and it gives way
+    to reduced transparency, increased contrast and browsers without color-mix()."""
+    glass = set()
+    for path in SOURCES:
+        for template in re.findall(r"css`(.*?)`", path.read_text(), re.S):
+            css = re.sub(r"/\*.*?\*/", "", template, flags=re.S)
+            for selector, body in re.findall(r"([^{};]+)\{([^{}]*)\}", css):
+                if "backdrop-filter" in body:
+                    glass.add(selector.strip())
+    assert glass == {".glass", ".card.sheet", ".toolbar"}, glass
+    styles = (ROOT / "frontend/src/styles.ts").read_text()
+    for query in (
+        "prefers-reduced-transparency: reduce",
+        "prefers-contrast: more",
+        "@supports not (background: color-mix",
+    ):
+        assert query in styles, query
+    assert "--ha-animation-duration-" in styles  # Home Assistant turns these down for reduced motion

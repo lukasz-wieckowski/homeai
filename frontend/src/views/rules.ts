@@ -108,7 +108,7 @@ export class HomeAIRules extends LitElement {
     const lang = this.hass.language;
     const r = this.editing!;
     const areas = Object.values((this.hass as any).areas ?? {}) as { area_id: string; name: string }[];
-    return html`<div part="card" class="card">
+    return html`<div part="card sheet" class="card sheet" role="dialog">
       ${this.field(t(lang, "rule_name"), html`<input part="input" class="grow" .value=${r.name} @input=${(e: Event) => this.set("name", (e.target as HTMLInputElement).value)} />`)}
       ${this.field(t(lang, "rule_entities"), html`<textarea part="input" .value=${r.target.entities.join("\n")} placeholder="sensor.freezer"
         @change=${(e: Event) => this.set("target.entities", (e.target as HTMLTextAreaElement).value.split(/[\n,]/).map((x) => x.trim()).filter(Boolean))}></textarea>`)}

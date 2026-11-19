@@ -245,9 +245,9 @@ export class HomeAISettings extends LitElement {
       </div>
       ${this.scopeBar()}
       ${this.history ? this.historyCard() : nothing}
-      ${q ? nothing : html`<div class="row toolbar-row">
+      ${q ? nothing : html`<div class="toolbar-row"><div part="segmented" class="segmented glass">
         ${this.schema.sections.map((s) => html`<button part=${s.id === this.section ? "button button-primary" : "button"} class=${s.id === this.section ? "primary" : ""} @click=${() => (this.section = s.id)}>${s.label}</button>`)}
-      </div>
+      </div></div>
       ${section ? html`<div class="row"><p class="muted grow">${section.description}</p>
         ${scoped ? nothing : html`<button part="button" @click=${this.resetSection}>${t(lang, "reset_section")}</button>`}</div>` : nothing}`}
       ${this.message ? html`<div part="card" class="card muted">${this.message}</div>` : nothing}

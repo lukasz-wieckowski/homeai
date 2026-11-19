@@ -45,7 +45,8 @@ npm run build
 
 The frontend takes its look from the Home Assistant theme: no colours, fonts, radii, shadows or spacing in
 `frontend/src`, only `--homeai-*` variables with Home Assistant defaults (see *Theming* in the README;
-`tests/test_frontend_theme.py` checks it). To look at the panel and the cards without Home Assistant, serve the
+`tests/test_frontend_theme.py` checks it). The default look follows Liquid Glass: glass only on the navigation
+layer (top bar, tabs, buttons, composer, sheets), never on content. To look at the panel and the cards without Home Assistant, serve the
 repository root (`python3 -m http.server`) and open `/frontend/preview/?theme=dark` — the preview page has example
 data and Home Assistant's light and dark variables, plus a made-up theme that sets `--homeai-*` variables.
 

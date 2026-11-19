@@ -334,6 +334,20 @@ Panel i karty nie mają własnych kolorów, czcionek, zaokrągleń, cieni ani od
 Home Assistanta, jasnego albo ciemnego, przez te same zmienne, które czytają karty samego Home Assistanta. Dom z
 własnym wyglądem ustawia w swoim motywie zmienne `--homeai-*`; czego nie da się zmienić zmienną, zmieni `::part()`.
 
+Domyślny wygląd idzie za Liquid Glass Apple, zbudowanym ze zmiennych Home Assistanta:
+
+- **Szkło tylko na warstwie nawigacji.** Górny pasek, zakładki, przyciski, pole rozmowy i edytory (arkusze) to
+  półprzezroczysty, rozmyty materiał nad treścią. Sama treść (karty, listy, tekst) zostaje pełna, jak karty Home
+  Assistanta.
+- **Jeden materiał na grupę.** Zakładki dzielą jedną pływającą kapsułę, sekcje ustawień też; wybrana jest wyróżniona
+  (wypełniona kolorem akcentu). Przyciski to szklane kapsuły, główna akcja jest wyróżniona.
+- **Głębia.** Górny pasek i zakładki zostają na wierzchu, a treść przewija się pod nimi, rozmyta. Szkło ma cienką
+  krawędź, odblask i cienie Home Assistanta, a arkusze unoszą się wyżej niż pasek.
+- **Kształty.** Kontrolki to kapsuły; pojemniki, w których leżą, mają bardziej zaokrąglone rogi.
+- **Dostępność.** Przy *Ogranicz przezroczystość* materiał robi się pełny. Przy *Zwiększ kontrast* szkło jest pełne i
+  ma wyraźne krawędzie. Przy *Ogranicz ruch* animacje naciśnięcia i najechania stają (`--ha-animation-duration-*` Home
+  Assistanta). Przeglądarki bez `color-mix()` dostają pełne kolory motywu.
+
 ```yaml
 # plik motywu (frontend: themes: !include_dir_merge_named themes); klucze motywu pisze się bez "--"
 Mój dom:
@@ -356,7 +370,7 @@ Mój dom:
 | `--homeai-surface-color` | `--secondary-background-color` | spokojniejsze powierzchnie (wiadomości HomeAI w rozmowie) |
 | `--homeai-divider-color` | `--divider-color` | linie między pozycjami |
 | `--homeai-error-color` | `--error-color` | komunikaty o błędach |
-| `--homeai-header-background` | `--app-header-background-color` | górny pasek panelu |
+| `--homeai-header-background` | `--app-header-background-color` jako szkło (72 %) | górny pasek panelu |
 | `--homeai-header-text-color` | `--app-header-text-color` | jego tekst |
 | `--homeai-severity-0-color`, `--homeai-severity-1-color`, `--homeai-severity-2-color`, `--homeai-severity-3-color`, `--homeai-severity-4-color` | `--secondary-text-color`, `--success-color`, `--info-color`, `--warning-color`, `--error-color` | znaczki wagi 0–4 |
 | `--homeai-severity-text-color` | `--text-primary-color` | cyfry na znaczkach |
@@ -369,7 +383,21 @@ Mój dom:
 | `--homeai-card-spacing` | `--ha-space-3` | odstęp między kartami |
 | `--homeai-button-border-radius` | `--ha-border-radius-pill` | przyciski |
 | `--homeai-button-padding` | `--ha-space-2` `--ha-space-4` | przyciski |
-| `--homeai-button-border-color` | `--homeai-divider-color` | przyciski |
+| `--homeai-button-border-color` | `--homeai-glass-border-color` | przyciski |
+| `--homeai-button-background` | `--homeai-text-color` w 5 % | szklane przyciski |
+| `--homeai-button-hover-background` | `--homeai-accent-color` w 12 % | szklane przyciski pod kursorem |
+| `--homeai-button-prominent-background` | `--homeai-accent-color` | główną akcję, otwartą zakładkę, wybraną sekcję |
+| `--homeai-button-prominent-box-shadow` | `--ha-box-shadow-s` | główną akcję |
+| `--homeai-glass-tint` | `--ha-card-background`, inaczej `--card-background-color` | kolor szkła |
+| `--homeai-glass-background` | `--homeai-glass-tint` w 72 % | materiał szkła (zakładki, pole rozmowy, arkusze) |
+| `--homeai-glass-filter` | `blur(--ha-space-5) saturate(1.8)` | co szkło robi z treścią pod sobą |
+| `--homeai-glass-border-color` | `--homeai-text-color` w 12 % | krawędź szkła |
+| `--homeai-glass-highlight-color` | `--homeai-text-color` w 6 % | odblask na górnej krawędzi szkła |
+| `--homeai-glass-box-shadow` | `--ha-box-shadow-m` | cień szkła |
+| `--homeai-segmented-border-radius` | `--ha-border-radius-3xl` | kapsułę zakładek i sekcji, pole rozmowy |
+| `--homeai-sheet-border-radius` | `--ha-border-radius-3xl` | edytory (arkusze) |
+| `--homeai-sheet-box-shadow` | `--ha-box-shadow-l` | edytory (arkusze) |
+| `--homeai-motion-duration` | `--ha-animation-duration-fast` | animacje naciśnięcia i najechania |
 | `--homeai-input-background` | `--input-fill-color` | pola |
 | `--homeai-input-text-color` | `--input-ink-color` | pola |
 | `--homeai-input-border-color` | `--input-outlined-idle-border-color` | pola |
@@ -403,15 +431,16 @@ Home Assistanta ustawiają tylko zmienne). Panel przekazuje dalej części swoic
 | `card`, `title`, `heading` | karta, jej tytuł, nagłówek między kartami |
 | `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | znaczek wagi (i ten dla danej wagi) |
 | `button`, `button-primary` | każdy przycisk, przycisk główny |
+| `segmented`, `sheet`, `composer` | kapsuła sekcji ustawień, edytor (arkusz), pole rozmowy |
 | `input` | pola, listy wyboru, pola wyboru |
 | `list`, `empty`, `error` | lista w karcie, napis „nic tu nie ma”, błąd |
 | `log`, `message`, `message-user`, `message-assistant` | rozmowa: przebieg i wiadomości |
 | `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | tylko panel: górny pasek, tytuł, zakładki, treść |
 
 ```css
-homeai-panel::part(card),
-homeai-situations-card::part(card) { backdrop-filter: blur(12px); }
+homeai-panel::part(sheet) { backdrop-filter: blur(32px) saturate(2); }
 homeai-panel::part(tab-active) { font-weight: 700; }
+homeai-situations-card::part(card) { border-width: 0; }
 ```
 
 ## Na telefonie

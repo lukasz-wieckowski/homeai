@@ -3,6 +3,25 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0]
+
+The panel and the cards look like Liquid Glass by default, still made only from Home Assistant's variables, so a
+home's theme can restyle every part of it.
+
+### Changed
+- **Glass on the navigation layer only.** The top bar, the tabs, the buttons, the chat composer and the editors are
+  a translucent, blurred material (`--homeai-glass-*`, tinted with the card colour, blurred with `--ha-space-5`); the
+  content (cards, lists, text) stays solid like Home Assistant's cards.
+- The top bar and the tabs stay on top while the content scrolls underneath. The tabs are one floating glass capsule
+  with the open tab prominent; the settings sections are the same kind of capsule.
+- Buttons are glass capsules, the main action is prominent (accent fill, `--ha-box-shadow-s`). They react to the
+  pointer and to a press, and show a focus ring for the keyboard.
+- The editors of the plan, presence and rules are sheets: glass, rounder (`--ha-border-radius-3xl`), floating higher
+  (`--ha-box-shadow-l`). The chat composer is a glass bar holding the field and the send button.
+- Reduce transparency and increase contrast make the material solid (with clear edges for contrast), and reduce
+  motion stops the animations. Browsers without `color-mix()` get solid theme colours.
+- New variables and the parts `segmented`, `sheet` and `composer` are listed in the README, section *Theming*.
+
 ## [1.4.0]
 
 Decisions after testing HomeAI on a copy of a real home: critical alerts are for danger to people only, and the

@@ -19,7 +19,7 @@ export const tokens = css`
     --_surface: var(--homeai-surface-color, var(--secondary-background-color));
     --_divider: var(--homeai-divider-color, var(--divider-color));
     --_error: var(--homeai-error-color, var(--error-color));
-    --_header-background: var(--homeai-header-background, var(--app-header-background-color));
+    --_header-background: var(--homeai-header-background, color-mix(in srgb, var(--app-header-background-color) 72%, transparent));
     --_header-text: var(--homeai-header-text-color, var(--app-header-text-color));
     --_severity-0: var(--homeai-severity-0-color, var(--secondary-text-color));
     --_severity-1: var(--homeai-severity-1-color, var(--success-color));
@@ -40,7 +40,11 @@ export const tokens = css`
     /* controls */
     --_button-radius: var(--homeai-button-border-radius, var(--ha-border-radius-pill));
     --_button-padding: var(--homeai-button-padding, var(--ha-space-2) var(--ha-space-4));
-    --_button-border-color: var(--homeai-button-border-color, var(--_divider));
+    --_button-border-color: var(--homeai-button-border-color, var(--_glass-border));
+    --_button-background: var(--homeai-button-background, color-mix(in srgb, var(--_text) 5%, transparent));
+    --_button-hover-background: var(--homeai-button-hover-background, color-mix(in srgb, var(--_accent) 12%, transparent));
+    --_button-prominent-background: var(--homeai-button-prominent-background, var(--_accent));
+    --_button-prominent-shadow: var(--homeai-button-prominent-box-shadow, var(--ha-box-shadow-s));
     --_input-background: var(--homeai-input-background, var(--input-fill-color));
     --_input-text: var(--homeai-input-text-color, var(--input-ink-color, var(--_text)));
     --_input-border-color: var(--homeai-input-border-color, var(--input-outlined-idle-border-color, var(--_divider)));
@@ -56,6 +60,21 @@ export const tokens = css`
     --_user-message-text: var(--homeai-user-message-text-color, var(--_on-accent));
     --_assistant-message-background: var(--homeai-assistant-message-background, var(--_surface));
     --_assistant-message-text: var(--homeai-assistant-message-text-color, var(--_text));
+
+    /* Liquid Glass: the navigation layer (top bar, tabs, buttons, the chat composer, sheets) is a translucent
+       material floating above the content; the content itself (cards, lists, text) stays solid */
+    --_glass-tint: var(--homeai-glass-tint, var(--ha-card-background, var(--card-background-color)));
+    --_glass-background: var(--homeai-glass-background, color-mix(in srgb, var(--_glass-tint) 72%, transparent));
+    --_glass-filter: var(--homeai-glass-filter, blur(var(--ha-space-5)) saturate(1.8));
+    --_glass-border: var(--homeai-glass-border-color, color-mix(in srgb, var(--_text) 12%, transparent));
+    --_glass-highlight: var(--homeai-glass-highlight-color, color-mix(in srgb, var(--_text) 6%, transparent));
+    --_glass-shadow: var(--homeai-glass-box-shadow, var(--ha-box-shadow-m));
+    --_glass-depth: inset 0 var(--_border-width) 0 var(--_glass-highlight), var(--_glass-shadow);
+    --_segment-radius: var(--homeai-segmented-border-radius, var(--ha-border-radius-3xl));
+    --_sheet-radius: var(--homeai-sheet-border-radius, var(--ha-border-radius-3xl));
+    --_sheet-shadow: var(--homeai-sheet-box-shadow, var(--ha-box-shadow-l));
+    --_sheet-depth: inset 0 var(--_border-width) 0 var(--_glass-highlight), var(--_sheet-shadow);
+    --_motion: var(--homeai-motion-duration, var(--ha-animation-duration-fast));
 
     /* typography */
     --_font-family: var(--homeai-font-family, var(--ha-font-family-body));
@@ -102,10 +121,32 @@ export const shared = [
     .setting { padding: var(--_space) 0; border-bottom: var(--_border-width) solid var(--_divider); }
     p { margin: var(--_space) 0; }
     b, strong { font-weight: var(--_strong-font-weight); }
-    button { font: inherit; border: var(--_border-width) solid var(--_button-border-color); background: transparent;
-      color: var(--_accent); border-radius: var(--_button-radius); padding: var(--_button-padding); cursor: pointer; }
-    button.primary { background: var(--_accent); color: var(--_on-accent); border-color: var(--_accent); }
-    button:disabled { opacity: 0.5; cursor: default; }
+    /* glass buttons: a translucent capsule; the main action is prominent (filled with the accent) */
+    button { font: inherit; border: var(--_border-width) solid var(--_button-border-color);
+      background: var(--_button-background); color: var(--_accent); border-radius: var(--_button-radius);
+      padding: var(--_button-padding); cursor: pointer;
+      transition: background-color var(--_motion), box-shadow var(--_motion), transform var(--_motion); }
+    button.primary { background: var(--_button-prominent-background); color: var(--_on-accent); border-color: transparent;
+      box-shadow: var(--_button-prominent-shadow); }
+    @media (hover: hover) {
+      button:hover:not(:disabled):not(.primary) { background: var(--_button-hover-background); }
+    }
+    button:active:not(:disabled) { transform: scale(0.97); }
+    button:focus-visible { outline: var(--_indicator-width) solid var(--_accent); outline-offset: var(--_indicator-width); }
+    button:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+    /* the material: one layer per group of controls, never on content */
+    .glass { background: var(--_glass-background); backdrop-filter: var(--_glass-filter);
+      -webkit-backdrop-filter: var(--_glass-filter); border: var(--_border-width) solid var(--_glass-border);
+      box-shadow: var(--_glass-depth); }
+    /* a segmented control: options share one glass capsule, the chosen one is prominent */
+    .segmented { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--_space-s);
+      padding: var(--_space-s); border-radius: var(--_segment-radius); max-width: 100%; box-sizing: border-box; }
+    .segmented button { border-color: transparent; background: transparent; color: var(--_text); }
+    .segmented button.primary { background: var(--_button-prominent-background); color: var(--_on-accent); }
+    /* a sheet: an editor that floats above the list it changes */
+    .card.sheet { background: var(--_glass-background); backdrop-filter: var(--_glass-filter);
+      -webkit-backdrop-filter: var(--_glass-filter); border-color: var(--_glass-border); border-radius: var(--_sheet-radius);
+      box-shadow: var(--_sheet-depth); }
     .sev { display: inline-block; min-width: 1.6em; text-align: center; border-radius: var(--_badge-radius);
       padding: 0 var(--_space-s); font-size: var(--_secondary-font-size); color: var(--_severity-text);
       background: var(--_severity-0); }
@@ -120,6 +161,22 @@ export const shared = [
     ul.plain { list-style: none; padding: 0; margin: 0; }
     ul.plain li { padding: var(--_space) 0; border-bottom: var(--_border-width) solid var(--_divider); }
     ul.plain li:last-child { border-bottom: none; }
+    /* Reduce transparency: the material becomes solid; increase contrast: clear edges; browsers without
+       color-mix: solid colours from the theme */
+    @media (prefers-reduced-transparency: reduce) {
+      :host { --_glass-background: var(--_glass-tint); --_glass-filter: none;
+        --_header-background: var(--homeai-header-background, var(--app-header-background-color)); }
+    }
+    @media (prefers-contrast: more) {
+      :host { --_glass-background: var(--_glass-tint); --_glass-filter: none; --_glass-border: var(--_text);
+        --_button-border-color: var(--_accent);
+        --_header-background: var(--homeai-header-background, var(--app-header-background-color)); }
+    }
+    @supports not (background: color-mix(in srgb, currentColor 50%, transparent)) {
+      :host { --_glass-background: var(--_glass-tint); --_glass-border: var(--_divider); --_glass-highlight: transparent;
+        --_button-background: transparent; --_button-hover-background: var(--_surface);
+        --_header-background: var(--homeai-header-background, var(--app-header-background-color)); }
+    }
   `,
 ];
 
@@ -137,6 +194,9 @@ export const PARTS = [
   "badge-4",
   "button",
   "button-primary",
+  "segmented",
+  "sheet",
+  "composer",
   "input",
   "list",
   "empty",

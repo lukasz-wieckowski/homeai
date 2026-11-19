@@ -329,6 +329,20 @@ The panel and the cards have no colours, fonts, radii, shadows or spacing of the
 Home Assistant theme in use, light or dark, through the same variables Home Assistant's own cards read. A home with
 its own look sets `--homeai-*` variables in its theme; what a variable cannot change, `::part()` can.
 
+The default look follows Apple's Liquid Glass, made from Home Assistant's variables:
+
+- **Glass only on the navigation layer.** The top bar, the tabs, the buttons, the chat composer and the editors
+  (sheets) are a translucent, blurred material floating above the content. The content itself (cards, lists, text)
+  stays solid, as Home Assistant's cards are.
+- **One material per group.** The tabs share one floating capsule, and so do the settings sections, with the chosen
+  one prominent (filled with the accent colour). Buttons are glass capsules; the main action is prominent.
+- **Depth.** The top bar and the tabs stay on top while the content scrolls underneath, blurred. Glass has a
+  hairline edge, a highlight and Home Assistant's shadows, and sheets float higher than the bar.
+- **Shapes.** Controls are capsules; the containers holding them have rounder corners.
+- **Accessibility.** With *Reduce transparency* the material becomes solid. With *Increase contrast* glass is solid
+  and its edges clear. With *Reduce motion* the press and hover animations stop (Home Assistant's
+  `--ha-animation-duration-*`). Browsers without `color-mix()` get solid theme colours.
+
 ```yaml
 # a theme file (frontend: themes: !include_dir_merge_named themes); theme keys are written without "--"
 My home:
@@ -351,7 +365,7 @@ My home:
 | `--homeai-surface-color` | `--secondary-background-color` | quieter surfaces (HomeAI's chat messages) |
 | `--homeai-divider-color` | `--divider-color` | lines between items |
 | `--homeai-error-color` | `--error-color` | error messages |
-| `--homeai-header-background` | `--app-header-background-color` | the panel's top bar |
+| `--homeai-header-background` | `--app-header-background-color` as glass (72 %) | the panel's top bar |
 | `--homeai-header-text-color` | `--app-header-text-color` | its text |
 | `--homeai-severity-0-color`, `--homeai-severity-1-color`, `--homeai-severity-2-color`, `--homeai-severity-3-color`, `--homeai-severity-4-color` | `--secondary-text-color`, `--success-color`, `--info-color`, `--warning-color`, `--error-color` | severity badges 0–4 |
 | `--homeai-severity-text-color` | `--text-primary-color` | numbers on the badges |
@@ -364,7 +378,21 @@ My home:
 | `--homeai-card-spacing` | `--ha-space-3` | between cards |
 | `--homeai-button-border-radius` | `--ha-border-radius-pill` | buttons |
 | `--homeai-button-padding` | `--ha-space-2` `--ha-space-4` | buttons |
-| `--homeai-button-border-color` | `--homeai-divider-color` | buttons |
+| `--homeai-button-border-color` | `--homeai-glass-border-color` | buttons |
+| `--homeai-button-background` | `--homeai-text-color` at 5 % | glass buttons |
+| `--homeai-button-hover-background` | `--homeai-accent-color` at 12 % | glass buttons under the pointer |
+| `--homeai-button-prominent-background` | `--homeai-accent-color` | the main action, the open tab, the chosen section |
+| `--homeai-button-prominent-box-shadow` | `--ha-box-shadow-s` | the main action |
+| `--homeai-glass-tint` | `--ha-card-background`, else `--card-background-color` | the colour of the glass |
+| `--homeai-glass-background` | `--homeai-glass-tint` at 72 % | the glass material (tabs, composer, sheets) |
+| `--homeai-glass-filter` | `blur(--ha-space-5) saturate(1.8)` | what the glass does to the content behind it |
+| `--homeai-glass-border-color` | `--homeai-text-color` at 12 % | the glass edge |
+| `--homeai-glass-highlight-color` | `--homeai-text-color` at 6 % | the highlight on the glass's top edge |
+| `--homeai-glass-box-shadow` | `--ha-box-shadow-m` | the glass shadow |
+| `--homeai-segmented-border-radius` | `--ha-border-radius-3xl` | the capsule of the tabs and sections, the composer |
+| `--homeai-sheet-border-radius` | `--ha-border-radius-3xl` | editors (sheets) |
+| `--homeai-sheet-box-shadow` | `--ha-box-shadow-l` | editors (sheets) |
+| `--homeai-motion-duration` | `--ha-animation-duration-fast` | press and hover animations |
 | `--homeai-input-background` | `--input-fill-color` | fields |
 | `--homeai-input-text-color` | `--input-ink-color` | fields |
 | `--homeai-input-border-color` | `--input-outlined-idle-border-color` | fields |
@@ -398,15 +426,16 @@ Assistant theme files themselves only set variables). The panel passes its tabs'
 | `card`, `title`, `heading` | a card, its title, a heading between cards |
 | `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | a severity badge (and the one for that severity) |
 | `button`, `button-primary` | every button, the main one |
+| `segmented`, `sheet`, `composer` | the settings sections' capsule, an editor (sheet), the chat composer |
 | `input` | fields, lists to choose from, checkboxes |
 | `list`, `empty`, `error` | a list in a card, the “nothing here” text, an error |
 | `log`, `message`, `message-user`, `message-assistant` | the chat: the conversation and its messages |
 | `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | the panel only: top bar, its title, the tabs, the content |
 
 ```css
-homeai-panel::part(card),
-homeai-situations-card::part(card) { backdrop-filter: blur(12px); }
+homeai-panel::part(sheet) { backdrop-filter: blur(32px) saturate(2); }
 homeai-panel::part(tab-active) { font-weight: 700; }
+homeai-situations-card::part(card) { border-width: 0; }
 ```
 
 ## On the phone

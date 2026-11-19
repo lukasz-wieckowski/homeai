@@ -48,6 +48,11 @@ export class HomeAIChat extends LitElement {
       .user { align-self: flex-end; background: var(--_user-message-background); color: var(--_user-message-text); }
       .assistant { align-self: flex-start; background: var(--_assistant-message-background); color: var(--_assistant-message-text); }
       textarea { min-height: 3em; font-family: inherit; font-size: inherit; }
+      .composer { display: flex; align-items: flex-end; gap: var(--_space); padding: var(--_space-s);
+        border-radius: var(--_segment-radius); }
+      .composer textarea { border: none; background: transparent; resize: none; min-height: 2.5em; }
+      .composer textarea:focus { outline: none; }
+      .composer:focus-within { border-color: var(--_accent); }
     `,
   ];
 
@@ -114,13 +119,12 @@ export class HomeAIChat extends LitElement {
         ${this.busy ? html`<div part="message message-assistant" class="msg assistant muted">…</div>` : nothing}
       </div>
       ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
-      <div class="row">
+      <div part="composer" class="composer glass">
         <textarea part="input" class="grow" placeholder=${t(lang, "chat_placeholder")} @keydown=${this.keydown} ?disabled=${this.busy}></textarea>
-      </div>
-      <div class="row actions">
         <button part="button button-primary" class="primary" @click=${this.send} ?disabled=${this.busy}>${t(lang, "send")}</button>
-        <span class="grow"></span>
-        ${this.messages.length ? html`<button part="button" @click=${this.restart}>${t(lang, "chat_new")}</button>` : nothing}
-      </div>`;
+      </div>
+      ${this.messages.length
+        ? html`<div class="row actions"><span class="grow"></span><button part="button" @click=${this.restart}>${t(lang, "chat_new")}</button></div>`
+        : nothing}`;
   }
 }

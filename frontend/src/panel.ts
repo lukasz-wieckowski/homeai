@@ -28,15 +28,24 @@ export class HomeAIPanel extends LitElement {
     shared,
     css`
       :host { background: var(--_background); min-height: 100%; }
+      /* the navigation layer stays on top while the content scrolls underneath, blurred by the glass */
+      .top { position: sticky; top: 0; z-index: 2; }
       .toolbar { display: flex; align-items: center; height: var(--homeai-header-height, var(--header-height));
-        padding: 0 var(--_space-l); gap: var(--_space); background: var(--_header-background); color: var(--_header-text); }
+        padding: 0 var(--_space-l); gap: var(--_space); background: var(--_header-background); color: var(--_header-text);
+        backdrop-filter: var(--_glass-filter); -webkit-backdrop-filter: var(--_glass-filter);
+        border-bottom: var(--_border-width) solid var(--_glass-border); }
       .toolbar h1 { font-family: var(--_font-family); font-size: var(--_header-font-size);
         font-weight: var(--_header-font-weight); margin: 0; flex: 1; }
-      nav { display: flex; gap: var(--_space-s); padding: var(--_space) var(--_space-l); overflow-x: auto;
-        border-bottom: var(--_border-width) solid var(--_divider); }
-      nav button { border: none; border-radius: 0; border-bottom: var(--_indicator-width) solid transparent; color: var(--_text); }
-      nav button.active { border-bottom-color: var(--_accent); color: var(--_accent); }
-      main { padding: var(--_content-padding); max-width: var(--homeai-content-max-width, 68em); margin: 0 auto; }
+      /* the tabs: one floating glass capsule; the open tab is prominent */
+      .tabbar { display: flex; justify-content: center; padding: var(--_space) var(--_space-l); pointer-events: none; }
+      .tabs { pointer-events: auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+        border-radius: var(--_button-radius); }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tabs button { white-space: nowrap; }
+      .tabs button.active { background: var(--_button-prominent-background); color: var(--_on-accent);
+        box-shadow: var(--_button-prominent-shadow); }
+      main { padding: 0 var(--_content-padding) var(--_content-padding); max-width: var(--homeai-content-max-width, 68em);
+        margin: 0 auto; }
     `,
   ];
 
@@ -65,13 +74,17 @@ export class HomeAIPanel extends LitElement {
     if (!this.hass) return html``;
     const lang = this.hass.language;
     return html`
-      <div part="header" class="toolbar">
-        <ha-menu-button .hass=${this.hass} .narrow=${this.narrow}></ha-menu-button>
-        <h1 part="header-title">HomeAI</h1>
+      <div class="top">
+        <div part="header" class="toolbar">
+          <ha-menu-button .hass=${this.hass} .narrow=${this.narrow}></ha-menu-button>
+          <h1 part="header-title">HomeAI</h1>
+        </div>
+        <div class="tabbar">
+          <nav part="tabs" class="tabs segmented glass" role="tablist">
+            ${TABS.map((tab) => html`<button part=${tab === this.tab ? "tab tab-active" : "tab"} class=${tab === this.tab ? "active" : ""} role="tab" aria-selected=${tab === this.tab ? "true" : "false"} @click=${() => (this.tab = tab)}>${t(lang, tab)}</button>`)}
+          </nav>
+        </div>
       </div>
-      <nav part="tabs">
-        ${TABS.map((tab) => html`<button part=${tab === this.tab ? "tab tab-active" : "tab"} class=${tab === this.tab ? "active" : ""} @click=${() => (this.tab = tab)}>${t(lang, tab)}</button>`)}
-      </nav>
       <main part="content">${this.view()}</main>
     `;
   }

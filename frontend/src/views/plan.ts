@@ -181,7 +181,7 @@ export class HomeAIPlan extends LitElement {
     const w = d.when;
     const names = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(lang, { weekday: "short" }));
     const field = (label: string, content: unknown) => html`<label class="row field"><span class="label">${label}</span>${content}</label>`;
-    return html`<div part="card" class="card">
+    return html`<div part="card sheet" class="card sheet" role="dialog">
       ${field(t(lang, "plan_type"), html`<select part="input" @change=${(e: Event) => this.set({ type: (e.target as HTMLSelectElement).value as Draft["type"] })}>
         <option value="action" ?selected=${d.type === "action"}>${t(lang, "plan_action")}</option>
         <option value="reminder" ?selected=${d.type === "reminder"}>${t(lang, "plan_reminder")}</option></select>`)}

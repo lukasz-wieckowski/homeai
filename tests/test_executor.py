@@ -217,8 +217,10 @@ async def test_logbook_entry_names_homeai(hass: HomeAssistant) -> None:
     hass.bus.async_listen("logbook_entry", callback(lambda e: entries.append(e)))  # noqa: PLW0108
     await rt.module("executor").execute(ActionRequest("light", "turn_on", entity_ids=["light.ceiling"]))
     await hass.async_block_till_done()
-    assert entries and entries[0].data["name"] == "HomeAI" and entries[0].data["entity_id"] == "light.ceiling"
-    assert entries[0].context.user_id == rt.system_user_id
+    # under HomeAI's device (its situations sensor), in the action's context: Activity links it to what changed
+    [entry] = [e for e in entries if "Ceiling" in e.data["message"]]
+    assert entry.data["name"] == "HomeAI" and entry.data["entity_id"] == "sensor.homeai_situations"
+    assert entry.context.user_id == rt.system_user_id
 
 
 async def test_plain_descriptions(hass: HomeAssistant) -> None:

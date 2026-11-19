@@ -32,12 +32,15 @@ def render() -> str:
     lines = [
         "# Settings",
         "",
-        "Every option HomeAI has, as shown in the HomeAI panel (Settings tab). Generated from the settings registry by",
-        "`scripts/gen_settings_doc.py`; do not edit by hand.",
+        "Every option HomeAI has, as shown in its options: **Settings → Devices & services → HomeAI → Configure**, one",
+        "page per section below. Generated from the settings registry by `scripts/gen_settings_doc.py`; do not edit",
+        "by hand.",
         "",
-        "*Scope* says where a value can be set: for the whole home, or overridden for a floor, area, device, entity",
-        "or person (the most specific value wins). *Confirm* marks changes that ask for confirmation because they",
-        "lower protection or change something important.",
+        "*Scope* says where a value can be set: for the whole home, or for a floor, area, device, entity or person",
+        "under **Settings for a place** (the most specific value wins). *Advanced* settings are in the collapsed part",
+        "of their page. *Confirm* marks changes that ask for confirmation because they lower protection or change",
+        "something important. The services `homeai.export_settings` and `homeai.import_settings` move them between",
+        "installations.",
         "",
     ]
     for section in registry.sections():
@@ -61,7 +64,7 @@ def render() -> str:
                 rng = s.unit or ""
             default = json.dumps(s.default, ensure_ascii=False) if not isinstance(s.default, str) else f"`{s.default}`"
             if s.type.value in ("json",) or len(default) > 60:
-                default = "see panel"
+                default = "see options"
             scopes = ", ".join(SCOPES.get(x.value, x.value) for x in sorted(s.scopes, key=lambda x: x.value))
             notes = [n for n in ("advanced" if s.advanced else "", f"confirm ({s.confirm})" if s.confirm else "") if n]
             description = text.get("description", "").replace("|", "\\|")

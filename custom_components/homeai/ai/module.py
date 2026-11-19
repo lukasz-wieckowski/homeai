@@ -20,7 +20,7 @@ from .budget import Ledger
 from .missions.investigate import investigate
 from .missions.triage import needs_triage, run_triage
 from .privacy import Privacy
-from .prompts import system_prompt
+from .prompts import defaults, system_prompt
 from .providers.base import AIError, AIRequest, AIResponse, Provider
 from .tiers import TierConfig, build_provider
 
@@ -299,4 +299,10 @@ class AIModule:
                 for t, cs in self.tiers.items()
             },
             "ledger": self.ledger.summary(),
+            # what was last sent to each tier (only with `privacy.log_prompts`), and each task's prompt
+            "last_prompts": self.last_prompts,
+            "prompts": {
+                mission: {"built_in": text, "own": str(self.rt.settings.get(f"ai.prompt_{mission}") or "")}
+                for mission, text in defaults().items()
+            },
         }

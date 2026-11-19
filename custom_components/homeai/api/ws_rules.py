@@ -1,4 +1,5 @@
-"""Custom detectors (rules without code) for the panel: list, save, preview."""
+"""Custom rules for cards and tools: list and preview. Rules are added and changed as the integration's subentries
+("Add rule" on the integration page); the flow shows the same preview."""
 
 from __future__ import annotations
 
@@ -11,7 +12,8 @@ import voluptuous as vol
 
 from ..settings import SettingError
 from ..signals.detectors.custom import meets, targets, validate_rules
-from .websocket import TYPE, command, user_name
+from ..signals.rules import preview
+from .websocket import TYPE, command
 
 Conn = websocket_api.ActiveConnection
 
@@ -20,21 +22,7 @@ Conn = websocket_api.ActiveConnection
 def ws_list(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
     hub = rt.module("signals")
     active = {s.data.get("rule"): s for s in hub.signals.values() if s.kind == "custom"} if hub else {}
-    connection.send_result(
-        msg["id"],
-        {"rules": [{**r, "firing": r["id"] in active} for r in rt.settings.get("detectors.custom") or []]},
-    )
-
-
-@command({TYPE: "homeai/rules/save", vol.Required("rules"): list}, admin=True)
-def ws_save(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: Any) -> None:
-    rules = rt.settings.set(
-        "detectors.custom", msg["rules"], user=user_name(hass, connection), confirmed=True, is_admin=True
-    )
-    rt.journal.add(
-        "setting", rt.text("journal|setting_changed", key="detectors.custom"), actor=user_name(hass, connection)
-    )
-    connection.send_result(msg["id"], {"rules": rules})
+    connection.send_result(msg["id"], {"rules": [{**r, "firing": r["id"] in active} for r in rt.rules]})
 
 
 @command({TYPE: "homeai/rules/preview", vol.Required("rule"): dict}, admin=True)
@@ -54,5 +42,6 @@ def ws_preview(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: A
         {
             "covered": [{"entity_id": e, "name": rt.world.display_name(e)} for e in covered[:200]],
             "meeting": meeting[:200],
+            "text": preview(rt, rule),
         },
     )

@@ -35,11 +35,12 @@ energy, comfort, maintenance, info), severity, entities, data for texts, who is 
 re-evaluated one second after a watched entity changes and on every tick (default one minute). Every
 threshold is a setting, most of them per entity, device, area or floor.
 
-Custom detectors are rules you write in the panel's **Rules** tab: entities (listed, or by label, area or
+Custom detectors are rules you add on the integration's page (**Add rule**, one config subentry of type `rule` per
+rule, applied without a reload): entities (listed, or by label, area or
 domain), a condition (state is or is not a value, above or below a number, unavailable), how many minutes it
 must hold, when the rule applies (always, at night, while everyone is away or while someone is home) and
 whether each entity opens its own signal or only all of them together. Each rule sets the severity, category,
-who is needed and the advice shown to people. The rule editor previews which entities it covers and which of
+who is needed and the advice shown to people. The rule's flow previews which entities it covers and which of
 them meet the condition right now.
 
 ## Situations
@@ -116,10 +117,22 @@ things only through the executor and the policy.
 ## Learning
 
 Norms per entity and hour of the week from the recorder's long-term statistics feed an anomaly detector.
-Habits from repeated manual actions become proposals. Undo and refusals adjust what HomeAI does on its own.
-A weekly review summarises the week for administrators.
+Habits from repeated manual actions become proposals: approval requests (kind `habit`) in the inbox. Undo and
+refusals adjust what HomeAI does on its own. A weekly review summarises the week for administrators. Memory holds
+facts and preferences; approved ones are the items of `todo.homeai_memory`, facts HomeAI noticed by itself wait as
+approval requests (kind `fact`).
+
+## Where people manage HomeAI
+
+Only what needs people has a panel: the inbox (situations and approval requests), the plan with presence, and the
+chat. Everything else is in Home Assistant's own places: the settings in the options flow (generated from the
+settings registry, also per floor, area, device, entity and person), AI tiers and custom rules as config
+subentries, memory as a to-do list, the journal in the logbook (entries that matter to people, under HomeAI's
+device), AI spend and budgets as sensor and number entities, prompts and the last AI requests in the options and
+the diagnostics.
 
 ## Storage
 
 Everything lives in Home Assistant's `.storage` (settings, journal, situations, approvals, plan, presence
-exceptions, AI ledger, dossiers, memory, learning, thermostat overrides and proposals). Diagnostics export the state with secrets redacted.
+exceptions, AI ledger, dossiers, memory, learning, thermostat overrides and proposals); AI tiers and custom rules
+are subentries of the config entry. Diagnostics export the state with secrets redacted.

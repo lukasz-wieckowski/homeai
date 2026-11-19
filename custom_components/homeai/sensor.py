@@ -1,4 +1,4 @@
-"""Sensors: open situations (count and list)."""
+"""Sensors: open situations (count and list), AI spend today and this month (with their budgets), next plan change."""
 
 from __future__ import annotations
 
@@ -90,6 +90,11 @@ class AICostSensor(HomeAIEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(self.rt.module("ai").ledger.listen(self.async_write_ha_state))
         self.async_on_remove(self.rt.on_tick(lambda _now: self.async_write_ha_state()))
+        self.async_on_remove(
+            self.rt.settings.listen(
+                "ai", lambda key: self.async_write_ha_state() if key.startswith("ai.budget") else None
+            )
+        )
 
     @property
     def native_value(self) -> float:
@@ -106,7 +111,13 @@ class AICostSensor(HomeAIEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         ledger = self.rt.module("ai").ledger
-        return {"calls_today": ledger.calls_today(), "budget_allowed": ledger.allowed()}
+        period = "daily" if self.translation_key == "ai_cost_today" else "monthly"
+        limit = float(self.rt.settings.get(f"ai.budget_{period}"))
+        return {
+            "calls_today": ledger.calls_today(),
+            "budget": limit or None,  # zero: no limit
+            "budget_allowed": ledger.allowed(),
+        }
 
 
 class NextPlanSensor(HomeAIEntity, SensorEntity):

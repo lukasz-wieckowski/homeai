@@ -1,4 +1,4 @@
-"""Number settings for automations and dashboards (the monthly AI budget)."""
+"""Number settings for automations and dashboards: the AI budgets per day and per month."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import HomeAIEntity, check_admin
 
-NUMBERS = {"ai_budget_monthly": "ai.budget_monthly"}
+NUMBERS = {"ai_budget_daily": "ai.budget_daily", "ai_budget_monthly": "ai.budget_monthly"}
 
 
 async def async_setup_entry(

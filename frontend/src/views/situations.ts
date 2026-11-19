@@ -6,8 +6,9 @@ import { PAGE_SIZE, paged } from "../pager";
 import { shared } from "../styles";
 import type { Approval, HomeAssistant, Situation } from "../types";
 
-// The inbox: requests waiting for someone's approval, then open situations by how much they matter. A row shows
-// what and where; it opens to show why and what to do. Notifications open `?situation=<id>` here.
+// The inbox: requests waiting for someone's approval (actions, facts HomeAI would remember, habits it would add to
+// the plan), then open situations by how much they matter. A row shows what and where; it opens to show why and
+// what to do. Notifications open `?situation=<id>` here.
 @element("homeai-situations")
 export class HomeAISituations extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -127,7 +128,7 @@ export class HomeAISituations extends LitElement {
     return html`<li part="row" class="approval">
       <div class="item-main">
         <span class="item-text"><span part="row-title" class="item-title">${a.what}</span>
-          <span part="row-meta" class="item-meta">${a.reason ? `${a.reason} · ` : ""}${t(lang, "expires")} ${shortWhen(a.expires, lang, tz)}</span></span>
+          <span part="row-meta" class="item-meta">${[a.reason, a.expires ? `${t(lang, "expires")} ${shortWhen(a.expires, lang, tz)}` : ""].filter(Boolean).join(" · ")}</span></span>
         <span class="item-actions">
           <button part="button" @click=${() => this.decide("deny", a)}>${t(lang, "deny")}</button>
           <button part="button button-primary" class="primary" @click=${() => this.decide("approve", a)}>${t(lang, "approve")}</button>

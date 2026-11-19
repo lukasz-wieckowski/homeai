@@ -25,17 +25,1333 @@
   "options": {
     "step": {
       "init": {
-        "title": "HomeAI quick settings",
-        "description": "All other settings are in the HomeAI panel.",
+        "title": "HomeAI options",
+        "description": "Choose what to change. Values set here apply to the whole home; under **Settings for a place** a floor, area, device, entity or person can have its own. Rules and AI connections are added on the integration's page.",
+        "menu_options": {
+          "general": "General",
+          "world": "Home model",
+          "presence": "People and sleep",
+          "privacy": "Privacy",
+          "detectors": "Detection",
+          "situations": "Situations",
+          "triage": "Assessment",
+          "notify": "Notifications",
+          "policy": "Policy",
+          "executor": "Actions",
+          "repair": "Self-repair",
+          "adapters": "Hubs and bridges",
+          "schedule": "Plan",
+          "heating": "Heating",
+          "ai": "AI",
+          "prompts": "AI prompts",
+          "learning": "Learning",
+          "place": "Settings for a place",
+          "undo": "Undo the last change",
+          "reset": "Reset a section to defaults"
+        },
+        "menu_option_descriptions": {
+          "general": "Language, parts of the day, journal and panel.",
+          "world": "Which entities HomeAI watches and the labels it understands.",
+          "presence": "Roles, house mode and how HomeAI knows who sleeps.",
+          "privacy": "What may be sent to cloud AI.",
+          "detectors": "What HomeAI watches and its limits.",
+          "situations": "When situations open and close.",
+          "triage": "How serious a situation is.",
+          "notify": "Who hears what, how and when.",
+          "policy": "What HomeAI may do on its own, what needs a yes, and what never happens.",
+          "executor": "How actions are run, checked and undone.",
+          "repair": "How HomeAI fixes things before bothering anyone.",
+          "adapters": "Knowledge about hubs, bridges and Zigbee2MQTT.",
+          "schedule": "The home's plan and presence exceptions.",
+          "heating": "Thermostats that speak HomeAI's schedule contract: overrides HomeAI sets by itself from presence, and weekly schedule changes it proposes.",
+          "ai": "AI tiers, assessment, budgets.",
+          "prompts": "Your own instructions for each AI task. Empty: the built-in prompt (shown in the diagnostics).",
+          "learning": "Norms, anomalies, habits and the weekly review.",
+          "place": "A floor, area, device, entity or person with values of its own.",
+          "undo": "Restore the value from before the most recent change.",
+          "reset": "Every value of one section back to its default; values for places stay."
+        }
+      },
+      "general": {
+        "title": "General",
+        "description": "Language, parts of the day, journal and panel.",
         "data": {
           "general_language": "Language",
+          "general_assistant_name": "Assistant name",
+          "general_night_start": "Night starts",
+          "general_morning_start": "Morning starts",
+          "general_day_start": "Day starts",
+          "general_evening_start": "Evening starts",
+          "general_journal_retention_days": "Journal retention",
+          "general_panel_sidebar": "Panels in sidebar",
+          "general_panels": "Which panels",
+          "general_panel_admin_only": "Panels for administrators only"
+        },
+        "data_description": {
+          "general_language": "Language of HomeAI's notifications, journal and AI replies. Auto follows Home Assistant.",
+          "general_assistant_name": "How HomeAI calls itself in messages and conversations.",
+          "general_night_start": "Start of the night part of the day.",
+          "general_morning_start": "Start of the morning part of the day.",
+          "general_day_start": "Start of the day part of the day.",
+          "general_evening_start": "Start of the evening part of the day.",
+          "general_journal_retention_days": "How long entries stay in HomeAI's journal.",
+          "general_panel_sidebar": "Show HomeAI's panels in Home Assistant's sidebar.",
+          "general_panels": "The panels HomeAI adds to the sidebar. Each person can still hide any of them from their own sidebar.",
+          "general_panel_admin_only": "Hide HomeAI's panels from non-administrators."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "general_startup_grace": "Startup grace period",
+              "general_tick_seconds": "Evaluation interval"
+            },
+            "data_description": {
+              "general_startup_grace": "After Home Assistant starts, integrations need time to come up. HomeAI does not announce situations or act during this time.",
+              "general_tick_seconds": "How often time-based checks run (unavailability, deadlines, schedules)."
+            }
+          }
+        }
+      },
+      "world": {
+        "title": "Home model",
+        "description": "Which entities HomeAI watches and the labels it understands.",
+        "data": {
+          "world_scope": "Which entities HomeAI sees",
+          "world_include_areas": "Selected areas",
+          "world_create_labels": "Create HomeAI labels",
+          "world_room_roles": "Room roles",
+          "world_room_roles_auto": "Guess room roles"
+        },
+        "data_description": {
+          "world_scope": "All entities, only those exposed to voice assistants, or only selected areas.",
+          "world_include_areas": "Areas HomeAI watches when the scope is “selected areas”.",
+          "world_create_labels": "Create the labels HomeAI understands (ignore, personal, critical, protective action, private) if they do not exist.",
+          "world_room_roles": "What this room is for: bedroom, bathroom, common space, workplace (a room may have several). Set it per room; empty means from HomeAI's labels, else from the room's icon and name. None means no role.",
+          "world_room_roles_auto": "Rooms without a role set or labelled get one from their icon (a bed, a sofa, a desk…) or their name (bedroom, living room, office…)."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "world_include_domains": "Only these domains",
+              "world_exclude_entities": "Excluded entities",
+              "world_include_hidden": "Include hidden entities",
+              "world_label_ignore": "Label: ignore",
+              "world_label_personal": "Label: personal",
+              "world_label_critical": "Label: critical",
+              "world_label_protective": "Label: protective action",
+              "world_label_private": "Label: private",
+              "world_label_bedroom": "Label: bedroom",
+              "world_label_bathroom": "Label: bathroom",
+              "world_label_common": "Label: common space",
+              "world_label_workplace": "Label: workplace",
+              "world_label_activity": "Label: activity"
+            },
+            "data_description": {
+              "world_include_domains": "Limit HomeAI to these entity domains. Empty means all.",
+              "world_exclude_entities": "Entity patterns HomeAI ignores, for example light.*_display.",
+              "world_include_hidden": "Also watch entities hidden in Home Assistant.",
+              "world_label_ignore": "Entities and devices with this label are invisible to HomeAI.",
+              "world_label_personal": "Personal devices (phones, laptops) may go offline; that is not a problem of the home.",
+              "world_label_critical": "Problems with these devices are always treated as urgent, and as critical when they are about safety (a leak, smoke, gas, carbon monoxide).",
+              "world_label_protective": "Actions on these entities may run automatically to protect the home (for example closing a water valve during a leak).",
+              "world_label_private": "Data of these entities is never sent to cloud AI.",
+              "world_label_bedroom": "A room with this label, or with a device or entity labelled so, is a bedroom.",
+              "world_label_bathroom": "A room with this label, or with a device or entity labelled so, is a bathroom.",
+              "world_label_common": "A room with this label, or with a device or entity labelled so, is a common space (living room, kitchen, dining room). Guests warm these rooms.",
+              "world_label_workplace": "A room with this label, or with a device or entity labelled so (a desk plug), is someone's workplace. Working from home warms it.",
+              "world_label_activity": "Entities with this label show that someone is busy in their room: a desk's power sensor, a PC, a TV. While one is active, the heating of that room follows “Heating: when someone is active”."
+            }
+          }
+        }
+      },
+      "presence": {
+        "title": "People and sleep",
+        "description": "Roles, house mode and how HomeAI knows who sleeps.",
+        "data": {
+          "presence_role": "Role",
+          "presence_home_mode_entity": "House mode helper",
+          "presence_vacation_mode": "Vacation mode",
+          "presence_sleep_sources": "Sleep sources",
+          "presence_sleep_helper": "Sleep helper",
+          "presence_night_start": "Night starts (workdays)",
+          "presence_night_end": "Night ends (workdays)",
+          "presence_weekend_night_start": "Night starts (weekends)",
+          "presence_weekend_night_end": "Night ends (weekends)",
+          "presence_charging_entities": "Phone charging sensors",
+          "presence_bed_entities": "Bed sensors",
+          "presence_workplace_areas": "Workplace"
+        },
+        "data_description": {
+          "presence_role": "Administrators approve risky actions and configuration changes; members receive notifications; guests and ignored people are not residents.",
+          "presence_home_mode_entity": "Optional helper (for example input_select) describing the house mode, such as home, away or vacation.",
+          "presence_vacation_mode": "The household is away: security matters are raised and the plan skips entries that need someone at home.",
+          "presence_sleep_sources": "Where HomeAI learns that someone sleeps, in order of trust: helper, sensors, AI inference, night hours.",
+          "presence_sleep_helper": "Switch or helper that says a person is asleep.",
+          "presence_night_start": "Usual bedtime on workdays.",
+          "presence_night_end": "Usual wake-up time on workdays.",
+          "presence_weekend_night_start": "Usual bedtime on Friday and Saturday.",
+          "presence_weekend_night_end": "Usual wake-up time on weekends.",
+          "presence_charging_entities": "Charging sensors of the person's phone; charging at night suggests sleep.",
+          "presence_bed_entities": "Bed occupancy sensors of the person.",
+          "presence_workplace_areas": "The rooms where this person works from home. Without one, the home's only workplace room is used."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "presence_vacation_states": "Vacation states",
+              "presence_sleep_helper_state": "Sleep helper state",
+              "presence_quiet_minutes": "Settling time"
+            },
+            "data_description": {
+              "presence_vacation_states": "States of the house mode helper that mean a longer absence.",
+              "presence_sleep_helper_state": "State of the sleep helper that means asleep.",
+              "presence_quiet_minutes": "How long a change in presence must last before HomeAI reacts."
+            }
+          }
+        }
+      },
+      "privacy": {
+        "title": "Privacy",
+        "description": "What may be sent to cloud AI.",
+        "data": {
           "privacy_level": "Data sent to cloud AI",
-          "notify_paused": "Pause notifications"
+          "privacy_never_send_entities": "Never send these entities",
+          "privacy_never_send_areas": "Never send these areas"
+        },
+        "data_description": {
+          "privacy_level": "Standard sends names of devices, rooms and people. Minimal replaces people and rooms with neutral labels. Full also sends calendar titles.",
+          "privacy_never_send_entities": "Entities whose data never leaves your home.",
+          "privacy_never_send_areas": "Areas whose data never leaves your home."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "privacy_log_prompts": "Keep AI requests",
+              "privacy_log_retention_days": "Keep AI requests for"
+            },
+            "data_description": {
+              "privacy_log_prompts": "Store requests and replies of AI calls for troubleshooting.",
+              "privacy_log_retention_days": "How long stored AI requests are kept."
+            }
+          }
+        }
+      },
+      "detectors": {
+        "title": "Detection",
+        "description": "What HomeAI watches and its limits.",
+        "data": {},
+        "data_description": {},
+        "sections": {
+          "safety": {
+            "name": "Safety sensors",
+            "data": {
+              "detectors_safety_enabled": "Safety sensors: watch",
+              "detectors_safety_severity_leak": "Water leak: severity",
+              "detectors_safety_severity_smoke": "Smoke: severity",
+              "detectors_safety_severity_gas": "Gas: severity",
+              "detectors_safety_severity_carbon_monoxide": "Carbon monoxide: severity",
+              "detectors_safety_severity_safety": "Safety alarm: severity",
+              "detectors_safety_severity_tamper": "Tampering: severity"
+            },
+            "data_description": {
+              "detectors_safety_enabled": "Watch leak, smoke, gas, carbon monoxide and tamper sensors.",
+              "detectors_safety_severity_leak": "Severity 0–4 of water leak (0 journal only, 4 critical).",
+              "detectors_safety_severity_smoke": "Severity 0–4 of smoke (0 journal only, 4 critical).",
+              "detectors_safety_severity_gas": "Severity 0–4 of gas (0 journal only, 4 critical).",
+              "detectors_safety_severity_carbon_monoxide": "Severity 0–4 of carbon monoxide (0 journal only, 4 critical).",
+              "detectors_safety_severity_safety": "Severity 0–4 of safety alarm (0 journal only, 4 critical).",
+              "detectors_safety_severity_tamper": "Severity 0–3 of tampering (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "security": {
+            "name": "Security",
+            "data": {
+              "detectors_security_enabled": "Security: watch",
+              "detectors_security_away_minutes": "Open while away: wait",
+              "detectors_security_night_minutes": "Open at night: wait",
+              "detectors_security_openings_at_night": "Windows at night"
+            },
+            "data_description": {
+              "detectors_security_enabled": "Watch doors, windows, gates and locks left open while nobody is home or everyone sleeps.",
+              "detectors_security_away_minutes": "How long a door, window or lock must stay open while everyone is away.",
+              "detectors_security_night_minutes": "How long something must stay open while everyone at home sleeps.",
+              "detectors_security_openings_at_night": "Also report doors and windows (not only locks and gates) open at night."
+            }
+          },
+          "internet": {
+            "name": "Internet connection",
+            "data": {
+              "detectors_internet_enabled": "Internet connection: watch",
+              "detectors_internet_entity": "Internet sensor",
+              "detectors_internet_minutes": "Internet down: wait",
+              "detectors_internet_severity": "Internet down: severity"
+            },
+            "data_description": {
+              "detectors_internet_enabled": "Watch the home's internet connection.",
+              "detectors_internet_entity": "Binary sensor that is on while the internet works. Empty: the first Ping sensor.",
+              "detectors_internet_minutes": "How long the connection must be down before it counts.",
+              "detectors_internet_severity": "Severity 0–3 of internet down (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "availability": {
+            "name": "Unresponsive devices",
+            "data": {
+              "detectors_availability_enabled": "Unresponsive devices: watch",
+              "detectors_availability_minutes": "Unresponsive after",
+              "detectors_availability_severity": "Unresponsive device: severity"
+            },
+            "data_description": {
+              "detectors_availability_enabled": "Watch devices whose entities are all unavailable.",
+              "detectors_availability_minutes": "How long all entities of a device must be unavailable.",
+              "detectors_availability_severity": "Severity 0–3 of unresponsive device (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "integrations": {
+            "name": "Integrations",
+            "data": {
+              "detectors_integrations_enabled": "Integrations: watch",
+              "detectors_integrations_severity": "Integration problem: severity",
+              "detectors_integrations_repairs": "Repairs issues",
+              "detectors_integrations_repairs_severity": "Repairs issues: severity"
+            },
+            "data_description": {
+              "detectors_integrations_enabled": "Watch integrations that failed to start or need a new sign-in, and Repairs issues.",
+              "detectors_integrations_severity": "Severity 0–3 of integration problem (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_integrations_repairs": "Report open issues from Settings → Repairs.",
+              "detectors_integrations_repairs_severity": "Severity 0–3 of repairs issues (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "backups": {
+            "name": "Backups",
+            "data": {
+              "detectors_backups_enabled": "Backups: watch",
+              "detectors_backups_max_age_hours": "Backup too old after",
+              "detectors_backups_severity": "Backup problem: severity"
+            },
+            "data_description": {
+              "detectors_backups_enabled": "Watch failed, old or incomplete automatic backups.",
+              "detectors_backups_max_age_hours": "Hours since the last successful automatic backup.",
+              "detectors_backups_severity": "Severity 0–3 of backup problem (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "updates": {
+            "name": "Updates",
+            "data": {
+              "detectors_updates_enabled": "Updates: watch",
+              "detectors_updates_severity": "Updates: severity"
+            },
+            "data_description": {
+              "detectors_updates_enabled": "Watch available updates.",
+              "detectors_updates_severity": "Severity 0–3 of updates (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "log": {
+            "name": "Log and automations",
+            "data": {
+              "detectors_log_enabled": "Log and automations: watch",
+              "detectors_log_window_hours": "Log window",
+              "detectors_log_min_errors": "Minimum log errors",
+              "detectors_log_severity": "Log errors: severity",
+              "detectors_log_automations": "Failed automations",
+              "detectors_log_automation_severity": "Failed automation: severity"
+            },
+            "data_description": {
+              "detectors_log_enabled": "Watch errors in Home Assistant's log and automations that failed.",
+              "detectors_log_window_hours": "How far back log errors and failed automations count.",
+              "detectors_log_min_errors": "Report the log only from this many errors.",
+              "detectors_log_severity": "Severity 0–3 of log errors (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_log_automations": "Report automations whose last run failed.",
+              "detectors_log_automation_severity": "Severity 0–3 of failed automation (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "battery": {
+            "name": "Batteries",
+            "data": {
+              "detectors_battery_enabled": "Batteries: watch",
+              "detectors_battery_threshold": "Battery threshold",
+              "detectors_battery_severity": "Low battery: severity",
+              "detectors_battery_safety_severity": "Low battery in a safety device: severity",
+              "detectors_battery_group": "Group batteries"
+            },
+            "data_description": {
+              "detectors_battery_enabled": "Watch low batteries.",
+              "detectors_battery_threshold": "Report batteries at or below this level.",
+              "detectors_battery_severity": "Severity 0–3 of low battery (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_battery_safety_severity": "Severity 0–3 of low battery in a safety device (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_battery_group": "All low batteries in one situation."
+            }
+          },
+          "consumables": {
+            "name": "Consumables",
+            "data": {
+              "detectors_consumables_enabled": "Consumables: watch",
+              "detectors_consumables_percent": "Consumable threshold",
+              "detectors_consumables_used_up_entities": "Sensors showing usage",
+              "detectors_consumables_severity": "Consumable: severity"
+            },
+            "data_description": {
+              "detectors_consumables_enabled": "Watch filters, brushes and other parts that need replacing.",
+              "detectors_consumables_percent": "Report consumables with this much life left or less.",
+              "detectors_consumables_used_up_entities": "Consumable sensors that show how much is used (100 = worn out) instead of what is left.",
+              "detectors_consumables_severity": "Severity 0–3 of consumable (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "watering": {
+            "name": "Plant watering",
+            "data": {
+              "detectors_watering_enabled": "Plant watering: watch",
+              "detectors_watering_min": "Soil moisture limit",
+              "detectors_watering_severity": "Plant watering: severity"
+            },
+            "data_description": {
+              "detectors_watering_enabled": "Watch soil moisture sensors and say when plants need water.",
+              "detectors_watering_min": "Below this soil moisture a plant needs water.",
+              "detectors_watering_severity": "Severity 0–3 of a plant that needs water (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "problems": {
+            "name": "Devices reporting problems",
+            "data": {
+              "detectors_problems_enabled": "Devices reporting problems: watch",
+              "detectors_problems_severity": "Device problem: severity",
+              "detectors_problems_plant_severity": "Plant problem: severity"
+            },
+            "data_description": {
+              "detectors_problems_enabled": "Watch problem sensors and plants that need attention.",
+              "detectors_problems_severity": "Severity 0–3 of device problem (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_problems_plant_severity": "Severity 0–3 of plant problem (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "stale": {
+            "name": "Silent sensors",
+            "data": {
+              "detectors_stale_enabled": "Silent sensors: watch",
+              "detectors_stale_hours": "Silent after",
+              "detectors_stale_severity": "Silent sensor: severity"
+            },
+            "data_description": {
+              "detectors_stale_enabled": "Watch sensors that stopped reporting.",
+              "detectors_stale_hours": "Hours without a report from a measuring sensor. 0 turns this off.",
+              "detectors_stale_severity": "Severity 0–3 of silent sensor (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "environment": {
+            "name": "Indoor environment",
+            "data": {
+              "detectors_environment_enabled": "Indoor environment: watch",
+              "detectors_environment_minutes": "Beyond limit for",
+              "detectors_environment_appliance_words": "Appliance sensors",
+              "detectors_environment_temperature_min_enabled": "Low temperature: watch",
+              "detectors_environment_temperature_min": "Low temperature: limit",
+              "detectors_environment_temperature_min_severity": "Low temperature: severity",
+              "detectors_environment_temperature_max_enabled": "High temperature: watch",
+              "detectors_environment_temperature_max": "High temperature: limit",
+              "detectors_environment_temperature_max_severity": "High temperature: severity",
+              "detectors_environment_humidity_max_enabled": "High humidity: watch",
+              "detectors_environment_humidity_max": "High humidity: limit",
+              "detectors_environment_humidity_max_severity": "High humidity: severity",
+              "detectors_environment_humidity_min_enabled": "Low humidity: watch",
+              "detectors_environment_humidity_min": "Low humidity: limit",
+              "detectors_environment_humidity_min_severity": "Low humidity: severity",
+              "detectors_environment_co2_max_enabled": "High CO₂: watch",
+              "detectors_environment_co2_max": "High CO₂: limit",
+              "detectors_environment_co2_max_severity": "High CO₂: severity",
+              "detectors_environment_pm25_max_enabled": "High PM2.5: watch",
+              "detectors_environment_pm25_max": "High PM2.5: limit",
+              "detectors_environment_pm25_max_severity": "High PM2.5: severity"
+            },
+            "data_description": {
+              "detectors_environment_enabled": "Watch temperature, humidity, CO₂ and PM2.5 limits.",
+              "detectors_environment_minutes": "How long a value must stay beyond its limit.",
+              "detectors_environment_appliance_words": "Words in a sensor's or device's name that mark it as inside an appliance (freezer, fridge, oven, aquarium). Their temperature and humidity are not treated as the room's.",
+              "detectors_environment_temperature_min_enabled": "Report low temperature indoors.",
+              "detectors_environment_temperature_min": "The limit for low temperature.",
+              "detectors_environment_temperature_min_severity": "Severity 0–3 of low temperature (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_temperature_max_enabled": "Report high temperature indoors.",
+              "detectors_environment_temperature_max": "The limit for high temperature.",
+              "detectors_environment_temperature_max_severity": "Severity 0–3 of high temperature (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_humidity_max_enabled": "Report high humidity indoors.",
+              "detectors_environment_humidity_max": "The limit for high humidity.",
+              "detectors_environment_humidity_max_severity": "Severity 0–3 of high humidity (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_humidity_min_enabled": "Report low humidity indoors.",
+              "detectors_environment_humidity_min": "The limit for low humidity.",
+              "detectors_environment_humidity_min_severity": "Severity 0–3 of low humidity (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_co2_max_enabled": "Report high co₂ indoors.",
+              "detectors_environment_co2_max": "The limit for high co₂.",
+              "detectors_environment_co2_max_severity": "Severity 0–3 of high co₂ (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_pm25_max_enabled": "Report high pm2.5 indoors.",
+              "detectors_environment_pm25_max": "The limit for high pm2.5.",
+              "detectors_environment_pm25_max_severity": "Severity 0–3 of high pm2.5 (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "divergence": {
+            "name": "Disagreeing sensors",
+            "data": {
+              "detectors_divergence_enabled": "Disagreeing sensors: watch",
+              "detectors_divergence_degrees": "Allowed difference",
+              "detectors_divergence_severity": "Disagreeing sensors: severity"
+            },
+            "data_description": {
+              "detectors_divergence_enabled": "Watch temperature sensors in one room that disagree.",
+              "detectors_divergence_degrees": "Maximum difference between temperature sensors in one room.",
+              "detectors_divergence_severity": "Severity 0–3 of disagreeing sensors (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "lights_away": {
+            "name": "Lights in an empty home",
+            "data": {
+              "detectors_lights_away_enabled": "Lights in an empty home: watch",
+              "detectors_lights_away_minutes": "Lights on for",
+              "detectors_lights_away_severity": "Lights in an empty home: severity"
+            },
+            "data_description": {
+              "detectors_lights_away_enabled": "Watch lights left on while everyone is away.",
+              "detectors_lights_away_minutes": "How long lights must be on while everyone is away.",
+              "detectors_lights_away_severity": "Severity 0–3 of lights in an empty home (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "window_heating": {
+            "name": "Window open while heating",
+            "data": {
+              "detectors_window_heating_enabled": "Window open while heating: watch",
+              "detectors_window_heating_minutes": "Window open for",
+              "detectors_window_heating_severity": "Window open while heating: severity"
+            },
+            "data_description": {
+              "detectors_window_heating_enabled": "Watch a window open in a room that is being heated.",
+              "detectors_window_heating_minutes": "How long a window must be open while heating.",
+              "detectors_window_heating_severity": "Severity 0–3 of window open while heating (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "external": {
+            "name": "Signals from other integrations",
+            "data": {
+              "detectors_external_enabled": "Signals from other integrations: watch",
+              "detectors_external_attributes": "Read homeai_signals attributes"
+            },
+            "data_description": {
+              "detectors_external_enabled": "Watch signals reported by automations and integrations.",
+              "detectors_external_attributes": "Accept signals that other integrations publish in a homeai_signals attribute."
+            }
+          },
+          "bridges": {
+            "name": "Hubs and bridges",
+            "data": {
+              "detectors_bridges_enabled": "Hubs and bridges: watch"
+            },
+            "data_description": {
+              "detectors_bridges_enabled": "Watch hubs and bridges (Zigbee2MQTT, hubs other devices connect through) and fold the devices behind them into one situation."
+            }
+          },
+          "custom": {
+            "name": "Custom rules",
+            "data": {
+              "detectors_custom_enabled": "Custom rules: watch"
+            },
+            "data_description": {
+              "detectors_custom_enabled": "Run the rules added on HomeAI's integration page (Add rule)."
+            }
+          },
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "detectors_system_refresh": "System data refresh"
+            },
+            "data_description": {
+              "detectors_system_refresh": "How often backups, the log and automation traces are read."
+            }
+          }
+        }
+      },
+      "situations": {
+        "title": "Situations",
+        "description": "When situations open and close.",
+        "data": {
+          "situations_min_duration": "Wait before announcing",
+          "situations_close_after": "Wait before closing",
+          "situations_dismiss_days": "“Not a problem” lasts"
+        },
+        "data_description": {
+          "situations_min_duration": "How long a new situation must last before anyone hears about it.",
+          "situations_close_after": "How long a situation must be gone before it is closed.",
+          "situations_dismiss_days": "Days a dismissed situation stays quiet."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "situations_min_duration_safety": "Wait before announcing: safety",
+              "situations_min_duration_security": "Wait before announcing: security",
+              "situations_min_duration_damage": "Wait before announcing: damage"
+            },
+            "data_description": {
+              "situations_min_duration_safety": "Delay for safety situations (leak, smoke).",
+              "situations_min_duration_security": "Delay for security situations.",
+              "situations_min_duration_damage": "Delay for situations that risk damage."
+            }
+          }
+        }
+      },
+      "triage": {
+        "title": "Assessment",
+        "description": "How serious a situation is.",
+        "data": {
+          "triage_raise_when_away": "Raise when nobody is home",
+          "triage_calibration_enabled": "Learn from “not a problem”"
+        },
+        "data_description": {
+          "triage_raise_when_away": "Safety, security and damage situations are one step more serious while everyone is away (up to urgent; only safety can be critical).",
+          "triage_calibration_enabled": "Lower the severity of kinds that are dismissed again and again (never safety)."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "triage_severity_overrides": "Severity overrides",
+              "triage_calibration_min_events": "Learning: minimum situations",
+              "triage_calibration_dismiss_ratio": "Learning: dismissed share"
+            },
+            "data_description": {
+              "triage_severity_overrides": "Fixed severity per kind of situation, for example {\"updates\": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent).",
+              "triage_calibration_min_events": "How many situations of a kind before learning applies.",
+              "triage_calibration_dismiss_ratio": "Share of dismissed situations that lowers severity."
+            }
+          }
+        }
+      },
+      "notify": {
+        "title": "Notifications",
+        "description": "Who hears what, how and when.",
+        "data": {
+          "notify_paused": "Pause notifications",
+          "notify_paused_allows_critical": "Critical despite pause",
+          "notify_targets": "Extra notification targets",
+          "notify_discover_apps": "Discover phones",
+          "notify_include_tablets": "Include tablets and computers",
+          "notify_max_per_day": "Notifications per day",
+          "notify_critical_sound": "Critical alerts break silence",
+          "notify_snooze_minutes": "Snooze for",
+          "notify_announce_resolved": "Tell when resolved",
+          "notify_tts_entity": "Speech engine",
+          "notify_tts_players": "Speakers",
+          "notify_digest_enabled": "Daily summary",
+          "notify_digest_times": "Summary times",
+          "notify_digest_to": "Summary recipients",
+          "notify_digest_max_items": "Summary items",
+          "notify_ladder_4": "Escalation: severity 4",
+          "notify_ladder_3": "Escalation: severity 3",
+          "notify_ladder_2": "Escalation: severity 2"
+        },
+        "data_description": {
+          "notify_paused": "Stop all notifications except critical ones (see below).",
+          "notify_paused_allows_critical": "Critical situations are announced even while notifications are paused.",
+          "notify_targets": "Notify entities or services for this person, besides discovered phones.",
+          "notify_discover_apps": "Use the companion app devices of the person.",
+          "notify_include_tablets": "Also send to tablets and computers with the companion app.",
+          "notify_max_per_day": "Most non-critical notifications one person gets in a day.",
+          "notify_critical_sound": "Critical situations use critical alerts that sound even in silent mode.",
+          "notify_snooze_minutes": "How long “Snooze” silences a situation.",
+          "notify_announce_resolved": "Send a short message when a notified situation resolves.",
+          "notify_tts_entity": "Text-to-speech entity for spoken notifications.",
+          "notify_tts_players": "Media players used for spoken notifications.",
+          "notify_digest_enabled": "Send a summary of open situations at set times.",
+          "notify_digest_times": "Times (HH:MM) of the summary.",
+          "notify_digest_to": "Who receives the summary.",
+          "notify_digest_max_items": "Most situations listed in a summary.",
+          "notify_ladder_4": "Steps for critical situations: after minutes, to whom, channels, repeat, critical.",
+          "notify_ladder_3": "Steps for urgent situations: after minutes, to whom, channels, repeat, critical.",
+          "notify_ladder_2": "Steps for attention situations: after minutes, to whom, channels, repeat, critical."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "notify_open_path": "Open in panel",
+              "notify_template_title": "Notification title template",
+              "notify_template_message": "Notification text template",
+              "notify_ladder_1": "Escalation: severity 1",
+              "notify_ladder_0": "Escalation: severity 0"
+            },
+            "data_description": {
+              "notify_open_path": "Path a notification opens.",
+              "notify_template_title": "Your own title in Home Assistant template syntax, e.g. {{ title }} ({{ severity }}). Variables: title, message, description, severity, category, kind, who, who_text, repair_failed, situation_id, entities. Empty or failing: the built-in title.",
+              "notify_template_message": "Your own text in Home Assistant template syntax, with the same variables as the title. Empty or failing: the built-in text.",
+              "notify_ladder_1": "Steps for notice situations: after minutes, to whom, channels, repeat, critical.",
+              "notify_ladder_0": "Steps for journal situations: after minutes, to whom, channels, repeat, critical."
+            }
+          }
+        }
+      },
+      "policy": {
+        "title": "Policy",
+        "description": "What HomeAI may do on its own, what needs a yes, and what never happens.",
+        "data": {
+          "policy_slider": "Autonomy",
+          "policy_autonomy_r1": "Comfort actions (R1)",
+          "policy_autonomy_r2": "Device actions (R2)",
+          "policy_autonomy_r3": "System repairs (R3)",
+          "policy_autonomy_r4": "Configuration (R4)",
+          "policy_person_r2": "Residents' device requests",
+          "policy_observation_days": "Observation period",
+          "policy_protective_actions": "Protective actions",
+          "policy_approval_minutes": "Approval expires after"
+        },
+        "data_description": {
+          "policy_slider": "One setting over the whole policy: only observe, cautious (propose comfort and device actions, repairs still run), balanced (the levels below) or bold (act on comfort and devices). Never stays never; configuration is never automatic.",
+          "policy_autonomy_r1": "What HomeAI may do on its own with lights, scenes, media and messages.",
+          "policy_autonomy_r2": "What HomeAI may do on its own with appliances, covers, heating and cooling.",
+          "policy_autonomy_r3": "Reloading integrations, restarting add-ons and retrying backups, only from repair playbooks.",
+          "policy_autonomy_r4": "Automations, scripts, scenes, helpers and dashboards. Never done without an administrator's yes.",
+          "policy_person_r2": "When a resident asks for a device action (R2): do it, or ask them to confirm first.",
+          "policy_observation_days": "Days after installation during which HomeAI only observes: comfort, device and system repair actions are written to the journal but not done. 0 starts acting at once.",
+          "policy_protective_actions": "Allow safe-direction actions on entities labelled “HomeAI: protective action” (e.g. close the water valve on a leak), even for security devices.",
+          "policy_approval_minutes": "How long a request for approval waits for an answer."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "policy_repairs_per_day": "System repairs per day",
+              "policy_risk_override": "Risk class",
+              "policy_risk_by_service": "Risk class by action",
+              "policy_risk_by_label": "Risk class by label",
+              "policy_actor_homeai_r1": "HomeAI's own rules: comfort (R1)",
+              "policy_actor_homeai_r2": "HomeAI's own rules: devices (R2)",
+              "policy_actor_homeai_r3": "HomeAI's own rules: system (R3)",
+              "policy_actor_homeai_r4": "HomeAI's own rules: configuration (R4)",
+              "policy_actor_ai_r1": "AI: comfort (R1)",
+              "policy_actor_ai_r2": "AI: devices (R2)",
+              "policy_actor_ai_r3": "AI: system (R3)",
+              "policy_actor_ai_r4": "AI: configuration (R4)",
+              "policy_actor_repair_r1": "Repairs: comfort (R1)",
+              "policy_actor_repair_r2": "Repairs: devices (R2)",
+              "policy_actor_repair_r3": "Repairs: system (R3)",
+              "policy_actor_repair_r4": "Repairs: configuration (R4)",
+              "policy_actor_schedule_r1": "The plan: comfort (R1)",
+              "policy_actor_schedule_r2": "The plan: devices (R2)",
+              "policy_actor_schedule_r3": "The plan: system (R3)",
+              "policy_actor_schedule_r4": "The plan: configuration (R4)"
+            },
+            "data_description": {
+              "policy_repairs_per_day": "Most automatic system repairs (R3) per day; more need an administrator.",
+              "policy_risk_override": "Override the risk class of actions on this entity, device, area or floor.",
+              "policy_risk_by_service": "Your own class for a whole domain or one action, e.g. {\"switch\": \"R3\", \"script.turn_on\": \"R4\"}. The most specific key wins.",
+              "policy_risk_by_label": "A class for everything with a label, by label id, e.g. {\"kids_room\": \"R4\"}. With several labels the highest class wins; an entity, device, area or floor override still comes first.",
+              "policy_actor_homeai_r1": "Level for HomeAI's own rules with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_homeai_r2": "Level for HomeAI's own rules with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_homeai_r3": "Level for HomeAI's own rules with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_homeai_r4": "Level for HomeAI's own rules with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_ai_r1": "Level for AI with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_ai_r2": "Level for AI with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_ai_r3": "Level for AI with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_ai_r4": "Level for AI with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_repair_r1": "Level for Repairs with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_repair_r2": "Level for Repairs with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_repair_r3": "Level for Repairs with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_repair_r4": "Level for Repairs with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_schedule_r1": "Level for The plan with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_schedule_r2": "Level for The plan with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_schedule_r3": "Level for The plan with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_schedule_r4": "Level for The plan with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies."
+            }
+          }
+        }
+      },
+      "executor": {
+        "title": "Actions",
+        "description": "How actions are run, checked and undone.",
+        "data": {
+          "executor_undo": "Undo"
+        },
+        "data_description": {
+          "executor_undo": "Snapshot comfort and device states before acting so actions can be undone."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "executor_timeout": "Action timeout",
+              "executor_verify_seconds": "Check result for",
+              "executor_undo_keep": "Undo history",
+              "executor_block_cloud_offline": "Cloud devices offline",
+              "executor_local_url": "Local address"
+            },
+            "data_description": {
+              "executor_timeout": "How long one service call may take.",
+              "executor_verify_seconds": "How long to wait for the expected state after an action.",
+              "executor_undo_keep": "How many recent actions can be undone.",
+              "executor_block_cloud_offline": "While the internet is down, refuse actions on cloud devices instead of waiting for them to fail.",
+              "executor_local_url": "Address HomeAI uses to reach this Home Assistant for configuration changes. Empty: localhost on the HTTP port."
+            }
+          }
+        }
+      },
+      "repair": {
+        "title": "Self-repair",
+        "description": "How HomeAI fixes things before bothering anyone.",
+        "data": {
+          "repair_enabled": "Self-repair",
+          "repair_quick_actions": "Suggested actions",
+          "repair_protective_enabled": "Protective actions on safety alarms",
+          "repair_max_attempts": "Attempts",
+          "repair_playbooks": "Repair playbooks in use",
+          "repair_never_reload": "Never reload"
+        },
+        "data_description": {
+          "repair_enabled": "Try repair playbooks before telling people.",
+          "repair_quick_actions": "Run actions that detectors suggest (e.g. turn off lights in an empty home), within the policy.",
+          "repair_protective_enabled": "On a leak, gas, smoke or carbon monoxide alarm run protective actions right away (people are notified at the same time).",
+          "repair_max_attempts": "How many times a playbook is tried before people are told.",
+          "repair_playbooks": "Which repairs HomeAI may try on its own before telling anyone.",
+          "repair_never_reload": "Integrations HomeAI never reloads, by domain (zha, mqtt) or config entry id. Their failures go straight to people."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "repair_backoff_minutes": "Pause between attempts",
+              "repair_verify_minutes": "Wait for the effect",
+              "repair_reload_wait": "Reload: wait first",
+              "repair_retry_wait": "Retrying integration: wait",
+              "repair_outage_wait": "Devices of one integration down: wait",
+              "repair_backup_wait": "Backup: wait before retrying",
+              "repair_action_wait": "Suggested action: wait"
+            },
+            "data_description": {
+              "repair_backoff_minutes": "Minutes between attempts (multiplied by the attempt number).",
+              "repair_verify_minutes": "After an attempt, how long to wait for the situation to clear.",
+              "repair_reload_wait": "Minutes before reloading a failed integration.",
+              "repair_retry_wait": "Minutes to let an integration that retries on its own come up before reloading it.",
+              "repair_outage_wait": "Minutes before reloading an integration whose devices all went silent.",
+              "repair_backup_wait": "Minutes before retrying a failed backup.",
+              "repair_action_wait": "Minutes before running a suggested action."
+            }
+          }
+        }
+      },
+      "adapters": {
+        "title": "Hubs and bridges",
+        "description": "Knowledge about hubs, bridges and Zigbee2MQTT.",
+        "data": {
+          "adapters_auto_bridges": "Find hubs automatically",
+          "adapters_bridge_entities": "Hub sensors",
+          "adapters_bridge_minutes": "Hub offline for",
+          "adapters_bridge_reload": "Reload hub integration"
+        },
+        "data_description": {
+          "adapters_auto_bridges": "Treat connectivity sensors of devices that others connect through, and the Zigbee2MQTT bridge, as hubs.",
+          "adapters_bridge_entities": "Extra entities that are off or offline when a hub is down.",
+          "adapters_bridge_minutes": "How long a hub must be offline before it counts.",
+          "adapters_bridge_reload": "Repair a hub that is offline by reloading its integration."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "adapters_bridge_severity": "Hub offline: severity",
+              "adapters_zigbee2mqtt_addon": "Zigbee2MQTT add-on"
+            },
+            "data_description": {
+              "adapters_bridge_severity": "Severity 0–3 of a hub that is offline (3 urgent; only safety can be critical).",
+              "adapters_zigbee2mqtt_addon": "Slug of the Zigbee2MQTT add-on (e.g. 45df7312_zigbee2mqtt) to restart when the bridge is offline. Empty: reload instead."
+            }
+          }
+        }
+      },
+      "schedule": {
+        "title": "Plan",
+        "description": "The home's plan and presence exceptions.",
+        "data": {
+          "schedule_catch_up_minutes": "Catch up missed entries",
+          "schedule_who_may_add": "Who may add to the plan",
+          "schedule_default_skip_when_away": "New entries skip when away",
+          "schedule_watch_hours": "“Tell me when”: longest watch",
+          "schedule_external_plans": "Plans from other integrations"
+        },
+        "data_description": {
+          "schedule_catch_up_minutes": "Run plan entries missed while Home Assistant was down if they are at most this late.",
+          "schedule_who_may_add": "Everyone, residents (administrators and members, not guests) or only administrators. Administrators may always.",
+          "schedule_default_skip_when_away": "New plan entries skip their run while everyone is away or on vacation, unless the entry says otherwise.",
+          "schedule_watch_hours": "How long HomeAI keeps watching for a “tell me when” request before giving up.",
+          "schedule_external_plans": "Show what other integrations plan (a homeai_plan attribute on their entities) in the plan calendar and panel. HomeAI never runs them."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "schedule_event_minutes": "Plan event length",
+              "schedule_presence_keep_days": "Keep past exceptions",
+              "schedule_max_entries": "Plan size",
+              "schedule_watch_max": "“Tell me when”: per person"
+            },
+            "data_description": {
+              "schedule_event_minutes": "How long plan entries look in the calendar.",
+              "schedule_presence_keep_days": "Days to keep presence exceptions after they end.",
+              "schedule_max_entries": "Most entries the plan may hold.",
+              "schedule_watch_max": "Most “tell me when” requests one person may have at a time."
+            }
+          }
+        }
+      },
+      "heating": {
+        "title": "Heating",
+        "description": "Thermostats that speak HomeAI's schedule contract: overrides HomeAI sets by itself from presence, and weekly schedule changes it proposes.",
+        "data": {
+          "heating_enabled": "Heating with HomeAI",
+          "heating_presence_overrides": "Overrides from presence",
+          "heating_away_preset": "Preset for trips",
+          "heating_guests_preset": "Preset for guests",
+          "heating_home_office_preset": "Preset for working from home",
+          "heating_sick_preset": "Preset for sickness",
+          "heating_nobody_home_minutes": "Nobody home after",
+          "heating_nobody_home_preset": "Preset when nobody is home",
+          "heating_activity_action": "When someone is active",
+          "heating_activity_preset": "Preset for activity",
+          "heating_activity_power": "Activity: power above",
+          "heating_activity_minutes": "Activity: after",
+          "heating_activity_valve": "Activity: valve limit",
+          "heating_schedule_proposals": "Propose schedule changes"
+        },
+        "data_description": {
+          "heating_enabled": "Use thermostats that speak HomeAI's schedule contract (attribute homeai_schedule): overrides from presence and proposals for the weekly schedule. Off: HomeAI removes its overrides and leaves the schedules alone.",
+          "heating_presence_overrides": "Trips, guests, working from home, sickness and an empty home change the heating for a while. HomeAI sets these overrides by itself as device actions (R2), by the autonomy level; during the observation period it only notes them.",
+          "heating_away_preset": "Preset while the whole household is away by the presence calendar, or vacation mode is on.",
+          "heating_guests_preset": "Preset in common spaces while guests are here (by the presence calendar).",
+          "heating_home_office_preset": "Preset at the person's workplace while they work from home.",
+          "heating_sick_preset": "Preset in the whole home while someone is sick.",
+          "heating_nobody_home_minutes": "When no resident has been home this long, the heating goes to the preset below until someone is back. 0: off.",
+          "heating_nobody_home_preset": "Preset while nobody is home.",
+          "heating_activity_action": "What an active entity labelled “HomeAI: activity” does to the heating of its room: nothing, an override with the preset below, or a lower valve limit (thermostats with a valve-limit number; others get the override).",
+          "heating_activity_preset": "Preset while someone is active in the room.",
+          "heating_activity_power": "A power sensor counts as active above this many watts.",
+          "heating_activity_minutes": "An entity must be active this long before the heating reacts.",
+          "heating_activity_valve": "Valve limit while someone is active (for “lower valve limit”); the previous limit comes back afterwards.",
+          "heating_schedule_proposals": "When people keep doing by hand what the next block of a schedule would do (warming up earlier, going to sleep earlier), HomeAI proposes moving that block. A new schedule is configuration (R4): an administrator approves it."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "heating_lead_hours": "Send overrides ahead",
+              "heating_rolling_hours": "Length of open-ended overrides",
+              "heating_activity_off_minutes": "Activity: ends after",
+              "heating_valve_limit_entity": "Valve-limit entity",
+              "heating_proposal_max_shift": "Furthest move"
+            },
+            "data_description": {
+              "heating_lead_hours": "How long before a calendar event (guests, a trip) HomeAI sends its override, so the thermostat can heat up in time. 0: when the event starts.",
+              "heating_rolling_hours": "Overrides without a known end (nobody home, vacation mode, activity) run this far ahead and are renewed while the reason lasts, so they end on their own if HomeAI stops.",
+              "heating_activity_off_minutes": "The reaction ends when the entity has been inactive this long.",
+              "heating_valve_limit_entity": "The number entity that limits this thermostat's valve. Empty: a number of the same device whose key or id says valve_limit.",
+              "heating_proposal_max_shift": "How far ahead of a block a manual change still counts as anticipating it."
+            }
+          }
+        }
+      },
+      "ai": {
+        "title": "AI",
+        "description": "AI tiers, assessment, budgets.",
+        "data": {
+          "ai_enabled": "AI",
+          "ai_triage_enabled": "AI assessment",
+          "ai_p2_confidence": "Investigate when unsure",
+          "ai_p2_min_severity": "Investigate from severity",
+          "ai_narrate_digest": "Write the summary with AI",
+          "ai_chat_tier": "Conversation tier",
+          "ai_chat_who": "Who may talk to HomeAI",
+          "ai_chat_can": "What conversations may do",
+          "ai_chat_length": "Answer length",
+          "ai_budget_mode": "When the budget is used up",
+          "ai_budget_daily": "Daily budget",
+          "ai_budget_monthly": "Monthly budget",
+          "ai_budget_warn_percent": "Warn at",
+          "ai_arbiter_enabled": "Arbiter",
+          "ai_arbiter_disputes": "Settle disagreements",
+          "ai_arbiter_approvals": "Review risky requests",
+          "ai_arbiter_failed_repairs": "After failed repairs",
+          "ai_arbiter_can_approve": "Arbiter may approve",
+          "ai_arbiter_per_day": "Arbiter decisions per day"
+        },
+        "data_description": {
+          "ai_enabled": "Use the AI tiers added as subentries. HomeAI works without them.",
+          "ai_triage_enabled": "Let the everyday tier (P1) check the assessment of new or unclear situations.",
+          "ai_p2_confidence": "When P1 is less sure than this, the investigation tier (P2) looks again.",
+          "ai_p2_min_severity": "Situations at least this serious are also checked by P2 (5 = never).",
+          "ai_narrate_digest": "Let P1 rewrite the summary as a short message (not with minimal privacy).",
+          "ai_chat_tier": "Which tier talks with people (the other one is used when it is missing).",
+          "ai_chat_who": "Everyone, residents (administrators and members) or only administrators. Voice satellites without a user count as everyone.",
+          "ai_chat_can": "Only read, act through the policy, or also change Home Assistant's configuration (still administrators only, with confirmation).",
+          "ai_chat_length": "How long HomeAI's answers in conversations are.",
+          "ai_budget_mode": "Only warn, or stop AI calls until the period ends.",
+          "ai_budget_daily": "Estimated AI cost per day. 0: no limit.",
+          "ai_budget_monthly": "Estimated AI cost per month. 0: no limit.",
+          "ai_budget_warn_percent": "Warn when this share of a budget is used.",
+          "ai_arbiter_enabled": "Let the arbiter tier (P3) settle hard cases.",
+          "ai_arbiter_disputes": "Ask the arbiter when P1 and P2 disagree.",
+          "ai_arbiter_approvals": "Ask the arbiter about waiting actions that are risky or come up while nobody is home.",
+          "ai_arbiter_failed_repairs": "Ask the arbiter when repairs failed on a serious matter.",
+          "ai_arbiter_can_approve": "Let the arbiter approve or refuse waiting actions up to system repairs (R3). Higher classes always need an administrator.",
+          "ai_arbiter_per_day": "Most arbiter decisions per day."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "ai_triage_confidence": "Unclear below",
+              "ai_triage_new_kinds": "Check new kinds",
+              "ai_p2_max_steps": "Investigation steps",
+              "ai_chat_max_steps": "Conversation steps",
+              "ai_chat_turns": "Conversation memory",
+              "ai_chat_shared_threads": "Shared conversations",
+              "ai_max_calls_per_hour": "Calls per hour",
+              "ai_timeout": "AI timeout",
+              "ai_p3_timeout": "Arbiter timeout",
+              "ai_arbiter_min_confidence": "Arbiter: approve from",
+              "ai_arbiter_effort": "Arbiter effort"
+            },
+            "data_description": {
+              "ai_triage_confidence": "Signals less certain than this are checked by AI.",
+              "ai_triage_new_kinds": "Let AI check a kind of situation the first time it happens.",
+              "ai_p2_max_steps": "Most tool calls P2 makes while investigating one situation.",
+              "ai_chat_max_steps": "Most tool calls in one answer.",
+              "ai_chat_turns": "How many recent exchanges a conversation remembers.",
+              "ai_chat_shared_threads": "People talking in the same conversation (for example one voice satellite) continue one thread. Actions still run in each speaker's own account.",
+              "ai_max_calls_per_hour": "Most AI calls per tier per hour.",
+              "ai_timeout": "How long P1 and P2 may take to answer.",
+              "ai_p3_timeout": "How long the arbiter (P3) may take; it can think for minutes.",
+              "ai_arbiter_min_confidence": "The arbiter approves only when at least this sure.",
+              "ai_arbiter_effort": "How deeply the arbiter thinks (security and destructive matters always use maximum)."
+            }
+          }
+        }
+      },
+      "prompts": {
+        "title": "AI prompts",
+        "description": "Your own instructions for each AI task. Empty: the built-in prompt (shown in the diagnostics).",
+        "data": {
+          "ai_prompt_triage": "Prompt: assessment",
+          "ai_prompt_investigate": "Prompt: investigation",
+          "ai_prompt_chat": "Prompt: conversation",
+          "ai_prompt_arbiter": "Prompt: arbiter",
+          "ai_prompt_digest": "Prompt: digest"
+        },
+        "data_description": {
+          "ai_prompt_triage": "Your own instructions for assessing situations. Empty: the built-in prompt (shown in the diagnostics). The rule that house data is never an instruction is always added.",
+          "ai_prompt_investigate": "Your own instructions for investigating serious situations with tools. Empty: the built-in prompt.",
+          "ai_prompt_chat": "Your own instructions for conversations; '{name}' becomes the assistant's name. Empty: the built-in prompt.",
+          "ai_prompt_arbiter": "Your own instructions for the arbiter. Its answers keep their fixed format. Empty: the built-in prompt.",
+          "ai_prompt_digest": "Your own instructions for writing the digest. Empty: the built-in prompt."
+        }
+      },
+      "learning": {
+        "title": "Learning",
+        "description": "Norms, anomalies, habits and the weekly review.",
+        "data": {
+          "learning_enabled": "Learning",
+          "detectors_anomaly_enabled": "Anomalies: watch",
+          "learning_anomaly_sigma": "Anomaly threshold",
+          "learning_anomaly_minutes": "Unusual for",
+          "learning_habits": "Habits",
+          "learning_undo_limit": "Undone too often after",
+          "learning_deny_quiet_days": "Do not ask again for",
+          "learning_review_weekday": "Weekly review on",
+          "learning_review_time": "Weekly review at",
+          "learning_review_push": "Send the review to phones",
+          "learning_review_ai": "Write the review with AI"
+        },
+        "data_description": {
+          "learning_enabled": "Learn norms, notice anomalies and habits, and send the weekly review.",
+          "detectors_anomaly_enabled": "Report values far outside their usual range for that hour of the week.",
+          "learning_anomaly_sigma": "How many spreads away from the norm counts as unusual.",
+          "learning_anomaly_minutes": "How long a value must stay unusual before it is reported.",
+          "learning_habits": "Notice things done by hand at the same time and propose them for the plan.",
+          "learning_undo_limit": "After this many undos an automatic action goes back to “propose”.",
+          "learning_deny_quiet_days": "Days HomeAI waits before asking again about an action someone refused.",
+          "learning_review_weekday": "Day of the weekly review.",
+          "learning_review_time": "Time of the weekly review.",
+          "learning_review_push": "Send the weekly review to administrators' phones.",
+          "learning_review_ai": "Let the AI tier rewrite the weekly review."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "data": {
+              "learning_nightly_time": "Nightly learning at",
+              "learning_baseline_weeks": "Norms from",
+              "learning_min_samples": "Minimum data",
+              "learning_anomaly_severity": "Anomaly: severity",
+              "learning_habit_days": "Habits from",
+              "learning_habit_min_days": "Habit after",
+              "learning_habit_window": "Habit time window",
+              "learning_raise_after": "Suggest more autonomy after"
+            },
+            "data_description": {
+              "learning_nightly_time": "When norms and habits are recomputed.",
+              "learning_baseline_weeks": "How many past weeks make the norm of each hour of the week.",
+              "learning_min_samples": "Hourly values needed before an entity has a norm.",
+              "learning_anomaly_severity": "Severity 0–3 of an unusual value (3 urgent; only safety can be critical).",
+              "learning_habit_days": "How many past days are searched for habits.",
+              "learning_habit_min_days": "On how many days something must repeat to become a proposal.",
+              "learning_habit_window": "How close in time repeated actions must be.",
+              "learning_raise_after": "Approvals without a refusal after which the weekly review suggests letting HomeAI act alone."
+            }
+          }
+        }
+      },
+      "place": {
+        "title": "Settings for a place",
+        "description": "Choose what kind of place gets values of its own. Places that already have them: {places}.",
+        "data": {
+          "scope": "Kind of place"
+        }
+      },
+      "place_target": {
+        "title": "Settings for a place",
+        "description": "Choose the {kind}.",
+        "data": {
+          "target": "Place"
+        }
+      },
+      "place_settings": {
+        "title": "Settings for {place}",
+        "description": "Only settings that can differ here are shown. A filled field is this place's own value; leave a field empty to use the value of the place around it or of the whole home, and clear it to remove this place's own value.",
+        "sections": {
+          "world": {
+            "name": "Home model",
+            "data": {
+              "world_room_roles": "Room roles"
+            },
+            "data_description": {
+              "world_room_roles": "What this room is for: bedroom, bathroom, common space, workplace (a room may have several). Set it per room; empty means from HomeAI's labels, else from the room's icon and name. None means no role."
+            }
+          },
+          "presence": {
+            "name": "People and sleep",
+            "data": {
+              "presence_role": "Role",
+              "presence_sleep_helper": "Sleep helper",
+              "presence_sleep_helper_state": "Sleep helper state",
+              "presence_night_start": "Night starts (workdays)",
+              "presence_night_end": "Night ends (workdays)",
+              "presence_weekend_night_start": "Night starts (weekends)",
+              "presence_weekend_night_end": "Night ends (weekends)",
+              "presence_charging_entities": "Phone charging sensors",
+              "presence_bed_entities": "Bed sensors",
+              "presence_workplace_areas": "Workplace"
+            },
+            "data_description": {
+              "presence_role": "Administrators approve risky actions and configuration changes; members receive notifications; guests and ignored people are not residents.",
+              "presence_sleep_helper": "Switch or helper that says a person is asleep.",
+              "presence_sleep_helper_state": "State of the sleep helper that means asleep.",
+              "presence_night_start": "Usual bedtime on workdays.",
+              "presence_night_end": "Usual wake-up time on workdays.",
+              "presence_weekend_night_start": "Usual bedtime on Friday and Saturday.",
+              "presence_weekend_night_end": "Usual wake-up time on weekends.",
+              "presence_charging_entities": "Charging sensors of the person's phone; charging at night suggests sleep.",
+              "presence_bed_entities": "Bed occupancy sensors of the person.",
+              "presence_workplace_areas": "The rooms where this person works from home. Without one, the home's only workplace room is used."
+            }
+          },
+          "detectors": {
+            "name": "Detection",
+            "data": {
+              "detectors_safety_severity_leak": "Water leak: severity",
+              "detectors_safety_severity_smoke": "Smoke: severity",
+              "detectors_safety_severity_gas": "Gas: severity",
+              "detectors_safety_severity_carbon_monoxide": "Carbon monoxide: severity",
+              "detectors_safety_severity_safety": "Safety alarm: severity",
+              "detectors_safety_severity_tamper": "Tampering: severity",
+              "detectors_security_away_minutes": "Open while away: wait",
+              "detectors_security_night_minutes": "Open at night: wait",
+              "detectors_security_openings_at_night": "Windows at night",
+              "detectors_availability_minutes": "Unresponsive after",
+              "detectors_availability_severity": "Unresponsive device: severity",
+              "detectors_battery_threshold": "Battery threshold",
+              "detectors_battery_severity": "Low battery: severity",
+              "detectors_battery_safety_severity": "Low battery in a safety device: severity",
+              "detectors_consumables_percent": "Consumable threshold",
+              "detectors_consumables_severity": "Consumable: severity",
+              "detectors_watering_min": "Soil moisture limit",
+              "detectors_watering_severity": "Plant watering: severity",
+              "detectors_problems_severity": "Device problem: severity",
+              "detectors_problems_plant_severity": "Plant problem: severity",
+              "detectors_stale_hours": "Silent after",
+              "detectors_stale_severity": "Silent sensor: severity",
+              "detectors_environment_minutes": "Beyond limit for",
+              "detectors_divergence_degrees": "Allowed difference",
+              "detectors_lights_away_minutes": "Lights on for",
+              "detectors_window_heating_minutes": "Window open for",
+              "detectors_window_heating_severity": "Window open while heating: severity",
+              "detectors_environment_temperature_min_enabled": "Low temperature: watch",
+              "detectors_environment_temperature_min": "Low temperature: limit",
+              "detectors_environment_temperature_min_severity": "Low temperature: severity",
+              "detectors_environment_temperature_max_enabled": "High temperature: watch",
+              "detectors_environment_temperature_max": "High temperature: limit",
+              "detectors_environment_temperature_max_severity": "High temperature: severity",
+              "detectors_environment_humidity_max_enabled": "High humidity: watch",
+              "detectors_environment_humidity_max": "High humidity: limit",
+              "detectors_environment_humidity_max_severity": "High humidity: severity",
+              "detectors_environment_humidity_min_enabled": "Low humidity: watch",
+              "detectors_environment_humidity_min": "Low humidity: limit",
+              "detectors_environment_humidity_min_severity": "Low humidity: severity",
+              "detectors_environment_co2_max_enabled": "High CO₂: watch",
+              "detectors_environment_co2_max": "High CO₂: limit",
+              "detectors_environment_co2_max_severity": "High CO₂: severity",
+              "detectors_environment_pm25_max_enabled": "High PM2.5: watch",
+              "detectors_environment_pm25_max": "High PM2.5: limit",
+              "detectors_environment_pm25_max_severity": "High PM2.5: severity"
+            },
+            "data_description": {
+              "detectors_safety_severity_leak": "Severity 0–4 of water leak (0 journal only, 4 critical).",
+              "detectors_safety_severity_smoke": "Severity 0–4 of smoke (0 journal only, 4 critical).",
+              "detectors_safety_severity_gas": "Severity 0–4 of gas (0 journal only, 4 critical).",
+              "detectors_safety_severity_carbon_monoxide": "Severity 0–4 of carbon monoxide (0 journal only, 4 critical).",
+              "detectors_safety_severity_safety": "Severity 0–4 of safety alarm (0 journal only, 4 critical).",
+              "detectors_safety_severity_tamper": "Severity 0–3 of tampering (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_security_away_minutes": "How long a door, window or lock must stay open while everyone is away.",
+              "detectors_security_night_minutes": "How long something must stay open while everyone at home sleeps.",
+              "detectors_security_openings_at_night": "Also report doors and windows (not only locks and gates) open at night.",
+              "detectors_availability_minutes": "How long all entities of a device must be unavailable.",
+              "detectors_availability_severity": "Severity 0–3 of unresponsive device (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_battery_threshold": "Report batteries at or below this level.",
+              "detectors_battery_severity": "Severity 0–3 of low battery (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_battery_safety_severity": "Severity 0–3 of low battery in a safety device (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_consumables_percent": "Report consumables with this much life left or less.",
+              "detectors_consumables_severity": "Severity 0–3 of consumable (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_watering_min": "Below this soil moisture a plant needs water.",
+              "detectors_watering_severity": "Severity 0–3 of a plant that needs water (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_problems_severity": "Severity 0–3 of device problem (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_problems_plant_severity": "Severity 0–3 of plant problem (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_stale_hours": "Hours without a report from a measuring sensor. 0 turns this off.",
+              "detectors_stale_severity": "Severity 0–3 of silent sensor (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_minutes": "How long a value must stay beyond its limit.",
+              "detectors_divergence_degrees": "Maximum difference between temperature sensors in one room.",
+              "detectors_lights_away_minutes": "How long lights must be on while everyone is away.",
+              "detectors_window_heating_minutes": "How long a window must be open while heating.",
+              "detectors_window_heating_severity": "Severity 0–3 of window open while heating (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_temperature_min_enabled": "Report low temperature indoors.",
+              "detectors_environment_temperature_min": "The limit for low temperature.",
+              "detectors_environment_temperature_min_severity": "Severity 0–3 of low temperature (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_temperature_max_enabled": "Report high temperature indoors.",
+              "detectors_environment_temperature_max": "The limit for high temperature.",
+              "detectors_environment_temperature_max_severity": "Severity 0–3 of high temperature (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_humidity_max_enabled": "Report high humidity indoors.",
+              "detectors_environment_humidity_max": "The limit for high humidity.",
+              "detectors_environment_humidity_max_severity": "Severity 0–3 of high humidity (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_humidity_min_enabled": "Report low humidity indoors.",
+              "detectors_environment_humidity_min": "The limit for low humidity.",
+              "detectors_environment_humidity_min_severity": "Severity 0–3 of low humidity (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_co2_max_enabled": "Report high co₂ indoors.",
+              "detectors_environment_co2_max": "The limit for high co₂.",
+              "detectors_environment_co2_max_severity": "Severity 0–3 of high co₂ (0 journal only, 3 urgent; only safety can be critical).",
+              "detectors_environment_pm25_max_enabled": "Report high pm2.5 indoors.",
+              "detectors_environment_pm25_max": "The limit for high pm2.5.",
+              "detectors_environment_pm25_max_severity": "Severity 0–3 of high pm2.5 (0 journal only, 3 urgent; only safety can be critical)."
+            }
+          },
+          "notify": {
+            "name": "Notifications",
+            "data": {
+              "notify_targets": "Extra notification targets",
+              "notify_discover_apps": "Discover phones",
+              "notify_include_tablets": "Include tablets and computers"
+            },
+            "data_description": {
+              "notify_targets": "Notify entities or services for this person, besides discovered phones.",
+              "notify_discover_apps": "Use the companion app devices of the person.",
+              "notify_include_tablets": "Also send to tablets and computers with the companion app."
+            }
+          },
+          "policy": {
+            "name": "Policy",
+            "data": {
+              "policy_risk_override": "Risk class"
+            },
+            "data_description": {
+              "policy_risk_override": "Override the risk class of actions on this entity, device, area or floor."
+            }
+          },
+          "adapters": {
+            "name": "Hubs and bridges",
+            "data": {
+              "adapters_bridge_minutes": "Hub offline for",
+              "adapters_bridge_severity": "Hub offline: severity"
+            },
+            "data_description": {
+              "adapters_bridge_minutes": "How long a hub must be offline before it counts.",
+              "adapters_bridge_severity": "Severity 0–3 of a hub that is offline (3 urgent; only safety can be critical)."
+            }
+          },
+          "heating": {
+            "name": "Heating",
+            "data": {
+              "heating_presence_overrides": "Overrides from presence",
+              "heating_away_preset": "Preset for trips",
+              "heating_guests_preset": "Preset for guests",
+              "heating_home_office_preset": "Preset for working from home",
+              "heating_sick_preset": "Preset for sickness",
+              "heating_nobody_home_preset": "Preset when nobody is home",
+              "heating_activity_preset": "Preset for activity",
+              "heating_activity_power": "Activity: power above",
+              "heating_activity_valve": "Activity: valve limit",
+              "heating_valve_limit_entity": "Valve-limit entity"
+            },
+            "data_description": {
+              "heating_presence_overrides": "Trips, guests, working from home, sickness and an empty home change the heating for a while. HomeAI sets these overrides by itself as device actions (R2), by the autonomy level; during the observation period it only notes them.",
+              "heating_away_preset": "Preset while the whole household is away by the presence calendar, or vacation mode is on.",
+              "heating_guests_preset": "Preset in common spaces while guests are here (by the presence calendar).",
+              "heating_home_office_preset": "Preset at the person's workplace while they work from home.",
+              "heating_sick_preset": "Preset in the whole home while someone is sick.",
+              "heating_nobody_home_preset": "Preset while nobody is home.",
+              "heating_activity_preset": "Preset while someone is active in the room.",
+              "heating_activity_power": "A power sensor counts as active above this many watts.",
+              "heating_activity_valve": "Valve limit while someone is active (for “lower valve limit”); the previous limit comes back afterwards.",
+              "heating_valve_limit_entity": "The number entity that limits this thermostat's valve. Empty: a number of the same device whose key or id says valve_limit."
+            }
+          },
+          "learning": {
+            "name": "Learning",
+            "data": {
+              "learning_anomaly_minutes": "Unusual for",
+              "learning_anomaly_severity": "Anomaly: severity"
+            },
+            "data_description": {
+              "learning_anomaly_minutes": "How long a value must stay unusual before it is reported.",
+              "learning_anomaly_severity": "Severity 0–3 of an unusual value (3 urgent; only safety can be critical)."
+            }
+          }
+        }
+      },
+      "confirm": {
+        "title": "Confirm the changes",
+        "description": "These changes lower protection or change something important ({place}):\n\n{changes}",
+        "menu_options": {
+          "apply": "Yes, save the changes",
+          "init": "No, back to the menu"
+        }
+      },
+      "undo": {
+        "title": "Undo the last change",
+        "description": "The last change:\n\n{change}\n\nSubmit to undo it. Undoing again goes one change further back."
+      },
+      "reset": {
+        "title": "Reset a section to defaults",
+        "description": "Every value of the chosen section goes back to its default. Values for places stay; the change can be undone.",
+        "data": {
+          "section": "Section"
         }
       }
     },
+    "error": {
+      "invalid_setting": "Not saved: {error}"
+    },
     "abort": {
-      "not_loaded": "HomeAI is not running. Reload the integration and try again."
+      "not_loaded": "HomeAI is not running. Reload the integration and try again.",
+      "nothing_to_undo": "There is no change to undo."
     }
   },
   "selector": {
@@ -48,7 +1364,7 @@
     },
     "general_language": {
       "options": {
-        "auto": "Auto (Home Assistant's language)",
+        "auto": "Auto",
         "en": "English",
         "pl": "Polski"
       }
@@ -188,6 +1504,403 @@
         "below": "Goes below",
         "changes": "Changes"
       }
+    },
+    "place_scope": {
+      "options": {
+        "floor": "Floor",
+        "area": "Area",
+        "device": "Device",
+        "entity": "Entity",
+        "person": "Person"
+      }
+    },
+    "override_bool": {
+      "options": {
+        "on": "On",
+        "off": "Off"
+      }
+    },
+    "rule_condition": {
+      "options": {
+        "state": "Is in a state",
+        "not_state": "Is not in a state",
+        "above": "Is above",
+        "below": "Is below",
+        "unavailable": "Is unavailable"
+      }
+    },
+    "rule_when": {
+      "options": {
+        "always": "Always",
+        "night": "Only at night",
+        "away": "Only when nobody is home",
+        "home": "Only when someone is home"
+      }
+    },
+    "rule_mode": {
+      "options": {
+        "each": "Each entity on its own",
+        "all": "Only when all of them meet it"
+      }
+    },
+    "general_panels": {
+      "options": {
+        "situations": "Situations and approvals",
+        "plan": "Home plan and presence",
+        "chat": "Chat"
+      }
+    },
+    "world_scope": {
+      "options": {
+        "all": "All entities",
+        "exposed": "Exposed to assistants",
+        "selected": "Selected areas"
+      }
+    },
+    "world_room_roles": {
+      "options": {
+        "none": "None",
+        "bedroom": "Bedroom",
+        "bathroom": "Bathroom",
+        "common": "Common space",
+        "workplace": "Workplace"
+      }
+    },
+    "presence_role": {
+      "options": {
+        "admin": "Administrator",
+        "member": "Member",
+        "guest": "Guest",
+        "ignore": "Ignore"
+      }
+    },
+    "presence_sleep_sources": {
+      "options": {
+        "helper": "Helper",
+        "sensors": "Sensors",
+        "ai": "AI inference",
+        "hours": "Night hours"
+      }
+    },
+    "notify_digest_to": {
+      "options": {
+        "none": "Nobody",
+        "all": "Everyone",
+        "home": "People at home",
+        "home_or_all": "People at home, else everyone",
+        "admins": "Administrators",
+        "awake_home": "People awake at home"
+      }
+    },
+    "policy_slider": {
+      "options": {
+        "observe": "Only observe",
+        "cautious": "Cautious",
+        "balanced": "Balanced",
+        "bold": "Bold"
+      }
+    },
+    "policy_autonomy_r1": {
+      "options": {
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_autonomy_r2": {
+      "options": {
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_autonomy_r3": {
+      "options": {
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_autonomy_r4": {
+      "options": {
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
+      }
+    },
+    "policy_person_r2": {
+      "options": {
+        "act": "Do it",
+        "confirm": "Ask to confirm"
+      }
+    },
+    "policy_risk_override": {
+      "options": {
+        "auto": "Automatic",
+        "R0": "R0 read",
+        "R1": "R1 comfort",
+        "R2": "R2 devices",
+        "R3": "R3 system",
+        "R4": "R4 configuration",
+        "R5": "R5 security",
+        "R6": "R6 destructive"
+      }
+    },
+    "policy_actor_homeai_r1": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_homeai_r2": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_homeai_r3": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_homeai_r4": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
+      }
+    },
+    "policy_actor_ai_r1": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_ai_r2": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_ai_r3": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_ai_r4": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
+      }
+    },
+    "policy_actor_repair_r1": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_repair_r2": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_repair_r3": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_repair_r4": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
+      }
+    },
+    "policy_actor_schedule_r1": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_schedule_r2": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_schedule_r3": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_schedule_r4": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
+      }
+    },
+    "repair_playbooks": {
+      "options": {
+        "reload_entry": "Reload an integration",
+        "wait_then_reload": "Wait for an integration to retry, then reload",
+        "reload_after_outage": "Reload after the internet returns",
+        "retry_backup": "Retry a failed backup",
+        "restart_addon": "Restart an add-on",
+        "press_restart": "Restart a hub with its restart button",
+        "action": "Suggested quick actions"
+      }
+    },
+    "schedule_who_may_add": {
+      "options": {
+        "everyone": "Everyone",
+        "residents": "Residents",
+        "admins": "Administrators"
+      }
+    },
+    "heating_activity_action": {
+      "options": {
+        "off": "Nothing",
+        "override": "Override with a preset",
+        "valve_limit": "Lower valve limit"
+      }
+    },
+    "ai_chat_tier": {
+      "options": {
+        "p1": "P1 — everyday brain",
+        "p2": "P2 — investigation"
+      }
+    },
+    "ai_chat_who": {
+      "options": {
+        "everyone": "Everyone",
+        "residents": "Residents",
+        "admins": "Administrators"
+      }
+    },
+    "ai_chat_can": {
+      "options": {
+        "read": "Only read",
+        "act": "Act",
+        "act_config": "Act and change configuration"
+      }
+    },
+    "ai_chat_length": {
+      "options": {
+        "short": "Short",
+        "normal": "Normal",
+        "detailed": "Detailed"
+      }
+    },
+    "ai_budget_mode": {
+      "options": {
+        "warn": "Only warn",
+        "block": "Stop AI calls"
+      }
+    },
+    "ai_arbiter_effort": {
+      "options": {
+        "medium": "Medium",
+        "high": "High",
+        "xhigh": "Very high",
+        "max": "Maximum"
+      }
+    },
+    "learning_review_weekday": {
+      "options": {
+        "0": "Monday",
+        "1": "Tuesday",
+        "2": "Wednesday",
+        "3": "Thursday",
+        "4": "Friday",
+        "5": "Saturday",
+        "6": "Sunday"
+      }
+    },
+    "settings_section": {
+      "options": {
+        "general": "General",
+        "world": "Home model",
+        "presence": "People and sleep",
+        "privacy": "Privacy",
+        "detectors": "Detection",
+        "situations": "Situations",
+        "triage": "Assessment",
+        "notify": "Notifications",
+        "policy": "Policy",
+        "executor": "Actions",
+        "repair": "Self-repair",
+        "adapters": "Hubs and bridges",
+        "schedule": "Plan",
+        "heating": "Heating",
+        "ai": "AI",
+        "prompts": "AI prompts",
+        "learning": "Learning"
+      }
     }
   },
   "exceptions": {
@@ -220,6 +1933,18 @@
     },
     "residents_only": {
       "message": "Only people who live here can do this."
+    },
+    "settings_invalid": {
+      "message": "The settings were not imported: {reason}."
+    },
+    "memory_residents_only": {
+      "message": "Only people who live here can change what HomeAI remembers."
+    },
+    "memory_not_found": {
+      "message": "HomeAI does not remember this any more."
+    },
+    "memory_not_yours": {
+      "message": "Only an administrator or the person who said it can change this."
     }
   },
   "entity": {
@@ -320,6 +2045,14 @@
     "number": {
       "ai_budget_monthly": {
         "name": "AI budget per month"
+      },
+      "ai_budget_daily": {
+        "name": "AI budget per day"
+      }
+    },
+    "todo": {
+      "memory": {
+        "name": "Memory"
       }
     }
   },
@@ -625,6 +2358,20 @@
           "description": "How long to watch; at most the HomeAI setting."
         }
       }
+    },
+    "export_settings": {
+      "name": "Export settings",
+      "description": "Returns HomeAI's settings that differ from the defaults (also for places), to keep or to import elsewhere."
+    },
+    "import_settings": {
+      "name": "Import settings",
+      "description": "Replaces all of HomeAI's settings with an export. Everything is checked first: nothing changes if one value is not valid.",
+      "fields": {
+        "settings": {
+          "name": "Settings",
+          "description": "The response of Export settings."
+        }
+      }
     }
   },
   "config_subentries": {
@@ -680,16 +2427,81 @@
         "cannot_connect": "Cannot connect to the provider.",
         "unknown_model": "The provider does not know this model."
       }
+    },
+    "rule": {
+      "initiate_flow": {
+        "user": "Add rule",
+        "reconfigure": "Change rule"
+      },
+      "entry_type": "Rule",
+      "step": {
+        "rule": {
+          "title": "Rule",
+          "description": "When an entity — or every entity with a label, in an area or of a domain — meets a condition for some minutes, HomeAI opens a situation.",
+          "data": {
+            "name": "Name",
+            "enabled": "On"
+          },
+          "sections": {
+            "target": {
+              "name": "What it watches",
+              "description": "Entities, or all entities with a label, in an area or of a domain (combined: all must match).",
+              "data": {
+                "entities": "Entities",
+                "label": "Label",
+                "area": "Area",
+                "domain": "Domain"
+              }
+            },
+            "condition": {
+              "name": "When it fires",
+              "data": {
+                "condition": "Condition",
+                "value": "State or number",
+                "minutes": "For at least",
+                "when": "Active",
+                "mode": "Entities"
+              },
+              "data_description": {
+                "value": "The state to compare (e.g. on, open) or the limit for above and below."
+              }
+            },
+            "situation": {
+              "name": "The situation it opens",
+              "data": {
+                "severity": "Severity",
+                "category": "Category",
+                "need": "Who is needed",
+                "advice": "Advice"
+              },
+              "data_description": {
+                "severity": "0 information, 1 low, 2 medium, 3 high, 4 critical (only safety).",
+                "advice": "What to do; shown with the situation."
+              }
+            }
+          }
+        },
+        "preview": {
+          "title": "Check the rule",
+          "description": "**{name}** covers {count} entities: {covered}.\n\nMeeting the condition now (without the waiting time): {meeting}.\n\nSubmit to save the rule."
+        }
+      },
+      "error": {
+        "invalid_rule": "The rule is not valid: {error}"
+      },
+      "abort": {
+        "reconfigure_successful": "The rule was updated."
+      }
     }
   },
   "issues": {
     "no_residents": {
       "title": "HomeAI knows no residents",
-      "description": "No person has the role administrator or member, so nobody gets notifications and presence is unknown. Set roles in the HomeAI panel (Settings → Presence) or add people in Home Assistant."
+      "description": "No person has the role administrator or member, so nobody gets notifications and presence is unknown. Set roles in HomeAI's options (Configure → Settings for a place → Person) or add people in Home Assistant."
     },
     "no_phones": {
       "title": "HomeAI cannot reach anyone",
-      "description": "None of the residents has a phone with the Home Assistant app or a notify target. Install the Companion app or add notify targets per person in the HomeAI panel."
+      "description": "None of the residents has a phone with the Home Assistant app or a notify target. Install the Companion app or add notify targets per person in HomeAI's options (Configure → Settings for a place → Person)."
     },
     "no_areas": {
       "title": "HomeAI does not know your rooms",

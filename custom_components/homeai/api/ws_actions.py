@@ -32,6 +32,11 @@ def ws_recent(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt: An
         connection.send_result(msg["id"], {"actions": [_public(a, connection) for a in actions]})
 
 
+def _visible(item: dict[str, Any], connection: Conn) -> bool:
+    """A private request (a fact about one person) is for that person and administrators."""
+    return not item.get("private") or connection.user.is_admin or item.get("requester") == connection.user.id
+
+
 def _public(record: dict[str, Any], connection: Conn) -> dict[str, Any]:
     """What a non-administrator sees of an action or approval: what it was, not its raw data (a saved automation's
     configuration, another person's account)."""
@@ -95,8 +100,8 @@ def ws_approvals(hass: HomeAssistant, connection: Conn, msg: dict[str, Any], rt:
         connection.send_result(
             msg["id"],
             {
-                "pending": [_public(a, connection) for a in approvals.pending()],
-                "recent": [_public(a, connection) for a in recent],
+                "pending": [_public(a, connection) for a in approvals.pending() if _visible(a, connection)],
+                "recent": [_public(a, connection) for a in recent if _visible(a, connection)],
             },
         )
 
@@ -108,7 +113,7 @@ def ws_approvals_subscribe(hass: HomeAssistant, connection: Conn, msg: dict[str,
 
     @callback
     def changed(_item: dict[str, Any]) -> None:
-        pending = [_public(a, connection) for a in approvals.pending()]
+        pending = [_public(a, connection) for a in approvals.pending() if _visible(a, connection)]
         connection.send_message(websocket_api.event_message(msg["id"], {"pending": pending}))
 
     connection.subscriptions[msg["id"]] = approvals.listen(changed)

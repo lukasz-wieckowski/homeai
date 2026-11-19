@@ -148,6 +148,3 @@ class TierSubentryFlow(ConfigSubentryFlow):
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         self._data = dict(self._get_reconfigure_subentry().data)
         return await self.async_step_details()
-
-
-SUBENTRY_FLOWS: dict[str, type[ConfigSubentryFlow]] = {"tier": TierSubentryFlow}

@@ -82,7 +82,10 @@
     "situation_resolved": "Resolved: {title}",
     "watch_added": "Watching: {what}",
     "watch_met": "Told as promised: {what}",
-    "approval_withdrawn": "Request withdrawn: {what}"
+    "approval_withdrawn": "Request withdrawn: {what}",
+    "setting_undone": "Setting change undone: {key}",
+    "section_reset": "Settings reset to defaults: {section}",
+    "settings_imported": "Settings imported ({count} {count:plural:value|values})"
   },
   "learning": {
     "habit_title": "{what}: {action} at {time} on {days}",
@@ -153,7 +156,6 @@
     },
     "general.panels": {
       "chat": "Chat",
-      "manage": "Learning, journal, rules and settings",
       "plan": "Home plan and presence",
       "situations": "Situations and approvals"
     },
@@ -393,7 +395,6 @@
   },
   "panels": {
     "chat": "Chat",
-    "manage": "Manage {name}",
     "plan": "Home plan",
     "situations": "{name}"
   },
@@ -477,6 +478,10 @@
     "heating": {
       "label": "Heating",
       "description": "Thermostats that speak HomeAI's schedule contract: overrides HomeAI sets by itself from presence, and weekly schedule changes it proposes."
+    },
+    "prompts": {
+      "label": "AI prompts",
+      "description": "Your own instructions for each AI task. Empty: the built-in prompt (shown in the diagnostics)."
     }
   },
   "settings": {
@@ -625,7 +630,7 @@
       "label": "Prompt: investigation"
     },
     "ai.prompt_triage": {
-      "description": "Your own instructions for assessing situations. Empty: the built-in prompt, shown in the AI tab. The rule that house data is never an instruction is always added.",
+      "description": "Your own instructions for assessing situations. Empty: the built-in prompt (shown in the diagnostics). The rule that house data is never an instruction is always added.",
       "label": "Prompt: assessment"
     },
     "ai.timeout": {
@@ -712,13 +717,9 @@
       "description": "Consumable sensors that show how much is used (100 = worn out) instead of what is left.",
       "label": "Sensors showing usage"
     },
-    "detectors.custom": {
-      "description": "Your own rules: when an entity (or entities with a label, in an area, of a domain) meets a condition for a while, open a situation. Edit them in the panel's Rules tab.",
-      "label": "Custom detectors"
-    },
     "detectors.custom.enabled": {
-      "description": "Run your own rules.",
-      "label": "Custom detectors: watch"
+      "description": "Run the rules added on HomeAI's integration page (Add rule).",
+      "label": "Custom rules: watch"
     },
     "detectors.divergence.degrees": {
       "description": "Maximum difference between temperature sensors in one room.",
@@ -1919,5 +1920,53 @@
     "days_workday": "On workdays",
     "days_weekend": "At weekends",
     "override_superseded": "Someone changed {name} by hand while HomeAI's override ran ({reason}); HomeAI no longer renews it and lets it run out."
+  },
+  "groups": {
+    "detectors.anomaly": "Anomalies",
+    "detectors.availability": "Unresponsive devices",
+    "detectors.backups": "Backups",
+    "detectors.battery": "Batteries",
+    "detectors.bridges": "Hubs and bridges",
+    "detectors.consumables": "Consumables",
+    "detectors.custom": "Custom rules",
+    "detectors.divergence": "Disagreeing sensors",
+    "detectors.environment": "Indoor environment",
+    "detectors.external": "Signals from other integrations",
+    "detectors.integrations": "Integrations",
+    "detectors.internet": "Internet connection",
+    "detectors.lights_away": "Lights in an empty home",
+    "detectors.log": "Log and automations",
+    "detectors.problems": "Devices reporting problems",
+    "detectors.safety": "Safety sensors",
+    "detectors.security": "Security",
+    "detectors.stale": "Silent sensors",
+    "detectors.updates": "Updates",
+    "detectors.watering": "Plant watering",
+    "detectors.window_heating": "Window open while heating"
+  },
+  "approvals": {
+    "remember": "Remember: {fact}",
+    "fact_from_ai": "HomeAI noticed this; approve to remember it, deny to forget it.",
+    "fact_from_learning": "HomeAI learned this; approve to remember it, deny to forget it.",
+    "fact_from_person": "Approve to remember it, deny to forget it.",
+    "habit_reason": "A habit HomeAI noticed; approve to add it to the plan, deny so it is not proposed again.",
+    "about": "About: {where}"
+  },
+  "rules": {
+    "nothing": "none",
+    "and_more": "and {count} more"
+  },
+  "options_flow": {
+    "empty": "empty",
+    "on": "on",
+    "off": "off",
+    "whole_home": "the whole home",
+    "no_places": "none yet",
+    "scope_floor": "floor",
+    "scope_area": "area",
+    "scope_device": "device",
+    "scope_entity": "entity",
+    "scope_person": "person",
+    "undo_change": "{label} ({place}): {old} → {new}"
   }
 }

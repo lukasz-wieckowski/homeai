@@ -104,7 +104,7 @@ def test_parts_are_exported_and_documented() -> None:
         assert f"`{part}`" in README, part
         assert f"`{part}`" in README_PL, part
     panel = (ROOT / "frontend/src/panel.ts").read_text()
-    assert panel.count("exportparts=${PARTS}") == 9  # every view passes its parts on
+    assert panel.count("exportparts=${PARTS}") == 4  # every view passes its parts on
     assert "exportparts=${PARTS}" in (ROOT / "frontend/src/card.ts").read_text()  # the chat card too
 
 

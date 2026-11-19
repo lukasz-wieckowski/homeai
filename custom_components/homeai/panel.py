@@ -1,8 +1,10 @@
 """HomeAI's panels in the sidebar and the Lovelace cards (one module served by the integration).
 
-One web component draws every panel; `config.view` says which: the inbox (situations and approvals, at the
-integration's own path, where notifications open), the home's plan with presence, the chat, and managing HomeAI
-(learning, journal, rules, settings, AI). `general.panels` chooses which of them appear in the sidebar.
+One web component draws every panel; `config.view` says which: the inbox (situations and approval requests, at the
+integration's own path, where notifications open), the home's plan with presence, and the chat. `general.panels`
+chooses which of them appear in the sidebar. Everything else lives where Home Assistant keeps it: settings in the
+integration's options, rules and AI connections as its subentries, memory as a to-do list, the journal in the
+logbook. The address of the old management panel stays, hidden, only to send old links there.
 """
 
 from __future__ import annotations
@@ -13,7 +15,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from . import i18n
-from .const import LOGGER, PANEL_ICONS, PANEL_PATHS, PANELS, STATIC_URL, VERSION
+from .const import LEGACY_PANEL_PATH, LOGGER, PANEL_ICONS, PANEL_PATHS, PANELS, STATIC_URL, VERSION
 
 FILE = "homeai-panel.js"
 DATA_STATIC = "homeai_static_registered"
@@ -64,6 +66,16 @@ async def async_setup_panel(hass: HomeAssistant, rt: Any) -> None:
             )
         except ValueError:
             LOGGER.debug("HomeAI panel %s already registered", view)
+    try:  # not in the sidebar (no title): old links and bookmarks land on the integration's page or Activity
+        await panel_custom.async_register_panel(
+            hass,
+            frontend_url_path=LEGACY_PANEL_PATH,
+            webcomponent_name="homeai-panel",
+            module_url=module_url,
+            config={"view": "redirect"},
+        )
+    except ValueError:
+        LOGGER.debug("HomeAI redirect panel already registered")
 
 
 def async_remove_panel(hass: HomeAssistant) -> None:
@@ -71,5 +83,5 @@ def async_remove_panel(hass: HomeAssistant) -> None:
         return
     from homeassistant.components.frontend import async_remove_panel
 
-    for url in PANEL_PATHS.values():
+    for url in (*PANEL_PATHS.values(), LEGACY_PANEL_PATH):
         async_remove_panel(hass, url, warn_if_unknown=False)

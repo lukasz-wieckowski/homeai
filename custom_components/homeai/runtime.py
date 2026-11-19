@@ -21,6 +21,7 @@ from . import i18n
 from .const import CONF_INITIAL_APPLIED, CONF_INITIAL_SETTINGS, CONF_INSTALLED_AT, CONF_SYSTEM_USER, LOGGER, NAME
 from .journal import Journal
 from .settings import SettingError, SettingsManager, build_registry
+from .signals.rules import rules_of
 from .world import Presence, WorldModel
 
 if TYPE_CHECKING:
@@ -44,6 +45,8 @@ class HomeAIRuntime:
         self.system_user_id: str | None = None  # the "HomeAI" system user: autonomy acts in its context
         self.installed_at: str | None = None
         self.subentry_snapshot: dict[str, Any] | None = None
+        # Custom rules (subentries of type `rule`): changing them updates this list without a reload.
+        self.rules: list[dict[str, Any]] = rules_of(entry)
         self._tick_handlers: list[TickHandler] = []
         self._ticking = False
         self._unsubs: list[Callable[[], None]] = []
@@ -185,6 +188,15 @@ class HomeAIRuntime:
             except Exception:
                 LOGGER.exception("HomeAI periodic task failed")
         self.journal.prune()
+
+    @callback
+    def set_rules(self, rules: list[dict[str, Any]]) -> None:
+        """The rule subentries changed: the custom detector picks the new list up at once."""
+        if rules == self.rules:
+            return
+        self.rules = rules
+        if (hub := self.module("signals")) is not None:
+            hub.rules_changed()
 
     # ——— Helpers for modules ———
     @property

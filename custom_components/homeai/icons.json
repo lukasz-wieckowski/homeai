@@ -53,6 +53,12 @@
     },
     "watch": {
       "service": "mdi:eye-check-outline"
+    },
+    "export_settings": {
+      "service": "mdi:export"
+    },
+    "import_settings": {
+      "service": "mdi:import"
     }
   },
   "entity": {
@@ -130,6 +136,14 @@
     "number": {
       "ai_budget_monthly": {
         "default": "mdi:cash-lock"
+      },
+      "ai_budget_daily": {
+        "default": "mdi:cash-clock"
+      }
+    },
+    "todo": {
+      "memory": {
+        "default": "mdi:head-lightbulb-outline"
       }
     }
   }

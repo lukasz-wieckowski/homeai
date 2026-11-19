@@ -3,6 +3,47 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0]
+
+Managing HomeAI moves to the places Home Assistant users already know; the *Manage HomeAI* panel is gone.
+
+### Changed
+- **Settings are the integration's options**: *Settings → Devices & services → HomeAI → Configure*. The menu lists
+  the sections; each is a form generated from the settings registry with a label and a description for every
+  setting (labels generated into `translations/*.json` by `scripts/gen_translations.py`), advanced settings in a
+  collapsed part, *Detection* split into collapsed parts by what it watches. **Settings for a place** sets values
+  for one floor, area, device, entity or person (empty inherits, clearing removes the place's own value). **Undo
+  the last change** and **Reset a section to defaults** are menu items. A change that lowers protection asks for
+  confirmation first; a setting read only at start reloads HomeAI when saved.
+- **Rules are the integration's entries**: *Add rule* on the integration's page, changed with *Reconfigure*,
+  removed with *Delete*. The last step shows what the rule covers and what meets it now. Rules apply without a
+  reload. The rules of the setting `detectors.custom` are moved to rule entries once (entry version 1.3), and an
+  older settings export with rules imports them as rules.
+- **Memory is a to-do list**, `todo.homeai_memory`: approved facts are items; add, edit or delete them there. Facts
+  about one person stay out of the list (every user sees every list) and remain private.
+- **Facts HomeAI noticed and habits it found wait in the inbox** as approval requests (kinds `fact` and `habit`):
+  no push and no expiry; a fact about one person is asked of that person. Deciding them elsewhere (the old
+  WebSocket commands, the to-do list) settles the request.
+- **The journal is in Activity**: entries that matter to people (situations opened and resolved, actions, repairs,
+  decisions, approvals, notifications, plan and settings changes) are written to the logbook under HomeAI's device,
+  actions in their own context. The journal itself stays for diagnostics and the AI's context.
+- **AI**: `number.homeai_ai_budget_daily` joins the monthly budget; the cost sensors carry their budget as an
+  attribute. Prompts have their own options page, **AI prompts** (the settings `ai.prompt_*` moved to the section
+  `prompts`). The built-in prompts and the last requests to each tier are in the diagnostics.
+- **Three panels**: HomeAI (inbox), Home plan and Chat. A stored choice of panels keeps the ones that still exist.
+  Old links to `/homeai-manage` or with `?tab=settings|rules|ai` open the integration's page, `?tab=learning` the
+  inbox and `?tab=journal` Activity.
+
+### Added
+- Services `homeai.export_settings` (response data) and `homeai.import_settings`, for administrators.
+- Options-flow sections, the place form, the rule subentry flow and its migration, the to-do list, the journal in
+  the logbook and the panels without *Manage* are covered by tests; a test keeps the generated translations in sync.
+
+### Removed
+- The *Manage HomeAI* panel and its views (learning, journal, rules, settings, AI) and the unused approvals view;
+  the WebSocket command `homeai/rules/save` (rules are subentries). The other WebSocket commands stay for cards.
+- The setting `detectors.custom` (now rule entries).
+
 ## [1.6.0]
 
 HomeAI's screens are split into panels and read as lists instead of a stack of cards.

@@ -27,6 +27,7 @@ from .model import Phase, Situation
 STORAGE_KEY = f"{DOMAIN}.situations"
 STORAGE_VERSION = 1
 HISTORY_LIMIT = 300
+JOURNAL_EVENTS = ("opened", "resolved")  # a situation opening and closing (dismissing also resolves it)
 # After a start, detectors that wait for a state to last (unavailable for N minutes, open for N minutes) need that
 # time again, because Home Assistant restarts every state's clock. Situations restored from storage are kept
 # open that long instead of being resolved and opened again as new ones (losing “Got it” and notifying twice).
@@ -255,7 +256,7 @@ class SituationEngine:
         self._timer = async_call_later(self.hass, delay, wake)
 
     async def emit(self, event: str, s: Situation) -> None:
-        """Run processors in order, then tell listeners and the bus."""
+        """Run processors in order, then tell the journal, listeners and the bus."""
         for name, processor in self.processors:
             try:
                 result = processor(event, s)
@@ -263,6 +264,11 @@ class SituationEngine:
                     await result
             except Exception:
                 LOGGER.exception("Situation processor %s failed on %s", name, event)
+        if event in JOURNAL_EVENTS:
+            title = s.title(self.rt.language)
+            self.rt.journal.add(
+                "situation", self.rt.text(f"journal|situation_{event}", title=title), situation_id=s.id, result=event
+            )
         for cb in list(self._listeners):
             try:
                 cb(event, s)

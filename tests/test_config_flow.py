@@ -50,20 +50,6 @@ async def test_only_one_instance(hass: HomeAssistant) -> None:
     assert result["reason"] == "single_instance_allowed"
 
 
-async def test_options_quick_settings(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(domain=DOMAIN, data={})
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    assert result["type"] is FlowResultType.FORM
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"general_language": "pl", "privacy_level": "standard"}
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.runtime_data.settings.get("general.language") == "pl"
-
-
 async def test_entry_not_made_by_the_wizard_is_cleaned_and_finished_in_repairs(
     hass: HomeAssistant, hass_admin_user, hass_read_only_user
 ) -> None:
@@ -85,7 +71,7 @@ async def test_entry_not_made_by_the_wizard_is_cleaned_and_finished_in_repairs(
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert entry.minor_version == 2
+    assert entry.minor_version == 3
     assert "api_key" not in entry.data and "something" not in entry.data and entry.data[CONF_NEEDS_SETUP]
     rt = entry.runtime_data
     assert rt.presence.role("person.anna") == "admin" and rt.presence.role("person.ben") == "member"
@@ -114,4 +100,4 @@ async def test_wizard_entries_are_not_flagged(hass: HomeAssistant) -> None:
     from .common import setup_homeai
 
     rt = await setup_homeai(hass)
-    assert CONF_NEEDS_SETUP not in rt.entry.data and rt.entry.minor_version == 2
+    assert CONF_NEEDS_SETUP not in rt.entry.data and rt.entry.minor_version == 3

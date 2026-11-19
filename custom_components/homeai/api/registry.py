@@ -7,6 +7,7 @@ from . import (  # noqa: F401 - imported for their registrations
     service_actions,
     service_ai,
     service_handlers,
+    service_settings,
     ws_actions,
     ws_ai,
     ws_chat,

@@ -18,7 +18,7 @@ export interface HomeAssistant {
   areas?: Record<string, { area_id: string; name: string; floor_id?: string | null }>;
   floors?: Record<string, { floor_id: string; name: string }>;
   devices?: Record<string, { id: string; name: string | null; name_by_user: string | null; area_id: string | null }>;
-  entities?: Record<string, { entity_id: string; device_id?: string | null; area_id?: string | null; hidden?: boolean; entity_category?: string | null }>;
+  entities?: Record<string, { entity_id: string; device_id?: string | null; area_id?: string | null; hidden?: boolean; entity_category?: string | null; platform?: string; translation_key?: string }>;
   callWS<T>(msg: Record<string, unknown>): Promise<T>;
   callService(domain: string, service: string, data?: Record<string, unknown>): Promise<unknown>;
   connection: {
@@ -45,43 +45,6 @@ export interface Situation {
   history: { ts: string; event: string; [k: string]: unknown }[];
 }
 
-export interface SettingItem {
-  key: string;
-  type: string;
-  default: unknown;
-  section: string;
-  group: string;
-  scopes: string[];
-  min: number | null;
-  max: number | null;
-  step: number | null;
-  unit: string | null;
-  options: string[];
-  option_labels?: Record<string, string>;
-  advanced: boolean;
-  confirm: string | null;
-  label: string;
-  description: string;
-  value: unknown;
-  source: string;
-  overrides: Record<string, unknown>;
-}
-
-export interface SettingsSchema {
-  language: string;
-  sections: { id: string; label: string; description: string }[];
-  settings: SettingItem[];
-}
-
-export interface JournalEntry {
-  id: string;
-  ts: string;
-  kind: string;
-  actor: string;
-  text: string;
-  result?: string;
-}
-
 export interface Approval {
   id: string;
   what: string;
@@ -89,9 +52,10 @@ export interface Approval {
   reason: string;
   approver: string;
   created: string;
-  expires: string;
+  expires: string | null; // requests that are not actions (a fact, a habit) wait until someone decides
   status: string;
   decided_by: string | null;
+  kind?: "fact" | "habit";
 }
 
 export interface WorldSummary {

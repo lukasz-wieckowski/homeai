@@ -82,7 +82,10 @@
     "situation_resolved": "Ustąpiło: {title}",
     "watch_added": "Pilnuję: {what}",
     "watch_met": "Powiedziano, jak obiecano: {what}",
-    "approval_withdrawn": "Prośba wycofana: {what}"
+    "approval_withdrawn": "Prośba wycofana: {what}",
+    "setting_undone": "Cofnięto zmianę ustawienia: {key}",
+    "section_reset": "Przywrócono domyślne ustawienia: {section}",
+    "settings_imported": "Zaimportowano ustawienia ({count} {count:plural:wartość|wartości|wartości})"
   },
   "learning": {
     "habit_title": "{what}: {action} o {time} w {days}",
@@ -153,7 +156,6 @@
     },
     "general.panels": {
       "chat": "Rozmowa",
-      "manage": "Uczenie, dziennik, reguły i ustawienia",
       "plan": "Plan domu i obecność",
       "situations": "Sprawy i zgody"
     },
@@ -393,7 +395,6 @@
   },
   "panels": {
     "chat": "Rozmowa",
-    "manage": "Zarządzanie {name}",
     "plan": "Plan domu",
     "situations": "{name}"
   },
@@ -477,6 +478,10 @@
     "heating": {
       "label": "Ogrzewanie",
       "description": "Termostaty, które mówią kontraktem harmonogramu HomeAI: nadpisania, które HomeAI ustawia samo z obecności, i zmiany harmonogramu tygodniowego, które proponuje."
+    },
+    "prompts": {
+      "label": "Prompty AI",
+      "description": "Własne instrukcje dla każdego zadania AI. Puste: wbudowany prompt (widoczny w diagnostyce)."
     }
   },
   "settings": {
@@ -625,7 +630,7 @@
       "label": "Prompt: dochodzenie"
     },
     "ai.prompt_triage": {
-      "description": "Własne instrukcje do oceny spraw. Puste: wbudowany prompt, widoczny w zakładce AI. Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze dodawana.",
+      "description": "Własne instrukcje do oceny spraw. Puste: wbudowany prompt (widoczny w diagnostyce). Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze dodawana.",
       "label": "Prompt: ocena"
     },
     "ai.timeout": {
@@ -712,13 +717,9 @@
       "description": "Czujniki pokazujące zużycie (100 = zużyty) zamiast pozostałej żywotności.",
       "label": "Czujniki zużycia"
     },
-    "detectors.custom": {
-      "description": "Twoje reguły: gdy encja (albo encje z etykietą, w obszarze, z domeny) spełnia warunek przez jakiś czas, otwórz sprawę. Edytuj je w zakładce Reguły panelu.",
-      "label": "Własne detektory"
-    },
     "detectors.custom.enabled": {
-      "description": "Uruchamiaj własne reguły.",
-      "label": "Własne detektory: obserwuj"
+      "description": "Uruchamiaj reguły dodane na stronie integracji HomeAI (Dodaj regułę).",
+      "label": "Własne reguły: obserwuj"
     },
     "detectors.divergence.degrees": {
       "description": "Największa różnica między czujnikami temperatury w jednym pokoju.",
@@ -1919,5 +1920,53 @@
     "days_workday": "W dni robocze",
     "days_weekend": "W weekendy",
     "override_superseded": "Ktoś ręcznie zmienił {name}, gdy działało nadpisanie HomeAI ({reason}); HomeAI już go nie odnawia i pozwala mu wygasnąć."
+  },
+  "groups": {
+    "detectors.anomaly": "Anomalie",
+    "detectors.availability": "Urządzenia bez łączności",
+    "detectors.backups": "Kopie zapasowe",
+    "detectors.battery": "Baterie",
+    "detectors.bridges": "Huby i mostki",
+    "detectors.consumables": "Materiały eksploatacyjne",
+    "detectors.custom": "Własne reguły",
+    "detectors.divergence": "Rozbieżne czujniki",
+    "detectors.environment": "Warunki w domu",
+    "detectors.external": "Sygnały innych integracji",
+    "detectors.integrations": "Integracje",
+    "detectors.internet": "Łącze z internetem",
+    "detectors.lights_away": "Światła w pustym domu",
+    "detectors.log": "Log i automatyzacje",
+    "detectors.problems": "Urządzenia zgłaszające problem",
+    "detectors.safety": "Czujniki bezpieczeństwa",
+    "detectors.security": "Zabezpieczenia",
+    "detectors.stale": "Milczące czujniki",
+    "detectors.updates": "Aktualizacje",
+    "detectors.watering": "Podlewanie roślin",
+    "detectors.window_heating": "Okno otwarte przy grzaniu"
+  },
+  "approvals": {
+    "remember": "Zapamiętać: {fact}",
+    "fact_from_ai": "HomeAI to zauważył; zatwierdź, by zapamiętał, odrzuć, by zapomniał.",
+    "fact_from_learning": "HomeAI się tego nauczył; zatwierdź, by zapamiętał, odrzuć, by zapomniał.",
+    "fact_from_person": "Zatwierdź, by zapamiętał, odrzuć, by zapomniał.",
+    "habit_reason": "Nawyk zauważony przez HomeAI; zatwierdź, by dodać go do planu, odrzuć, by nie proponował go znowu.",
+    "about": "Dotyczy: {where}"
+  },
+  "rules": {
+    "nothing": "brak",
+    "and_more": "i {count} innych"
+  },
+  "options_flow": {
+    "empty": "puste",
+    "on": "włączone",
+    "off": "wyłączone",
+    "whole_home": "cały dom",
+    "no_places": "jeszcze żadnych",
+    "scope_floor": "piętro",
+    "scope_area": "obszar",
+    "scope_device": "urządzenie",
+    "scope_entity": "encję",
+    "scope_person": "osobę",
+    "undo_change": "{label} ({place}): {old} → {new}"
   }
 }

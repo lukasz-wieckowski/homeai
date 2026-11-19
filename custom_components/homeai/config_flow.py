@@ -1,7 +1,8 @@
-"""Config flow for HomeAI: a short setup wizard, quick options, and AI tiers as subentries.
+"""Config flow for HomeAI: a short setup wizard, the options (`options_flow.py`), and subentries for AI tiers and
+custom rules.
 
 The wizard only asks what HomeAI cannot discover: the household's language, how much data may go to cloud AI,
-and each person's role. Everything else has defaults and lives in the settings panel.
+and each person's role. Everything else has defaults and is changed in the integration's options (Configure).
 """
 
 from __future__ import annotations
@@ -19,8 +20,10 @@ from homeassistant.core import callback
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, SelectSelectorMode
 import voluptuous as vol
 
-from .const import CONF_INITIAL_SETTINGS, DOMAIN, NAME
+from .const import CONF_INITIAL_SETTINGS, DOMAIN, NAME, SUBENTRY_RULE, SUBENTRY_TIER
+from .options_flow import HomeAIOptionsFlow
 from .settings.definitions import ROLES
+from .signals.rules import RuleSubentryFlow
 
 LANGUAGES = ["auto", "en", "pl"]
 PRIVACY = ["standard", "minimal", "full"]
@@ -34,7 +37,8 @@ class HomeAIConfigFlow(ConfigFlow, domain=DOMAIN):
     """Set up HomeAI. Only one instance is allowed (`single_config_entry` in the manifest)."""
 
     VERSION = 1
-    MINOR_VERSION = 2  # 1.2: entries the wizard did not make are cleaned up and flagged (see __init__.py)
+    # 1.2: entries the wizard did not make are cleaned up and flagged; 1.3: custom rules are subentries (__init__.py)
+    MINOR_VERSION = 3
 
     def __init__(self) -> None:
         self._initial: dict[str, Any] = {"overrides": {}}
@@ -95,36 +99,6 @@ class HomeAIConfigFlow(ConfigFlow, domain=DOMAIN):
     @classmethod
     @callback
     def async_get_supported_subentry_types(cls, config_entry: ConfigEntry) -> dict[str, type[ConfigSubentryFlow]]:
-        from .ai.subentry import SUBENTRY_FLOWS
+        from .ai.subentry import TierSubentryFlow
 
-        return dict(SUBENTRY_FLOWS)
-
-
-class HomeAIOptionsFlow(OptionsFlow):
-    """Most common settings; everything else is in the HomeAI panel."""
-
-    QUICK = ("general.language", "privacy.level", "notify.paused")
-
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        runtime = getattr(self.config_entry, "runtime_data", None)
-        if runtime is None:
-            return self.async_abort(reason="not_loaded")
-        settings = runtime.settings
-        keys = [k for k in self.QUICK if k in settings.registry]
-        if user_input is not None:
-            user = self.context.get("user_id")
-            for key in keys:
-                field = key.replace(".", "_")
-                if field in user_input:
-                    settings.set(key, user_input[field], user=user, confirmed=True)
-            return self.async_create_entry(data=dict(self.config_entry.options))
-        schema: dict[Any, Any] = {}
-        for key in keys:
-            setting = settings.registry[key]
-            current = settings.get(key)
-            field = key.replace(".", "_")  # translation keys cannot contain dots
-            if setting.options:
-                schema[vol.Required(field, default=current)] = _select(list(setting.options), field)
-            else:
-                schema[vol.Required(field, default=current)] = bool if setting.type == "bool" else str
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
+        return {SUBENTRY_TIER: TierSubentryFlow, SUBENTRY_RULE: RuleSubentryFlow}

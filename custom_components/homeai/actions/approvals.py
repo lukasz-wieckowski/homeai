@@ -7,11 +7,17 @@ phones with Approve / Deny buttons, and expire after `policy.approval_minutes`.
 A person's own request approved by an administrator runs in that administrator's context. A request that needs
 the person's own yes and came where HomeAI cannot ask in the conversation (another assistant using HomeAI's tools)
 becomes an approval addressed to that person (`approver: requester`); their Approve is their confirmation.
+
+Besides actions, other modules ask here for a yes about something that is not an action (`kind`): a fact HomeAI
+noticed and would remember, a habit it would add to the plan. Such a request waits in the inbox without a push and
+without expiring; the module that asked says what Approve and Deny do (`register_kind`) and settles the request
+when it was decided elsewhere.
 """
 
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -23,6 +29,15 @@ from homeassistant.util import dt as dt_util, ulid as ulid_util
 from ..const import DOMAIN, LOGGER
 from ..notify.recipients import targets_for
 from ..policy import ActionRequest, Decision
+
+
+@dataclass(frozen=True, slots=True)
+class Kind:
+    """What Approve and Deny do for requests of one kind; each returns False when the thing asked about is gone."""
+
+    approve: Callable[[dict[str, Any], str | None], Awaitable[bool]]
+    deny: Callable[[dict[str, Any], str | None], Awaitable[bool]]
+
 
 STORAGE_KEY = f"{DOMAIN}.approvals"
 EVENT_APPROVAL = "homeai_approval"
@@ -40,6 +55,7 @@ class Approvals:
         self._listeners: list[Callable[[dict[str, Any]], None]] = []
         # Modules that know when their own request no longer fits (a schedule proposal after the schedule changed).
         self._checks: list[Callable[[dict[str, Any]], Awaitable[bool]]] = []
+        self._kinds: dict[str, Kind] = {}  # requests that are not actions: kind → what Approve and Deny do
 
     async def async_setup(self) -> None:
         data = await self._store.async_load() or {}
@@ -85,6 +101,82 @@ class Approvals:
 
     def pending(self) -> list[dict[str, Any]]:
         return sorted((a for a in self.items.values() if a["status"] == "pending"), key=lambda a: a["created"])
+
+    # ——— Requests that are not actions ———
+    @callback
+    def register_kind(self, kind: str, handler: Kind) -> Callable[[], None]:
+        self._kinds[kind] = handler
+        return lambda: self._kinds.pop(kind, None) if self._kinds.get(kind) is handler else None
+
+    def find(self, kind: str, ref: str) -> dict[str, Any] | None:
+        """The pending request of this kind about `ref`."""
+        return next((a for a in self.pending() if a.get("kind") == kind and a.get("ref") == ref), None)
+
+    def ask(
+        self,
+        kind: str,
+        ref: str,
+        what: str,
+        reason: str,
+        *,
+        approver: str = "residents",
+        requester: str | None = None,
+        private: bool = False,
+    ) -> dict[str, Any]:
+        """Ask for a yes about something that is not an action. Asking again about the same `ref` returns the
+        request already waiting. `private`: only the requester and administrators see it."""
+        if (item := self.find(kind, ref)) is not None:
+            return item
+        item = {
+            "id": ulid_util.ulid_now().lower(),
+            "kind": kind,
+            "ref": ref,
+            "request": {},
+            "what": what,
+            "risk": 0,
+            "reason": reason,
+            "approver": approver,
+            "requester": requester,
+            "private": private,
+            "created": dt_util.utcnow().isoformat(timespec="seconds"),
+            "expires": None,
+            "status": "pending",
+            "decided_by": None,
+            "result": None,
+        }
+        self.items[item["id"]] = item
+        self._changed(item)
+        return item
+
+    def settle(self, kind: str, ref: str, status: str = "withdrawn") -> None:
+        """What a request asked about was decided or is gone (approved elsewhere, removed): stop asking."""
+        item = self.find(kind, ref)
+        if item is None:
+            return
+        item.update(status=status, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
+        self._changed(item)
+
+    async def _decide_kind(self, item: dict[str, Any], verb: str, user_id: str | None) -> dict[str, Any] | None:
+        handler = self._kinds.get(item["kind"])
+        if handler is None:
+            return None
+        who = await self._name(user_id)
+        status = "approved" if verb == "approve" else "denied"
+        # decided before the handler runs, so the module settling its own request finds nothing left to settle
+        item.update(status=status, decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
+        try:
+            ok = await (handler.approve if verb == "approve" else handler.deny)(item, user_id)
+        except Exception:
+            LOGGER.exception("Deciding a %s request failed", item["kind"])
+            ok = False
+        if not ok:
+            item.update(status="withdrawn")  # what it asked about is gone
+            self._changed(item)
+            return None
+        key = "journal|approval_granted" if verb == "approve" else "journal|approval_denied"
+        self.rt.journal.add("approval", self.rt.text(key, what=item["what"], who=who))
+        self._changed(item)
+        return item
 
     # ——— Requests ———
     async def create(self, request: ActionRequest, decision: Decision, what: str) -> dict[str, Any]:
@@ -182,6 +274,8 @@ class Approvals:
         item = self.items.get(approval_id)
         if item is None or item["status"] != "pending" or not await self.can_decide(item, user_id):
             return None
+        if item.get("kind"):
+            return await self._decide_kind(item, "approve", user_id)
         who = await self._name(user_id)
         request = ActionRequest.from_dict(item["request"])
         if await self._outdated(item, request):
@@ -234,6 +328,8 @@ class Approvals:
         item = self.items.get(approval_id)
         if item is None or item["status"] != "pending" or not await self.can_decide(item, user_id):
             return None
+        if item.get("kind"):
+            return await self._decide_kind(item, "deny", user_id)
         who = await self._name(user_id)
         item.update(status="denied", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         self.rt.journal.add("approval", self.rt.text("journal|approval_denied", what=item["what"], who=who))
@@ -251,7 +347,8 @@ class Approvals:
             return False
         item.update(status="withdrawn", decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         self.rt.journal.add("approval", self.rt.text("journal|approval_withdrawn", what=item["what"]))
-        await self._clear(item)
+        if not item.get("kind"):
+            await self._clear(item)
         self._changed(item)
         return True
 
@@ -262,7 +359,7 @@ class Approvals:
     async def approve_as_arbiter(self, approval_id: str, decision: dict[str, Any]) -> dict[str, Any] | None:
         """The arbiter approves within its limits (checked by the arbiter; never above R3, never R6)."""
         item = self.items.get(approval_id)
-        if item is None or item["status"] != "pending" or int(item["risk"]) > 3:
+        if item is None or item["status"] != "pending" or int(item["risk"]) > 3 or item.get("kind"):
             return None
         if item["request"].get("actor") == "person" or item["approver"] == "requester":
             return None  # a person's request waits for a person: the arbiter only advises
@@ -280,7 +377,7 @@ class Approvals:
 
     async def deny_as_arbiter(self, approval_id: str, decision: dict[str, Any]) -> dict[str, Any] | None:
         item = self.items.get(approval_id)
-        if item is None or item["status"] != "pending":
+        if item is None or item["status"] != "pending" or item.get("kind"):
             return None
         who = self.rt.text("ai|arbiter_name")
         item.update(status="denied", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
@@ -291,7 +388,7 @@ class Approvals:
 
     async def tick(self, now: datetime) -> None:
         for item in self.pending():
-            expires = dt_util.parse_datetime(item["expires"])
+            expires = dt_util.parse_datetime(item["expires"]) if item.get("expires") else None
             if expires is not None and expires <= now:
                 item["status"] = "expired"
                 self.rt.journal.add("approval", self.rt.text("journal|approval_expired", what=item["what"]))

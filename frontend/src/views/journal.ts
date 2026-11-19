@@ -2,6 +2,7 @@ import { LitElement, html } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { clock, dayLabel, homeDay, t } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant, JournalEntry } from "../types";
 
@@ -9,13 +10,14 @@ import type { HomeAssistant, JournalEntry } from "../types";
 export class HomeAIJournal extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @state() private entries: JournalEntry[] = [];
+  @state() pages: Record<string, number> = {};
 
   static styles = shared;
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
     try {
-      const res = await this.hass.callWS<{ entries: JournalEntry[] }>({ type: "homeai/journal/recent", limit: 200 });
+      const res = await this.hass.callWS<{ entries: JournalEntry[] }>({ type: "homeai/journal/recent", limit: 500 });
       this.entries = res.entries;
     } catch {
       this.entries = [];
@@ -26,9 +28,10 @@ export class HomeAIJournal extends LitElement {
     const lang = this.hass.language;
     const tz = this.hass.config?.time_zone;
     if (!this.entries.length) return html`<div part="empty" class="empty">—</div>`;
+    const page = paged(this, "entries", this.entries, lang, 30);
     const rows: unknown[] = [];
     let last = "";
-    for (const e of this.entries) {
+    for (const e of page.items) {
       const day = homeDay(e.ts, tz);
       if (day !== last) {
         rows.push(html`<li part="day" class="day">${dayLabel(e.ts, lang, tz)}</li>`);
@@ -40,6 +43,6 @@ export class HomeAIJournal extends LitElement {
           <span part="row-meta" class="item-meta">${t(lang, `kind_${e.kind}`).replace(/^kind_/, "")}</span></span>
         <span></span></div></li>`);
     }
-    return html`<ul part="card list" class="list">${rows}</ul>`;
+    return html`<ul part="card list" class="list">${rows}</ul>${page.nav}`;
   }
 }

@@ -448,6 +448,7 @@ części swoich widoków, więc `homeai-panel::part(card)` sięga kart i list w 
 | `segmented`, `sheet`, `composer` | kapsuła sekcji ustawień, edytor (arkusz), pole rozmowy |
 | `input` | pola, listy wyboru, pola wyboru |
 | `list`, `row`, `row-title`, `row-meta`, `time`, `day` | lista, wiersz, jego tytuł, linia szczegółów i godzina, nagłówek dnia w planie i dzienniku |
+| `pager` | strony pod długą listą (poprzednie, gdzie jesteś, następne) |
 | `empty`, `error` | napis „nic tu nie ma”, błąd |
 | `log`, `message`, `message-user`, `message-assistant` | rozmowa: przebieg i wiadomości |
 | `header`, `header-title`, `tabs`, `tab`, `tab-active`, `tab-icon`, `tab-label`, `content` | tylko panel: górny pasek, tytuł, zakładki (ikona zakładki pokazuje się na telefonie, gdy jest ich dużo), treść |

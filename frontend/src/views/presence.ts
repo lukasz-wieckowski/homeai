@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { inZone, t, when } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant, WorldSummary } from "../types";
 
@@ -42,6 +43,7 @@ export class HomeAIPresence extends LitElement {
   @state() private world?: WorldSummary;
   @state() private draft?: Draft;
   @state() private error = "";
+  @state() pages: Record<string, number> = {};
 
   static styles = shared;
 
@@ -141,12 +143,12 @@ export class HomeAIPresence extends LitElement {
         <p class="hint">${t(lang, "presence_hint")}</p>
         ${!this.draft && this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
         ${this.items.length
-          ? html`<ul part="card list" class="list">${this.items.map((i) => html`<li part="row">
+          ? html`<ul part="card list" class="list">${paged(this, "items", this.items, lang).items.map((i) => html`<li part="row">
               <button class="item-main plain" @click=${() => (this.draft = { id: i.id, kind: i.kind, person: i.person ?? "", start: localDay(i.start, tz), end: localDay(i.end, tz, true), note: i.note })}>
                 <span class="item-text"><span part="row-title" class="item-title">${t(lang, `presence_${i.kind}`)} · ${this.personName(i.person)}</span>
                   <span part="row-meta" class="item-meta">${span(i.start, i.end, lang, tz)}${i.note ? ` · ${i.note}` : ""}</span></span>
                 <span class="chevron">›</span>
-              </button></li>`)}</ul>`
+              </button></li>`)}</ul>${paged(this, "items", this.items, lang).nav}`
           : html`<div part="empty" class="empty">${t(lang, "presence_none")}</div>`}
       </section>`;
   }

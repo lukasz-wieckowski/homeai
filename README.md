@@ -443,6 +443,7 @@ passes its views' parts on, so `homeai-panel::part(card)` reaches the cards and 
 | `segmented`, `sheet`, `composer` | the settings sections' capsule, an editor (sheet), the chat composer |
 | `input` | fields, lists to choose from, checkboxes |
 | `list`, `row`, `row-title`, `row-meta`, `time`, `day` | a list, a row, its title, its details line and its time, a day's heading in the plan and the journal |
+| `pager` | the pages under a long list (previous, where you are, next) |
 | `empty`, `error` | the “nothing here” text, an error |
 | `log`, `message`, `message-user`, `message-assistant` | the chat: the conversation and its messages |
 | `header`, `header-title`, `tabs`, `tab`, `tab-active`, `tab-icon`, `tab-label`, `content` | the panel only: top bar, its title, the tabs (a tab's icon shows on a phone when there are many), the content |

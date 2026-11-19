@@ -4,6 +4,7 @@ import { live } from "lit/directives/live.js";
 import { repeat } from "lit/directives/repeat.js";
 import { element } from "../define";
 import { t, when } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant, SettingItem, SettingsSchema, WorldSummary } from "../types";
 
@@ -27,6 +28,7 @@ export class HomeAISettings extends LitElement {
   @state() private scopeRef = "";
   @state() private scopeValues: Record<string, unknown> = {};
   @state() private history?: Change[];
+  @state() pages: Record<string, number> = {};
 
   static styles = [
     shared,
@@ -240,10 +242,11 @@ export class HomeAISettings extends LitElement {
     return html`<section class="section">
       <div class="section-head"><h2 part="heading" class="heading">${t(lang, "history")}</h2>
         <button part="button button-quiet" class="quiet" @click=${this.toggleHistory}>${t(lang, "close")}</button></div>
-      <ul part="card list" class="list">${(this.history ?? []).map((c) => html`<li part="row"><div class="item-main plain">
+      <ul part="card list" class="list">${paged(this, "history", this.history ?? [], lang, 15).items.map((c) => html`<li part="row"><div class="item-main plain">
         <span class="item-text"><span part="row-title" class="item-title">${labels.get(c.key) ?? c.key}${c.scope !== "global" ? html` <span class="muted">(${c.scope})</span>` : nothing}</span>
           <span part="row-meta" class="item-meta">${c.key === "import" ? t(lang, "import") : c.reset ? `${show(c.old)} → ${t(lang, "default")}` : `${show(c.old)} → ${show(c.new)}`}${c.user ? ` · ${c.user}` : ""}</span></span>
         <span part="time" class="item-aside">${when(c.ts, lang)}</span></div></li>`)}</ul>
+      ${paged(this, "history", this.history ?? [], lang, 15).nav}
     </section>`;
   }
 
@@ -256,12 +259,15 @@ export class HomeAISettings extends LitElement {
     // a section that does not exist (any more) falls back to the first one
     const section = this.schema.sections.find((x) => x.id === this.section) ?? this.schema.sections[0];
     const current = section?.id ?? this.section;
-    const items = this.schema.settings.filter(
+    const all = this.schema.settings.filter(
       (x) =>
         (q ? `${x.label} ${x.description} ${x.key}`.toLowerCase().includes(q) : x.section === current) &&
         (this.advanced || !x.advanced || q) &&
         (this.scopeType === "global" || x.scopes.includes(this.scopeType)),
     );
+    // one list of pages for each section, search and place, so changing any of them starts at its first page
+    const page = paged(this, `${q ? `?${q}` : current}|${this.skey}|${this.advanced}`, all, lang, 20);
+    const items = page.items;
 
     return html`
       <div class="tools">
@@ -285,7 +291,7 @@ export class HomeAISettings extends LitElement {
             <p class="hint">${section.description}</p>`}
           ${this.scopeType !== "global" && !this.scopeRef ? html`<div part="empty" class="empty">${t(lang, "scope_pick")}</div>` : html`<ul part="card list" class="list">
             ${items.length ? nothing : html`<li class="empty">${t(lang, "scope_none")}</li>`}
-            ${repeat(items, (item) => `${this.skey}|${item.key}`, (item) => {
+            ${repeat(page.items, (item) => `${this.skey}|${item.key}`, (item) => {
               const here = scoped && item.key in this.scopeValues;
               const value = here ? this.scopeValues[item.key] : item.value;
               const count = Object.keys(item.overrides || {}).length;
@@ -297,7 +303,7 @@ export class HomeAISettings extends LitElement {
                 <span class="control">${this.input(item, value)}</span>
               </li>`;
             })}
-          </ul>`}
+          </ul>${page.nav}`}
           <div class="footer">
             <button part="button button-quiet" class="quiet" @click=${this.undo}>${t(lang, "undo")}</button>
             <button part="button button-quiet" class="quiet" @click=${this.toggleHistory}>${t(lang, "history")}</button>

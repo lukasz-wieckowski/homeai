@@ -1,6 +1,7 @@
 // Panel texts. Messages from HomeAI itself (titles, journal) arrive already translated by the backend.
 const TEXTS: Record<string, Record<string, string>> = {
   en: {
+    pages: "Pages", page_prev: "Previous", page_next: "Next", of: "of",
     manage: "Manage", waiting_approval: "Waiting for your approval", needs_attention: "Needs attention",
     for_info: "For your information", decided: "Recent decisions", acked_by: "Acknowledged by",
     today: "Today", tomorrow: "Tomorrow", plan_skip_once: "Skip this time", plan_edit_entry: "Edit the entry",
@@ -62,6 +63,7 @@ const TEXTS: Record<string, Record<string, string>> = {
     kind_memory: "Memory", kind_policy: "Policy", kind_system: "System", kind_decision: "Decision", kind_notification: "Notification",
   },
   pl: {
+    pages: "Strony", page_prev: "Poprzednie", page_next: "Następne", of: "z",
     manage: "Zarządzanie", waiting_approval: "Czeka na Twoją zgodę", needs_attention: "Wymaga uwagi",
     for_info: "Do wiadomości", decided: "Ostatnie decyzje", acked_by: "Potwierdzone przez",
     today: "Dziś", tomorrow: "Jutro", plan_skip_once: "Pomiń tym razem", plan_edit_entry: "Edytuj wpis",

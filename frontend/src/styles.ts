@@ -184,6 +184,10 @@ export const shared = [
       background: var(--_severity-0); }
     .dot.sev-4 { background: var(--_severity-4); } .dot.sev-3 { background: var(--_severity-3); }
     .dot.sev-2 { background: var(--_severity-2); } .dot.sev-1 { background: var(--_severity-1); }
+    /* pages of a long list: previous, where you are, next */
+    .pager { display: flex; align-items: center; justify-content: space-between; gap: var(--_space);
+      padding: var(--_space) 0 0; }
+    .pager-count { color: var(--_secondary-text); font-size: var(--_secondary-font-size); font-variant-numeric: tabular-nums; }
     ul.plain { list-style: none; padding: 0; margin: 0; }
     ul.plain li { padding: var(--_space) 0; border-bottom: var(--_border-width) solid var(--_divider); }
     ul.plain li:last-child { border-bottom: none; }
@@ -299,6 +303,7 @@ export const PARTS = [
   "row-meta",
   "day",
   "time",
+  "pager",
   "empty",
   "error",
   "log",

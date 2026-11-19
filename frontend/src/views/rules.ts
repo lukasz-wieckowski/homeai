@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { t } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -39,6 +40,7 @@ export class HomeAIRules extends LitElement {
   @state() private editing?: Rule;
   @state() private preview?: { covered: { entity_id: string; name: string }[]; meeting: string[] };
   @state() private error = "";
+  @state() pages: Record<string, number> = {};
 
   static styles = shared;
 
@@ -179,13 +181,13 @@ export class HomeAIRules extends LitElement {
           <button part="button button-primary" class="primary" @click=${() => { this.editing = structuredClone(EMPTY); this.preview = undefined; }}>${t(lang, "rule_add")}</button></div>
         ${!this.editing && this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
         ${this.rules.length
-          ? html`<ul part="card list" class="list">${this.rules.map((r) => html`<li part="row">
+          ? html`<ul part="card list" class="list">${paged(this, "rules", this.rules, lang, 15).items.map((r) => html`<li part="row">
               <button class="item-main" @click=${() => { this.editing = structuredClone(r); this.preview = undefined; }}>
                 <span part="badge badge-${r.severity}" class="dot sev-${r.severity}"></span>
                 <span class="item-text"><span part="row-title" class="item-title ${r.enabled ? "" : "off"}">${r.name}</span>
                   <span part="row-meta" class="item-meta">${t(lang, `rule_${r.condition.type}`)}${r.condition.type === "unavailable" ? "" : ` ${r.condition.value ?? ""}`} · ${r.minutes} min · ${t(lang, `rule_${r.when}`)}${r.enabled ? "" : ` · ${t(lang, "rule_off")}`}${r.firing ? ` · ${t(lang, "rule_firing")}` : ""}</span></span>
                 <span class="chevron">›</span>
-              </button></li>`)}</ul>`
+              </button></li>`)}</ul>${paged(this, "rules", this.rules, lang, 15).nav}`
           : html`<div part="empty" class="empty">${t(lang, "no_rules")}</div>`}
       </section>
     `;

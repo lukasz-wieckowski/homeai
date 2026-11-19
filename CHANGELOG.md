@@ -27,6 +27,9 @@ HomeAI's screens are split into panels and read as lists instead of a stack of c
   toggles.
 - **Settings**: sections are a list beside the settings on a wide screen and a dropdown on a phone; undo, history,
   export and import moved under the list.
+- **Pages for long lists**: situations, approvals, decisions, the plan (15 a page, a month ahead), entries,
+  presence, the journal (30 a page of the last 500), learning, memory, rules, settings and their history; the
+  part `pager` styles them.
 - The chat panel fills the page and keeps the composer at the bottom.
 - The situations and plan cards for dashboards use the same rows.
 - New variables (`--homeai-reading-width`, `--homeai-section-spacing`, `--homeai-row-padding-x`,

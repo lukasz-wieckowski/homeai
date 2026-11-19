@@ -2,6 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { t, when } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -16,6 +17,7 @@ export class HomeAILearning extends LitElement {
   @state() private facts: Fact[] = [];
   @state() private reviews: Review[] = [];
   @state() private draft = "";
+  @state() pages: Record<string, number> = {};
 
   static styles = shared;
 
@@ -50,13 +52,13 @@ export class HomeAILearning extends LitElement {
       <section class="section">
         <div class="section-head"><h2 part="heading" class="heading">${t(lang, "proposals")}${this.proposals.length ? html` <span class="count">${this.proposals.length}</span>` : nothing}</h2></div>
         ${this.proposals.length
-          ? html`<ul part="card list" class="list">${this.proposals.map((p) => html`<li part="row" class="open">
+          ? html`<ul part="card list" class="list">${paged(this, "proposals", this.proposals, lang).items.map((p) => html`<li part="row" class="open">
               <div class="item-main plain"><span class="item-text"><span part="row-title" class="item-title">${p.title}</span>
                 <span part="row-meta" class="item-meta">${p.days_seen} ${t(lang, "days_of")} ${p.days_possible} ${t(lang, "days_word")}</span></span></div>
               <div class="item-more flush"><div class="item-actions end">
                 <button part="button" @click=${() => this.call("homeai/learning/reject", { proposal_id: p.id })}>${t(lang, "deny")}</button>
                 <button part="button button-primary" class="primary" @click=${() => this.call("homeai/learning/approve", { proposal_id: p.id })}>${t(lang, "approve")}</button>
-              </div></div></li>`)}</ul>`
+              </div></div></li>`)}</ul>${paged(this, "proposals", this.proposals, lang).nav}`
           : html`<p class="hint">${t(lang, "no_proposals")}</p>`}
       </section>
       <section class="section">
@@ -67,7 +69,7 @@ export class HomeAILearning extends LitElement {
               @input=${(e: Event) => (this.draft = (e.target as HTMLInputElement).value)} @keydown=${(e: KeyboardEvent) => e.key === "Enter" && this.remember()} />
             <button part="button" ?disabled=${!this.draft.trim()} @click=${this.remember}>${t(lang, "remember")}</button>
           </div></li>
-          ${this.facts.map((f) => html`<li part="row"><div class="item-main plain">
+          ${paged(this, "facts", this.facts, lang).items.map((f) => html`<li part="row"><div class="item-main plain">
             <span class="item-text"><span part="row-title" class="item-title">${f.text}</span>
               <span part="row-meta" class="item-meta">${scopeName(f)} · ${t(lang, `memory_from_${f.source}`)}</span></span>
             <span class="item-actions">
@@ -75,6 +77,7 @@ export class HomeAILearning extends LitElement {
               <button part="button button-quiet" class="quiet" aria-label=${`${t(lang, "remove")}: ${f.text}`} @click=${() => this.call("homeai/memory/remove", { fact_id: f.id })}>${t(lang, "remove")}</button>
             </span></div></li>`)}
         </ul>
+        ${paged(this, "facts", this.facts, lang).nav}
       </section>
       ${this.reviews.length
         ? html`<section class="section">

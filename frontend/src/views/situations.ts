@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { shortWhen, t, when } from "../i18n";
+import { PAGE_SIZE, paged } from "../pager";
 import { shared } from "../styles";
 import type { Approval, HomeAssistant, Situation } from "../types";
 
@@ -16,6 +17,7 @@ export class HomeAISituations extends LitElement {
   @state() private decided: Approval[] = [];
   @state() private expanded: string | null = new URLSearchParams(location.search).get("situation");
   @state() private error = "";
+  @state() pages: Record<string, number> = {};
   private unsubs: (() => void)[] = [];
   private subscribing = false;
   private scrolled = false;
@@ -66,7 +68,7 @@ export class HomeAISituations extends LitElement {
       }
       this.unsubs = [situations, approvals];
       const [list, recent] = await Promise.all([
-        this.hass.callWS<{ resolved: Situation[] }>({ type: "homeai/situations/list", resolved: 10, language: lang }),
+        this.hass.callWS<{ resolved: Situation[] }>({ type: "homeai/situations/list", resolved: 100, language: lang }),
         this.hass.callWS<{ recent: Approval[] }>({ type: "homeai/approvals/list" }),
       ]);
       this.resolved = list.resolved;
@@ -75,6 +77,21 @@ export class HomeAISituations extends LitElement {
       this.error = err?.message ?? String(err);
     } finally {
       this.subscribing = false;
+    }
+  }
+
+  private groups(): [Situation[], Situation[]] {
+    const byWeight = [...this.open].sort((a, b) => b.severity - a.severity || (b.opened_at || b.first_seen).localeCompare(a.opened_at || a.first_seen));
+    return [byWeight.filter((s) => s.severity >= 2), byWeight.filter((s) => s.severity < 2)];
+  }
+
+  protected willUpdate(changed: Map<string, unknown>): void {
+    // a notification's situation opens on the page it is on
+    if (!changed.has("open") || !this.expanded || this.scrolled) return;
+    const [attention, info] = this.groups();
+    for (const [key, list] of [["needs_attention", attention], ["for_info", info]] as const) {
+      const at = list.findIndex((s) => s.id === this.expanded);
+      if (at >= 0) this.pages = { ...this.pages, [key]: Math.floor(at / PAGE_SIZE) };
     }
   }
 
@@ -153,24 +170,28 @@ export class HomeAISituations extends LitElement {
 
   private group(key: string, items: Situation[]) {
     if (!items.length) return nothing;
+    const page = paged(this, key, items, this.hass.language);
     return html`<section class="section">
       <div class="section-head"><h2 part="heading" class="heading">${t(this.hass.language, key)} <span class="count">${items.length}</span></h2></div>
-      <ul part="card list" class="list">${items.map((s) => this.situation(s))}</ul>
+      <ul part="card list" class="list">${page.items.map((s) => this.situation(s))}</ul>
+      ${page.nav}
     </section>`;
   }
 
   render() {
     const lang = this.hass.language;
     const tz = this.hass.config?.time_zone;
-    const byWeight = [...this.open].sort((a, b) => b.severity - a.severity || (b.opened_at || b.first_seen).localeCompare(a.opened_at || a.first_seen));
-    const attention = byWeight.filter((s) => s.severity >= 2);
-    const info = byWeight.filter((s) => s.severity < 2);
+    const [attention, info] = this.groups();
+    const pending = paged(this, "pending", this.pending, lang);
+    const resolved = paged(this, "resolved", this.resolved, lang);
+    const decided = paged(this, "decided", this.decided, lang);
     return html`
       ${this.error ? html`<div part="card error" class="card error">${this.error}</div>` : nothing}
       ${this.pending.length
         ? html`<section class="section">
             <div class="section-head"><h2 part="heading" class="heading">${t(lang, "waiting_approval")} <span class="count">${this.pending.length}</span></h2></div>
-            <ul part="card list" class="list">${this.pending.map((a) => this.approval(a))}</ul>
+            <ul part="card list" class="list">${pending.items.map((a) => this.approval(a))}</ul>
+            ${pending.nav}
           </section>`
         : nothing}
       ${this.group("needs_attention", attention)}
@@ -179,18 +200,20 @@ export class HomeAISituations extends LitElement {
       ${this.resolved.length
         ? html`<details class="section">
             <summary class="section-head"><h2 part="heading" class="heading">${t(lang, "resolved")} <span class="count">${this.resolved.length}</span></h2><span class="chevron">›</span></summary>
-            <ul part="card list" class="list">${this.resolved.map((s) => html`<li part="row"><div class="item-main plain">
+            <ul part="card list" class="list">${resolved.items.map((s) => html`<li part="row"><div class="item-main plain">
               <span class="item-text"><span part="row-title" class="item-title">${s.title}</span></span>
               <span part="time" class="item-aside">${shortWhen(s.opened_at || s.first_seen, lang, tz)}</span></div></li>`)}</ul>
+            ${resolved.nav}
           </details>`
         : nothing}
       ${this.decided.length
         ? html`<details class="section">
-            <summary class="section-head"><h2 part="heading" class="heading">${t(lang, "decided")} <span class="count">${Math.min(this.decided.length, 15)}</span></h2><span class="chevron">›</span></summary>
-            <ul part="card list" class="list">${this.decided.slice(0, 15).map((a) => html`<li part="row"><div class="item-main plain">
+            <summary class="section-head"><h2 part="heading" class="heading">${t(lang, "decided")} <span class="count">${this.decided.length}</span></h2><span class="chevron">›</span></summary>
+            <ul part="card list" class="list">${decided.items.map((a) => html`<li part="row"><div class="item-main plain">
               <span class="item-text"><span part="row-title" class="item-title">${a.what}</span>
                 <span part="row-meta" class="item-meta">${t(lang, `status_${a.status}`).replace(/^status_/, "")}${a.decided_by ? ` · ${a.decided_by}` : ""}</span></span>
               <span part="time" class="item-aside">${shortWhen(a.created, lang, tz)}</span></div></li>`)}</ul>
+            ${decided.nav}
           </details>`
         : nothing}
     `;

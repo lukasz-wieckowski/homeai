@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
 import { clock, dayLabel, homeDay, inZone, t, when } from "../i18n";
+import { paged } from "../pager";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -83,7 +84,7 @@ export class HomeAIPlan extends LitElement {
   @state() private watches: Watch[] = [];
   @state() private draft?: Draft;
   @state() private error = "";
-  @state() private all = false;
+  @state() pages: Record<string, number> = {};
   @state() private expanded: string | null = null;
 
   static styles = [
@@ -103,7 +104,7 @@ export class HomeAIPlan extends LitElement {
   }
 
   private async load(): Promise<void> {
-    const res = await this.hass.callWS<{ entries: Entry[]; occurrences: Occurrence[] }>({ type: "homeai/plan/list", days: 14 });
+    const res = await this.hass.callWS<{ entries: Entry[]; occurrences: Occurrence[] }>({ type: "homeai/plan/list", days: 31 });
     this.entries = res.entries;
     this.occurrences = res.occurrences;
     try {
@@ -250,7 +251,8 @@ export class HomeAIPlan extends LitElement {
   private timeline() {
     const lang = this.hass.language;
     const tz = this.hass.config?.time_zone;
-    const shown = this.occurrences.slice(0, this.all ? 200 : 12);
+    const page = paged(this, "next", this.occurrences, lang, 15);
+    const shown = page.items;
     const rows: unknown[] = [];
     let last = "";
     shown.forEach((o, i) => {
@@ -259,7 +261,7 @@ export class HomeAIPlan extends LitElement {
         rows.push(html`<li part="day" class="day">${dayLabel(o.at, lang, tz)}</li>`);
         last = day;
       }
-      const key = `${o.entry_id}|${o.at}|${i}`;
+      const key = `${o.entry_id}|${o.at}|${page.offset + i}`;
       const open = this.expanded === key;
       const source = o.external ? this.hass.states[o.source ?? ""]?.attributes.friendly_name ?? o.source ?? "" : "";
       const meta = source && !o.title.toLowerCase().includes(String(source).toLowerCase()) ? `${t(lang, "from_source")} ${source}` : "";
@@ -280,10 +282,7 @@ export class HomeAIPlan extends LitElement {
               : nothing}
           </li>`);
     });
-    return html`<ul part="card list" class="list">${rows}</ul>
-      ${this.occurrences.length > 12
-        ? html`<div class="item-actions end"><button part="button button-quiet" class="quiet" @click=${() => (this.all = !this.all)}>${this.all ? t(lang, "show_less") : `${t(lang, "show_all")} (${this.occurrences.length})`}</button></div>`
-        : nothing}`;
+    return html`<ul part="card list" class="list">${rows}</ul>${page.nav}`;
   }
 
   private edit(id: string): void {
@@ -305,7 +304,7 @@ export class HomeAIPlan extends LitElement {
           ${this.watches.length
             ? html`<section class="section">
                 <div class="section-head"><h2 part="heading" class="heading">${t(lang, "watching")} <span class="count">${this.watches.length}</span></h2></div>
-                <ul part="card list" class="list">${this.watches.map((w) => {
+                <ul part="card list" class="list">${paged(this, "watches", this.watches, lang).items.map((w) => {
                   const open = this.expanded === `watch|${w.id}`;
                   return html`<li part="row" class=${open ? "open" : ""}>
                     <button class="item-main plain" aria-expanded=${open ? "true" : "false"} @click=${() => (this.expanded = open ? null : `watch|${w.id}`)}>
@@ -317,17 +316,19 @@ export class HomeAIPlan extends LitElement {
                       <button part="button" @click=${() => this.removeWatch(w.id)}>${t(lang, "watch_stop")}</button></div></div>` : nothing}
                   </li>`;
                 })}</ul>
+                ${paged(this, "watches", this.watches, lang).nav}
               </section>`
             : nothing}
           ${this.entries.length
             ? html`<section class="section">
                 <div class="section-head"><h2 part="heading" class="heading">${t(lang, "plan_entries")} <span class="count">${this.entries.length}</span></h2></div>
-                <ul part="card list" class="list">${this.entries.map((e) => html`<li part="row">
+                <ul part="card list" class="list">${paged(this, "entries", this.entries, lang).items.map((e) => html`<li part="row">
                   <button class="item-main plain" @click=${() => (this.draft = fromEntry(e))}>
                     <span class="item-text"><span part="row-title" class="item-title ${e.enabled ? "" : "off"}">${e.title}</span>
                       <span part="row-meta" class="item-meta">${describeWhen(e.when, lang)} · ${e.author_name}${e.enabled ? "" : ` · ${t(lang, "entry_off")}`}</span></span>
                     <span class="chevron">›</span>
                   </button></li>`)}</ul>
+                ${paged(this, "entries", this.entries, lang).nav}
               </section>`
             : nothing}
         </div>

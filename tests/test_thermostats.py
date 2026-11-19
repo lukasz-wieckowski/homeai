@@ -603,3 +603,68 @@ async def test_long_trip_is_sent_in_pieces(hass: HomeAssistant, freezer: FrozenD
     renewed = [c for c in heat.calls_of("add_override") if c.data["entity_id"] == ["climate.living"]]
     assert len(renewed) == 2 and renewed[1].data["override_id"] == renewed[0].data["override_id"]
     assert dt_util.parse_datetime(renewed[1].data["end"]) == dt_util.utcnow() + timedelta(days=30)
+
+
+async def test_a_change_by_hand_wins_over_renewals(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, hass_admin_user
+) -> None:
+    freezer.move_to(NOW)
+    rt, heat = await thermostats_rt(hass, {"heating.nobody_home_minutes": 30})
+    module = rt.module("thermostats")
+    hass.states.async_set("person.anna", "not_home", {"friendly_name": "Anna"})
+    hass.states.async_set("person.ben", "not_home", {"friendly_name": "Ben"})
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=31))
+    await module.reconcile()
+    assert len(heat.calls_of("add_override")) == 3
+    # on the way home Anna warms the living room up in the app
+    freezer.tick(timedelta(minutes=30))
+    attrs = dict(hass.states.get("climate.living").attributes)
+    hass.states.async_set(
+        "climate.living", "heat", {**attrs, "temperature": 22.0}, context=Context(user_id=hass_admin_user.id)
+    )
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=1, minutes=40))
+    await module.reconcile()
+    renewed = {c.data["entity_id"][0] for c in heat.calls_of("add_override")[3:]}
+    assert renewed == {"climate.bedroom", "climate.bathroom"}  # not the living room: Anna's change stays
+    record = next(r for r in module.records.values() if r["entity_id"] == "climate.living")
+    assert record["status"] == "superseded"
+    assert any("changed Living by hand" in e["text"] for e in rt.journal.recent(20))
+    freezer.tick(timedelta(minutes=40))
+    await module.reconcile()
+    assert len([c for c in heat.calls_of("add_override") if c.data["entity_id"] == ["climate.living"]]) == 1
+    # home again before it ran out: HomeAI still takes its own override off
+    hass.states.async_set("person.anna", "home", {"friendly_name": "Anna"})
+    await hass.async_block_till_done()
+    await module.reconcile()
+    assert ["climate.living"] in [c.data["entity_id"] for c in heat.calls_of("remove_override")]
+
+
+async def test_source_attribute_tells_manual_changes(hass: HomeAssistant, hass_admin_user) -> None:
+    rt, _heat = await thermostats_rt(hass)
+    module = rt.module("thermostats")
+    attrs = dict(hass.states.get("climate.living").attributes)
+    # a turn of the knob: the thermostat writes it with a fresh context but says it is a hold
+    hass.states.async_set("climate.living", "heat", {**attrs, "temperature": 23.0, "source": "hold"})
+    # its own schedule block, even in the context of a person's earlier call, is not by hand
+    hass.states.async_set(
+        "climate.living",
+        "heat",
+        {**attrs, "temperature": 18.0, "preset_mode": "sleep", "source": "schedule"},
+        context=Context(user_id=hass_admin_user.id),
+    )
+    # HomeAI's own change never counts as a person's
+    hass.states.async_set(
+        "climate.living",
+        "heat",
+        {**attrs, "temperature": 21.0, "preset_mode": "comfort"},
+        context=Context(user_id=rt.system_user_id),
+    )
+    await hass.async_block_till_done()
+    assert [c[1] for c in module.manual["climate.living"]] == [23.0]
+    assert module.preset_temps["climate.living"]["sleep"] == 18.0
+    hass.states.async_set("climate.living", "heat", {**attrs, "preset_temperatures": {"comfort": 21.5, "eco": "x"}})
+    assert module.preset_temperatures("climate.living")["comfort"] == 21.5
+    assert module.preset_temperatures("climate.living")["sleep"] == 18.0
+    assert "eco" not in module.preset_temperatures("climate.living")

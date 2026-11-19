@@ -201,14 +201,17 @@ def _empty(value: Any) -> bool:
     return value is None or (isinstance(value, (str, list, dict)) and not value)
 
 
-def _flatten(user_input: dict[str, Any], parts: set[str]) -> dict[str, Any]:
+def _flatten(user_input: dict[str, Any], parts: dict[str, list[Setting]]) -> tuple[dict[str, Any], set[str]]:
+    """The answers without their parts, and the settings of parts that were not sent at all: a client that leaves
+    a collapsed part out leaves its values as they are."""
     flat: dict[str, Any] = {}
     for key, value in user_input.items():
         if key in parts and isinstance(value, dict):
             flat.update(value)
         else:
             flat[key] = value
-    return flat
+    absent = {s.key for name, items in parts.items() if name not in user_input for s in items}
+    return flat, absent
 
 
 class HomeAIOptionsFlow(OptionsFlow):
@@ -279,8 +282,9 @@ class HomeAIOptionsFlow(OptionsFlow):
         placeholders = {**LITERAL_PLACEHOLDERS, "error": ""}
         shown: dict[str, Any] = {}
         if user_input is not None:
-            flat = _flatten(user_input, set(parts))
-            changes, problems = self._read(sid, [*top, *(s for p in parts.values() for s in p)], flat, shown)
+            flat, absent = _flatten(user_input, parts)
+            items = [s for s in (*top, *(s for p in parts.values() for s in p)) if s.key not in absent]
+            changes, problems = self._read(sid, items, flat, shown)
             if problems:
                 errors["base"] = "invalid_setting"
                 placeholders["error"] = "; ".join(problems)
@@ -297,10 +301,8 @@ class HomeAIOptionsFlow(OptionsFlow):
 
         schema: dict[Any, Any] = dict(entry(s) for s in top)
         for name, items in parts.items():
-            # a part left closed may arrive empty or not at all: its fields then keep their values
-            schema[vol.Optional(name, default={})] = section(
-                vol.Schema(dict(entry(s) for s in items)), {"collapsed": True}
-            )
+            # optional: a part that is not sent at all keeps its values
+            schema[vol.Optional(name)] = section(vol.Schema(dict(entry(s) for s in items)), {"collapsed": True})
         return self.async_show_form(
             step_id=sid, data_schema=vol.Schema(schema), errors=errors, description_placeholders=placeholders
         )
@@ -437,11 +439,13 @@ class HomeAIOptionsFlow(OptionsFlow):
         placeholders = {**LITERAL_PLACEHOLDERS, "place": self._place_name(skey), "error": ""}
         shown: dict[str, Any] = {}
         if user_input is not None:
-            flat = _flatten(user_input, set(by_section))
+            flat, absent = _flatten(user_input, by_section)
             changes: list[tuple[str, Any]] = []
             problems: list[str] = []
             for items in by_section.values():
                 for s in items:
+                    if s.key in absent:
+                        continue
                     raw = flat.get(field(s.key))
                     if _empty(raw):
                         if s.key in current:
@@ -468,7 +472,7 @@ class HomeAIOptionsFlow(OptionsFlow):
                 key = vol.Optional(field(s.key), description={"suggested_value": value} if value is not None else None)
                 inner[key] = selector_for(s, place=True, lang=self._lang())
             own = any(s.key in current or s.key in shown for s in items)
-            schema[vol.Optional(sid, default={})] = section(vol.Schema(inner), {"collapsed": not own})
+            schema[vol.Optional(sid)] = section(vol.Schema(inner), {"collapsed": not own})
         return self.async_show_form(
             step_id="place_settings",
             data_schema=vol.Schema(schema),

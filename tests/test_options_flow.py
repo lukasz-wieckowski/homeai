@@ -117,6 +117,11 @@ async def test_detection_is_split_by_what_it_watches(hass: HomeAssistant) -> Non
     await hass.config_entries.options.async_configure(result["flow_id"], data)
     assert rt.settings.get("detectors.battery.threshold") == 35
 
+    rt.settings.set("detectors.consumables.used_up_entities", ["sensor.filter"], user="test")
+    result = await open_step(hass, rt.entry.entry_id, "detectors")
+    await hass.config_entries.options.async_configure(result["flow_id"], {})  # parts not sent keep their values
+    assert rt.settings.get("detectors.consumables.used_up_entities") == ["sensor.filter"]
+
 
 async def test_a_change_that_lowers_protection_asks_first(hass: HomeAssistant) -> None:
     standard_home(hass)
@@ -213,6 +218,12 @@ async def test_settings_for_a_place(hass: HomeAssistant) -> None:
     assert data["detectors"]["detectors_security_openings_at_night"] == "off"
     del data["detectors"]["detectors_battery_threshold"]  # emptied: inherit again
     await hass.config_entries.options.async_configure(result["flow_id"], data)
+    assert rt.settings.overrides_for(f"area:{kitchen}") == {"detectors.security.openings_at_night": False}
+
+    result = await open_step(hass, rt.entry.entry_id, "place")
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"scope": "area"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"target": kitchen})
+    await hass.config_entries.options.async_configure(result["flow_id"], {})  # no part sent: nothing changes
     assert rt.settings.overrides_for(f"area:{kitchen}") == {"detectors.security.openings_at_night": False}
 
 

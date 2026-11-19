@@ -13,7 +13,7 @@ Fixes from testing HomeAI 1.3.0 together with Heat Zones on a copy of a real hom
   phone notifications right after installing (#18). *Never* stays never; configuration (R4) is still proposed.
 - Open-ended heating overrides (nobody home, vacation mode, activity) no longer make the thermostat heat ahead
   towards their end, which is only a horizon HomeAI renews: they are sent with `open_end: true` to thermostats that
-  announce the `open_end` extension in `homeai_schedule.features` (#19).
+  announce the `open_end` extension in `homeai_schedule.features` (#19, agreed with Heat Zones, heat-zones#2).
 - The device registry is iterated instead of being used as a mapping, which Home Assistant reports as deprecated and
   stops supporting in 2027.9 (#20).
 

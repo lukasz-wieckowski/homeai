@@ -83,7 +83,9 @@ homeai_schedule:
   towards it (an override always wins for its whole time; after it is removed the schedule simply resumes). HomeAI
   sends it with its open-ended overrides (nobody home, vacation mode, activity), and only to thermostats that list
   `open_end` in `homeai_schedule.features`. Overrides with a real end (a trip, guests) leave it out, so the thermostat
-  can heat up in time for the end.
+  can heat up in time for the end. `get_schedule` returns `open_end: true` on such overrides; a renewal that only moves
+  the end keeps the override's age (it is not a newer instruction than a person's change). If nobody renews it, the
+  schedule resumes at that end without heating ahead.
 - Between an override and a person's manual change the newer instruction wins. An override sent again **unchanged**
   (same start, end and value) keeps its age; one sent with other times or another value is a new instruction.
 - The thermostat's own changes (schedule blocks, heating ahead, the end of an override) are written with a fresh

@@ -14,6 +14,12 @@ and offers these services in that domain, each targeting the climate entity:
 - `set_schedule` — `weekly`: the whole week.
 - `estimate` — responds `{entity_id: {minutes | null, confidence}}`.
 
+Optional extensions a thermostat announces in `homeai_schedule.features`:
+
+- `open_end`: `add_override` accepts `open_end: true` — the end is only a horizon the caller renews or removes, so the
+  thermostat does not heat ahead towards it. HomeAI sends it with its open-ended overrides (nobody home, vacation
+  mode, activity) to thermostats that announce it.
+
 Changes keep their usual meaning: `climate.set_temperature` / `set_preset_mode` are a manual change that lasts until
 the next block of the schedule. HomeAI's overrides carry `source: homeai` and a reason.
 """
@@ -31,6 +37,7 @@ ATTRIBUTE = "homeai_schedule"
 VERSION = 1
 SOURCE = "homeai"
 REASON_MAX = 200
+OPEN_END = "open_end"  # optional feature: an override's end is only a horizon
 SERVICES = ("add_override", "remove_override", "get_schedule", "set_schedule", "estimate")
 REQUIRED_SERVICES = ("add_override", "remove_override", "get_schedule")
 DAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
@@ -46,6 +53,7 @@ class Thermostat:
     device_id: str | None
     presets: tuple[str, ...]  # the climate entity's preset_modes ("" when it does not list them)
     available: bool
+    features: frozenset[str] = frozenset()  # optional contract extensions it announces (`open_end`)
 
     def has_preset(self, preset: str) -> bool:
         return not self.presets or preset in self.presets
@@ -84,6 +92,10 @@ def discover(hass: HomeAssistant, world: Any) -> dict[str, Thermostat]:
         if not areas and info.area_id:
             areas = (info.area_id,)
         presets = state.attributes.get("preset_modes")
+        raw_features = state.attributes[ATTRIBUTE].get("features")
+        features = (
+            frozenset(f for f in raw_features if isinstance(f, str)) if isinstance(raw_features, list) else frozenset()
+        )
         found[state.entity_id] = Thermostat(
             entity_id=state.entity_id,
             domain=domain,
@@ -91,6 +103,7 @@ def discover(hass: HomeAssistant, world: Any) -> dict[str, Thermostat]:
             device_id=info.device_id,
             presets=tuple(str(p) for p in presets) if isinstance(presets, (list, tuple)) else (),
             available=state.state not in ("unavailable", "unknown"),
+            features=features,
         )
     return found
 

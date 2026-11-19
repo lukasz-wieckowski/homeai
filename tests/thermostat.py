@@ -42,6 +42,7 @@ class FakeHeat:
         weekly: list[dict[str, Any]] | None = None,
         valve: bool = False,
         plan: list[dict[str, Any]] | None = None,
+        features: list[str] | None = None,
     ) -> str:
         name = entity_id.split(".", 1)[1].replace("_", " ").title()
         device = home.device(name, area=area)
@@ -53,6 +54,8 @@ class FakeHeat:
             "preset_modes": list(presets),
             "homeai_schedule": {"version": 1, "domain": self.domain},
         }
+        if features is not None:
+            attrs["homeai_schedule"]["features"] = features
         if plan is not None:
             attrs["homeai_plan"] = plan
         home.entity(entity_id, "heat", device=device, attrs=attrs)
@@ -71,6 +74,13 @@ class FakeHeat:
             {"days": ["sat", "sun"], "time": "08:00", "preset_mode": "comfort"},
         ]
         return entity_id
+
+    def features(self, call: ServiceCall) -> set[str]:
+        out: set[str] = set()
+        for entity_id in self._entities(call):
+            state = self.hass.states.get(entity_id)
+            out |= set((state.attributes.get("homeai_schedule") or {}).get("features") or []) if state else set()
+        return out
 
     def calls_of(self, service: str) -> list[ServiceCall]:
         return [c for c in self.calls if c.service == service]
@@ -91,13 +101,19 @@ class FakeHeat:
             raise ServiceValidationError("end must be in the future")
         if len(str(call.data.get("reason", ""))) > 200:
             raise ServiceValidationError("reason is too long")
+        if "open_end" in call.data and "open_end" not in self.features(call):
+            raise ServiceValidationError("extra keys not allowed @ data['open_end']")  # like a strict schema
         oid = str(call.data.get("override_id") or f"o{len(self.calls)}")
         for entity_id in self._entities(call):
             self.overrides[entity_id][oid] = {
                 "override_id": oid,
                 "start": call.data.get("start"),
                 "end": call.data["end"],
-                **{k: call.data[k] for k in ("preset_mode", "temperature", "reason", "source") if k in call.data},
+                **{
+                    k: call.data[k]
+                    for k in ("preset_mode", "temperature", "reason", "source", "open_end")
+                    if k in call.data
+                },
             }
         return {"override_id": oid}
 

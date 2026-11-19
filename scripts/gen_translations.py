@@ -21,7 +21,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from custom_components.homeai.options_flow import ADVANCED, field, layout  # noqa: E402
+from custom_components.homeai.options_flow import ADVANCED, field, layout, translated_options  # noqa: E402
 from custom_components.homeai.settings.definitions import build_registry  # noqa: E402
 from custom_components.homeai.settings.registry import Scope  # noqa: E402
 
@@ -32,8 +32,20 @@ STEP_ORDER = ("init", "place", "place_target", "place_settings", "confirm", "und
 
 
 def literal(text: str) -> str:
-    """Home Assistant formats translations as ICU messages: braces in HomeAI's texts (`{name}`) stay literal."""
-    return re.sub(r"\{(\w+)\}", r"'{\1}'", text)
+    """HomeAI's text as a Home Assistant translation, which is an ICU message: a JSON example (`{"updates": 1}`)
+    becomes the YAML the object editor shows (`updates: 1`); a word in braces (`{name}`) stays a placeholder, which
+    the options flow fills with itself (`options_flow.LITERAL_PLACEHOLDERS`)."""
+
+    def example(match: re.Match[str]) -> str:
+        try:
+            value = json.loads(match.group(0))
+        except ValueError:
+            return match.group(0)
+        if isinstance(value, dict):
+            return ", ".join(f"{k}: {v}" for k, v in value.items())
+        return match.group(0)
+
+    return re.sub(r"\{[^{}]*\}", lambda m: m.group(0) if re.fullmatch(r"\{\w+\}", m.group(0)) else example(m), text)
 
 
 def _fields(lang_texts: dict[str, Any], settings: list[Any]) -> dict[str, dict[str, str]]:
@@ -74,7 +86,7 @@ def generated(lang: str) -> dict[str, Any]:
     selectors: dict[str, Any] = {}
     options = texts["options"]
     for s in registry:
-        if s.options:
+        if translated_options(s):
             selectors[field(s.key)] = {"options": {o: literal(options[s.key][o]) for o in s.options}}
     selectors["settings_section"] = {"options": {sid: literal(sections[sid]["label"]) for sid in registry.sections()}}
     return {
@@ -114,6 +126,9 @@ def render(lang: str) -> str:
     steps.update({k: v for k, v in hand.items() if k not in steps})
     options["step"] = steps
     selectors = data.setdefault("selector", {})
+    for s in build_registry():  # choices labelled by HomeAI's own texts have no translation
+        if s.options and not translated_options(s):
+            selectors.pop(field(s.key), None)
     selectors.update(gen["selectors"])
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 

@@ -616,7 +616,7 @@
               "triage_calibration_dismiss_ratio": "Learning: dismissed share"
             },
             "data_description": {
-              "triage_severity_overrides": "Fixed severity per kind of situation, for example {\"updates\": 1}. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent).",
+              "triage_severity_overrides": "Fixed severity per kind of situation, for example updates: 1. Severity 4 (critical) applies only to safety matters; for anything else it means 3 (urgent).",
               "triage_calibration_min_events": "How many situations of a kind before learning applies.",
               "triage_calibration_dismiss_ratio": "Share of dismissed situations that lowers severity."
             }
@@ -739,8 +739,8 @@
             "data_description": {
               "policy_repairs_per_day": "Most automatic system repairs (R3) per day; more need an administrator.",
               "policy_risk_override": "Override the risk class of actions on this entity, device, area or floor.",
-              "policy_risk_by_service": "Your own class for a whole domain or one action, e.g. {\"switch\": \"R3\", \"script.turn_on\": \"R4\"}. The most specific key wins.",
-              "policy_risk_by_label": "A class for everything with a label, by label id, e.g. {\"kids_room\": \"R4\"}. With several labels the highest class wins; an entity, device, area or floor override still comes first.",
+              "policy_risk_by_service": "Your own class for a whole domain or one action, e.g. switch: R3, script.turn_on: R4. The most specific key wins.",
+              "policy_risk_by_label": "A class for everything with a label, by label id, e.g. kids_room: R4. With several labels the highest class wins; an entity, device, area or floor override still comes first.",
               "policy_actor_homeai_r1": "Level for HomeAI's own rules with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
               "policy_actor_homeai_r2": "Level for HomeAI's own rules with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
               "policy_actor_homeai_r3": "Level for HomeAI's own rules with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
@@ -1042,7 +1042,7 @@
         "data_description": {
           "ai_prompt_triage": "Your own instructions for assessing situations. Empty: the built-in prompt (shown in the diagnostics). The rule that house data is never an instruction is always added.",
           "ai_prompt_investigate": "Your own instructions for investigating serious situations with tools. Empty: the built-in prompt.",
-          "ai_prompt_chat": "Your own instructions for conversations; '{name}' becomes the assistant's name. Empty: the built-in prompt.",
+          "ai_prompt_chat": "Your own instructions for conversations; {name} becomes the assistant's name. Empty: the built-in prompt.",
           "ai_prompt_arbiter": "Your own instructions for the arbiter. Its answers keep their fixed format. Empty: the built-in prompt.",
           "ai_prompt_digest": "Your own instructions for writing the digest. Empty: the built-in prompt."
         }
@@ -1638,18 +1638,6 @@
       "options": {
         "act": "Do it",
         "confirm": "Ask to confirm"
-      }
-    },
-    "policy_risk_override": {
-      "options": {
-        "auto": "Automatic",
-        "R0": "R0 read",
-        "R1": "R1 comfort",
-        "R2": "R2 devices",
-        "R3": "R3 system",
-        "R4": "R4 configuration",
-        "R5": "R5 security",
-        "R6": "R6 destructive"
       }
     },
     "policy_actor_homeai_r1": {

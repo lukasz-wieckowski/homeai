@@ -12,6 +12,7 @@ Home Assistant takes form labels only from `translations/<lang>.json`, so the fi
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.config_entries import ConfigFlowResult, OptionsFlow
@@ -60,6 +61,11 @@ EMPTY: dict[T, Any] = {
     T.MULTISELECT: [],
 }
 ON, OFF = "on", "off"
+# Words in braces in HomeAI's texts that are meant literally (a prompt's `{name}`): translations keep them as
+# placeholders, and every form fills them with themselves.
+LITERAL_PLACEHOLDERS = {"name": "{name}"}
+# Choices Home Assistant can translate: lowercase keys (`R0`…`R6` cannot be translation keys).
+TRANSLATABLE = re.compile(r"^(?!.+[_-]{2})(?![_-])[a-z0-9-_]+(?<![_-])$")
 
 
 def field(key: str) -> str:
@@ -95,14 +101,30 @@ def place_layout(registry: SettingsRegistry, scope: Scope) -> dict[str, list[Set
     return out
 
 
-def _select(options: list[str] | tuple[str, ...], key: str, *, multiple: bool = False) -> SelectSelector:
+def translated_options(s: Setting) -> bool:
+    """Whether the setting's choices are labelled by the translations (else by HomeAI's own texts)."""
+    return bool(s.options) and all(TRANSLATABLE.match(o) for o in s.options)
+
+
+def _select(
+    options: list[str] | tuple[str, ...],
+    key: str | None,
+    *,
+    multiple: bool = False,
+    labels: dict[str, str] | None = None,
+) -> SelectSelector:
     mode = SelectSelectorMode.LIST if multiple and len(options) <= 8 else SelectSelectorMode.DROPDOWN
-    return SelectSelector(
-        SelectSelectorConfig(options=list(options), translation_key=key, multiple=multiple, mode=mode)
+    config = SelectSelectorConfig(
+        options=[{"value": o, "label": labels.get(o, o)} for o in options] if labels is not None else list(options),
+        multiple=multiple,
+        mode=mode,
     )
+    if key and labels is None:
+        config["translation_key"] = key
+    return SelectSelector(config)
 
 
-def selector_for(s: Setting, *, place: bool = False) -> Any:
+def selector_for(s: Setting, *, place: bool = False, lang: str = i18n.FALLBACK) -> Any:
     """The form control for a setting, by its type and its selector hint."""
     t = s.type
     if t is T.BOOL:
@@ -121,7 +143,8 @@ def selector_for(s: Setting, *, place: bool = False) -> Any:
     if t is T.TIME:
         return TimeSelector()
     if t in (T.SELECT, T.MULTISELECT):
-        return _select(s.options, field(s.key), multiple=t is T.MULTISELECT)
+        labels = None if translated_options(s) else i18n.section(lang, "options").get(s.key) or {}
+        return _select(s.options, field(s.key), multiple=t is T.MULTISELECT, labels=labels)
     if t is T.TEXT:
         return TextSelector(TextSelectorConfig(multiline=True))
     if t is T.ENTITY:
@@ -253,7 +276,7 @@ class HomeAIOptionsFlow(OptionsFlow):
         settings = self._rt.settings
         top, parts = layout(settings.registry, sid)
         errors: dict[str, str] = {}
-        placeholders = {"error": ""}
+        placeholders = {**LITERAL_PLACEHOLDERS, "error": ""}
         shown: dict[str, Any] = {}
         if user_input is not None:
             flat = _flatten(user_input, set(parts))
@@ -270,7 +293,7 @@ class HomeAIOptionsFlow(OptionsFlow):
                 key = vol.Optional(field(s.key), description={"suggested_value": value})
             else:
                 key = vol.Required(field(s.key), default=value)
-            return key, selector_for(s)
+            return key, selector_for(s, lang=self._lang())
 
         schema: dict[Any, Any] = dict(entry(s) for s in top)
         for name, items in parts.items():
@@ -411,7 +434,7 @@ class HomeAIOptionsFlow(OptionsFlow):
         by_section = place_layout(settings.registry, scope)
         current = settings.overrides_for(skey)
         errors: dict[str, str] = {}
-        placeholders = {"place": self._place_name(skey), "error": ""}
+        placeholders = {**LITERAL_PLACEHOLDERS, "place": self._place_name(skey), "error": ""}
         shown: dict[str, Any] = {}
         if user_input is not None:
             flat = _flatten(user_input, set(by_section))
@@ -443,7 +466,7 @@ class HomeAIOptionsFlow(OptionsFlow):
             for s in items:
                 value = shown.get(s.key, to_form(s, current[s.key], place=True) if s.key in current else None)
                 key = vol.Optional(field(s.key), description={"suggested_value": value} if value is not None else None)
-                inner[key] = selector_for(s, place=True)
+                inner[key] = selector_for(s, place=True, lang=self._lang())
             own = any(s.key in current or s.key in shown for s in items)
             schema[vol.Optional(sid, default={})] = section(vol.Schema(inner), {"collapsed": not own})
         return self.async_show_form(

@@ -12,7 +12,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType, section
 import voluptuous as vol
 
-from custom_components.homeai.options_flow import ADVANCED, field, layout
+from custom_components.homeai.options_flow import (
+    ADVANCED,
+    LITERAL_PLACEHOLDERS,
+    field,
+    layout,
+    translated_options,
+)
 from custom_components.homeai.settings import Target, build_registry
 
 from .common import setup_homeai
@@ -280,8 +286,50 @@ def test_field_names_are_unique_and_translated() -> None:
         for s in registry:
             if len(s.scopes) > 1:
                 assert steps["place_settings"]["sections"][s.section]["data"][field(s.key)], (lang, s.key)
-            if s.options:
+            if translated_options(s):
                 assert set(tr["selector"][field(s.key)]["options"]) == set(s.options), (lang, s.key)
+            elif s.options:  # R0…R6 cannot be translation keys: labelled from HomeAI's texts in the form
+                assert field(s.key) not in tr["selector"], (lang, s.key)
     script = str(ROOT / "scripts/gen_translations.py")
     result = subprocess.run([sys.executable, script, "--check"], capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout
+
+
+def _strings(node: Any) -> list[str]:
+    if isinstance(node, dict):
+        return [t for v in node.values() for t in _strings(v)]
+    return [node]
+
+
+def test_translations_follow_home_assistants_rules() -> None:
+    """The rules hassfest checks in CI: no HTML, URLs or quoted placeholders in texts, placeholders are identifiers
+    (and the generated forms fill every one of them), choices have lowercase keys, field help only for fields."""
+    import re
+    import string
+
+    key = re.compile(r"^(?!.+[_-]{2})(?![_-])[a-z0-9-_]+(?<![_-])$")
+    url = re.compile(r"((https?|mqtts?|ftps?|scp|socket|socks5)://|www\.)[a-z0-9]+([-.][a-z0-9]+)*\.[a-z]{2,5}", re.I)
+    for lang in ("en", "pl"):
+        tr = json.loads((ROOT / f"custom_components/homeai/translations/{lang}.json").read_text(encoding="utf-8"))
+
+        def walk(node: Any, path: str) -> None:
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    walk(v, f"{path}.{k}")
+                return
+            assert not re.search(r"<[a-z].*?>", node, re.I), path
+            assert not re.search(r"'{\w+}'", node), path
+            assert not url.search(node), path
+            assert node == node.strip(), path
+            for _, name, _, _ in string.Formatter().parse(node):
+                assert not name or name.isidentifier(), (path, name)
+
+        walk(tr, lang)
+        for name, spec in tr["selector"].items():
+            assert all(key.match(option) for option in spec.get("options", {})), (lang, name)
+        for sid in build_registry().sections():
+            step = tr["options"]["step"][sid]
+            assert set(step.get("data_description", {})) <= set(step.get("data", {})), (lang, sid)
+            texts = " ".join(_strings(step))
+            used = {name for _, name, _, _ in string.Formatter().parse(texts) if name}
+            assert used <= set(LITERAL_PLACEHOLDERS) | {"error"}, (lang, sid, used)

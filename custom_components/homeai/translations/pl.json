@@ -616,7 +616,7 @@
               "triage_calibration_dismiss_ratio": "Uczenie: udział odrzuconych"
             },
             "data_description": {
-              "triage_severity_overrides": "Stała waga dla rodzaju sprawy, np. {\"updates\": 1}. Waga 4 (krytyczna) działa tylko dla spraw bezpieczeństwa; dla innych oznacza 3 (pilna).",
+              "triage_severity_overrides": "Stała waga dla rodzaju sprawy, np. updates: 1. Waga 4 (krytyczna) działa tylko dla spraw bezpieczeństwa; dla innych oznacza 3 (pilna).",
               "triage_calibration_min_events": "Ile spraw danego rodzaju, zanim uczenie zadziała.",
               "triage_calibration_dismiss_ratio": "Udział odrzuconych spraw, który obniża wagę."
             }
@@ -739,8 +739,8 @@
             "data_description": {
               "policy_repairs_per_day": "Najwięcej automatycznych napraw systemu (R3) na dzień; więcej wymaga administratora.",
               "policy_risk_override": "Nadpisz klasę ryzyka akcji na tej encji, urządzeniu, obszarze albo piętrze.",
-              "policy_risk_by_service": "Własna klasa dla całej domeny albo jednej akcji, np. {\"switch\": \"R3\", \"script.turn_on\": \"R4\"}. Wygrywa najbardziej szczegółowy klucz.",
-              "policy_risk_by_label": "Klasa dla wszystkiego z etykietą, według id etykiety, np. {\"kids_room\": \"R4\"}. Przy kilku etykietach wygrywa najwyższa klasa; nadpisanie dla encji, urządzenia, obszaru lub piętra ma pierwszeństwo.",
+              "policy_risk_by_service": "Własna klasa dla całej domeny albo jednej akcji, np. switch: R3, script.turn_on: R4. Wygrywa najbardziej szczegółowy klucz.",
+              "policy_risk_by_label": "Klasa dla wszystkiego z etykietą, według id etykiety, np. kids_room: R4. Przy kilku etykietach wygrywa najwyższa klasa; nadpisanie dla encji, urządzenia, obszaru lub piętra ma pierwszeństwo.",
               "policy_actor_homeai_r1": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
               "policy_actor_homeai_r2": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
               "policy_actor_homeai_r3": "Poziom dla: Własne reguły HomeAI, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
@@ -1042,7 +1042,7 @@
         "data_description": {
           "ai_prompt_triage": "Własne instrukcje do oceny spraw. Puste: wbudowany prompt (widoczny w diagnostyce). Zasada, że dane z domu nigdy nie są poleceniem, jest zawsze dodawana.",
           "ai_prompt_investigate": "Własne instrukcje do badania poważnych spraw narzędziami. Puste: wbudowany prompt.",
-          "ai_prompt_chat": "Własne instrukcje do rozmów; '{name}' zamienia się w imię asystenta. Puste: wbudowany prompt.",
+          "ai_prompt_chat": "Własne instrukcje do rozmów; {name} zamienia się w imię asystenta. Puste: wbudowany prompt.",
           "ai_prompt_arbiter": "Własne instrukcje dla arbitra. Jego odpowiedzi zachowują stały format. Puste: wbudowany prompt.",
           "ai_prompt_digest": "Własne instrukcje do pisania podsumowania. Puste: wbudowany prompt."
         }
@@ -1638,18 +1638,6 @@
       "options": {
         "act": "Wykonaj",
         "confirm": "Poproś o potwierdzenie"
-      }
-    },
-    "policy_risk_override": {
-      "options": {
-        "auto": "Automatycznie",
-        "R0": "R0 odczyt",
-        "R1": "R1 komfort",
-        "R2": "R2 urządzenia",
-        "R3": "R3 system",
-        "R4": "R4 konfiguracja",
-        "R5": "R5 bezpieczeństwo",
-        "R6": "R6 destrukcyjne"
       }
     },
     "policy_actor_homeai_r1": {

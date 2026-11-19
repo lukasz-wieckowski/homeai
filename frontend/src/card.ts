@@ -2,7 +2,7 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "./define";
 import { t, when } from "./i18n";
-import { shared } from "./styles";
+import { PARTS, shared } from "./styles";
 import type { HomeAssistant } from "./types";
 import "./views/chat";
 
@@ -38,18 +38,18 @@ export class HomeAISituationsCard extends LitElement {
     const lang = this.hass.language;
     const entity = this.hass.states[this.config.entity ?? "sensor.homeai_situations"];
     const items = ((entity?.attributes.situations ?? []) as Item[]).filter((s) => s.severity >= (this.config.min_severity ?? 1));
-    return html`<div class="card">
-      ${this.config.title ? html`<div class="title" style="margin-bottom: 8px">${this.config.title}</div>` : nothing}
+    return html`<div part="card" class="card">
+      ${this.config.title ? html`<div part="title" class="title spaced">${this.config.title}</div>` : nothing}
       ${items.length
-        ? html`<ul class="plain">${items.map(
+        ? html`<ul part="list" class="plain">${items.map(
             (s) => html`<li>
-              <div class="row"><span class="sev sev-${s.severity}">${s.severity}</span><span class="grow">${s.title}</span>
+              <div class="row"><span part="badge badge-${s.severity}" class="sev sev-${s.severity}">${s.severity}</span><span class="grow">${s.title}</span>
                 <span class="muted">${when(s.since, lang)}</span></div>
               ${s.repairing ? html`<div class="muted">${t(lang, "repairing")}</div>` : nothing}
-              <div class="row" style="margin-top: 6px">
-                <button @click=${() => this.act("acknowledge", s.id)} ?disabled=${s.acknowledged}>${t(lang, "ack")}</button>
-                <button @click=${() => this.act("handle", s.id)}>${t(lang, "handle")}</button>
-                <button @click=${() => this.act("snooze", s.id)}>${t(lang, "snooze")}</button>
+              <div class="row actions">
+                <button part="button" @click=${() => this.act("acknowledge", s.id)} ?disabled=${s.acknowledged}>${t(lang, "ack")}</button>
+                <button part="button" @click=${() => this.act("handle", s.id)}>${t(lang, "handle")}</button>
+                <button part="button" @click=${() => this.act("snooze", s.id)}>${t(lang, "snooze")}</button>
               </div></li>`,
           )}</ul>`
         : html`<div class="muted">${t(lang, "nothing_open")}</div>`}
@@ -109,10 +109,10 @@ export class HomeAIPlanCard extends LitElement {
     if (!this.hass) return nothing;
     const lang = this.hass.language;
     const items = this.occurrences.slice(0, this.config.limit ?? 6);
-    return html`<div class="card">
-      <div class="title" style="margin-bottom: 8px">${this.config.title ?? t(lang, "plan_next")}</div>
+    return html`<div part="card" class="card">
+      <div part="title" class="title spaced">${this.config.title ?? t(lang, "plan_next")}</div>
       ${items.length
-        ? html`<ul class="plain">${items.map((o) => html`<li class="row"><span class="muted">${when(o.at, lang)}</span><span class="grow">${o.title}</span></li>`)}</ul>`
+        ? html`<ul part="list" class="plain">${items.map((o) => html`<li class="row"><span class="muted">${when(o.at, lang)}</span><span class="grow">${o.title}</span></li>`)}</ul>`
         : html`<div class="muted">${t(lang, "no_plan")}</div>`}
     </div>`;
   }
@@ -142,9 +142,9 @@ export class HomeAIChatCard extends LitElement {
 
   render() {
     if (!this.hass) return nothing;
-    return html`<div class="card">
-      ${this.config.title ? html`<div class="title" style="margin-bottom: 8px">${this.config.title}</div>` : nothing}
-      <homeai-chat .hass=${this.hass} compact storage-key="homeai-chat-card"></homeai-chat>
+    return html`<div part="card" class="card">
+      ${this.config.title ? html`<div part="title" class="title spaced">${this.config.title}</div>` : nothing}
+      <homeai-chat exportparts=${PARTS} .hass=${this.hass} compact storage-key="homeai-chat-card"></homeai-chat>
     </div>`;
   }
 }

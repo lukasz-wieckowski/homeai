@@ -40,12 +40,14 @@ export class HomeAIChat extends LitElement {
   static styles = [
     shared,
     css`
-      .log { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; padding: 4px 0 12px; }
-      :host([compact]) .log { max-height: 320px; }
-      .msg { max-width: 85%; padding: 8px 12px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .user { align-self: flex-end; background: var(--primary-color); color: var(--text-primary-color, #fff); }
-      .assistant { align-self: flex-start; background: var(--secondary-background-color, #f1f1f1); }
-      textarea { min-height: 44px; font-family: inherit; font-size: 1em; }
+      .log { display: flex; flex-direction: column; gap: var(--_space); max-height: 60vh; overflow-y: auto;
+        padding: var(--_space-s) 0 var(--_space-l); }
+      :host([compact]) .log { max-height: 24em; }
+      .msg { max-width: 85%; padding: var(--_space) var(--_space-l); border-radius: var(--_message-radius);
+        white-space: pre-wrap; overflow-wrap: anywhere; }
+      .user { align-self: flex-end; background: var(--_user-message-background); color: var(--_user-message-text); }
+      .assistant { align-self: flex-start; background: var(--_assistant-message-background); color: var(--_assistant-message-text); }
+      textarea { min-height: 3em; font-family: inherit; font-size: inherit; }
     `,
   ];
 
@@ -106,19 +108,19 @@ export class HomeAIChat extends LitElement {
   render() {
     const lang = this.hass.language;
     return html`
-      <div class="log" aria-live="polite">
+      <div part="log" class="log" aria-live="polite">
         ${this.messages.length ? nothing : html`<div class="muted">${t(lang, "chat_hint")}</div>`}
-        ${this.messages.map((m) => html`<div class="msg ${m.role}">${m.text}</div>`)}
-        ${this.busy ? html`<div class="msg assistant muted">…</div>` : nothing}
+        ${this.messages.map((m) => html`<div part="message message-${m.role}" class="msg ${m.role}">${m.text}</div>`)}
+        ${this.busy ? html`<div part="message message-assistant" class="msg assistant muted">…</div>` : nothing}
       </div>
-      ${this.error ? html`<div class="muted" style="color: var(--error-color)">${this.error}</div>` : nothing}
+      ${this.error ? html`<div part="error" class="muted error">${this.error}</div>` : nothing}
       <div class="row">
-        <textarea class="grow" placeholder=${t(lang, "chat_placeholder")} @keydown=${this.keydown} ?disabled=${this.busy}></textarea>
+        <textarea part="input" class="grow" placeholder=${t(lang, "chat_placeholder")} @keydown=${this.keydown} ?disabled=${this.busy}></textarea>
       </div>
-      <div class="row" style="margin-top: 8px">
-        <button class="primary" @click=${this.send} ?disabled=${this.busy}>${t(lang, "send")}</button>
+      <div class="row actions">
+        <button part="button button-primary" class="primary" @click=${this.send} ?disabled=${this.busy}>${t(lang, "send")}</button>
         <span class="grow"></span>
-        ${this.messages.length ? html`<button @click=${this.restart}>${t(lang, "chat_new")}</button>` : nothing}
+        ${this.messages.length ? html`<button part="button" @click=${this.restart}>${t(lang, "chat_new")}</button>` : nothing}
       </div>`;
   }
 }

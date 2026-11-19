@@ -53,10 +53,10 @@ export class HomeAISituations extends LitElement {
     const lang = this.hass.language;
     const a = s.assessment || {};
     const repairing = ["waiting", "trying", "verifying"].includes(s.repair?.status);
-    return html`<div class="card">
+    return html`<div part="card" class="card">
       <div class="row">
-        <span class="sev sev-${s.severity}" title=${t(lang, "severity")}>${s.severity}</span>
-        <span class="title grow">${s.title}</span>
+        <span part="badge badge-${s.severity}" class="sev sev-${s.severity}" title=${t(lang, "severity")}>${s.severity}</span>
+        <span part="title" class="title grow">${s.title}</span>
         <span class="muted">${t(lang, "since")} ${when(s.opened_at || s.first_seen, lang)}</span>
       </div>
       ${s.description ? html`<p>${s.description}</p>` : nothing}
@@ -65,10 +65,10 @@ export class HomeAISituations extends LitElement {
       ${repairing ? html`<p class="muted">${t(lang, "repairing")} (${s.repair.playbook})</p>` : nothing}
       ${s.acked_by ? html`<p class="muted">✓ ${s.acked_by}</p>` : nothing}
       <div class="row">
-        <button @click=${() => this.act("ack", s)} ?disabled=${!!s.acked_by}>${t(lang, "ack")}</button>
-        <button @click=${() => this.act("handle", s)}>${t(lang, "handle")}</button>
-        <button @click=${() => this.act("snooze", s)}>${t(lang, "snooze")}</button>
-        <button @click=${() => this.act("dismiss", s)}>${t(lang, "dismiss")}</button>
+        <button part="button" @click=${() => this.act("ack", s)} ?disabled=${!!s.acked_by}>${t(lang, "ack")}</button>
+        <button part="button" @click=${() => this.act("handle", s)}>${t(lang, "handle")}</button>
+        <button part="button" @click=${() => this.act("snooze", s)}>${t(lang, "snooze")}</button>
+        <button part="button" @click=${() => this.act("dismiss", s)}>${t(lang, "dismiss")}</button>
       </div>
     </div>`;
   }
@@ -76,10 +76,10 @@ export class HomeAISituations extends LitElement {
   render() {
     const lang = this.hass.language;
     return html`
-      ${this.open.length ? this.open.map((s) => this.renderSituation(s)) : html`<div class="empty">${t(lang, "nothing_open")}</div>`}
+      ${this.open.length ? this.open.map((s) => this.renderSituation(s)) : html`<div part="empty" class="empty">${t(lang, "nothing_open")}</div>`}
       ${this.resolved.length
-        ? html`<h3>${t(lang, "resolved")}</h3>
-            <div class="card"><ul class="plain">
+        ? html`<h3 part="heading" class="heading">${t(lang, "resolved")}</h3>
+            <div part="card" class="card"><ul part="list" class="plain">
               ${this.resolved.map((s) => html`<li class="row"><span class="grow">${s.title}</span><span class="muted">${when(s.opened_at || s.first_seen, lang)}</span></li>`)}
             </ul></div>`
         : nothing}

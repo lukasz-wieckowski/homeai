@@ -23,6 +23,7 @@ API OpenAI.</sub>
   [Sprawy](#sprawy) · [Zgody](#zgody) · [Rozmowa](#rozmowa) · [Plan](#plan) · [Obecność](#obecność) ·
   [Uczenie](#uczenie) · [Reguły](#reguły) · [Dziennik](#dziennik) · [Ustawienia](#ustawienia) · [AI](#ai)
 - [Karty na pulpit](#karty-na-pulpit)
+- [Motywy](#motywy)
 - [Na telefonie](#na-telefonie)
 - [Kalendarze](#kalendarze)
 - [Ogrzewanie](#ogrzewanie)
@@ -142,7 +143,8 @@ dzienny, jest pomijane i odpowiada następne. Budżety dzienny i miesięczny dla
 Wszystko, co wymaga uwagi, od najpoważniejszych. Każda sprawa pokazuje:
 
 - **wagę**: 0 informacja (tylko dziennik), 1 niska (wystarczy podsumowanie), 2 średnia (ktoś dzisiaj), 3 wysoka
-  (ktoś teraz), 4 krytyczna (zagrożenie dla ludzi albo poważne szkody; budzi domowników);
+  (ktoś teraz), 4 krytyczna (tylko bezpieczeństwo, zagrożenie dla ludzi: zalanie, dym, gaz, czad; budzi domowników). Inne sprawy,
+  także otwarte okno, gdy nikogo nie ma, są najwyżej wysokie (3);
 - co się stało i **radę**; z AI także **Dlaczego** (uzasadnienie modelu) i ponumerowane **kroki**;
 - **HomeAI naprawia**, gdy działa scenariusz naprawy; ludzie dowiadują się tylko wtedy, gdy się nie uda.
 
@@ -326,6 +328,92 @@ sections:
           - sensor.homeai_next_plan_change
 ```
 
+## Motywy
+
+Panel i karty nie mają własnych kolorów, czcionek, zaokrągleń, cieni ani odstępów. Wszystko bierze się z motywu
+Home Assistanta, jasnego albo ciemnego, przez te same zmienne, które czytają karty samego Home Assistanta. Dom z
+własnym wyglądem ustawia w swoim motywie zmienne `--homeai-*`; czego nie da się zmienić zmienną, zmieni `::part()`.
+
+```yaml
+# plik motywu (frontend: themes: !include_dir_merge_named themes); klucze motywu pisze się bez "--"
+Mój dom:
+  homeai-card-background: "rgba(255, 255, 255, 0.7)"
+  homeai-card-border-radius: 24px
+  homeai-accent-color: "#c4581c"
+  homeai-font-family: Georgia, serif
+  modes:
+    dark:
+      homeai-card-background: "rgba(28, 28, 28, 0.7)"
+```
+
+| Zmienna | Domyślnie (zmienna Home Assistanta) | Co zmienia |
+|---|---|---|
+| `--homeai-text-color` | `--primary-text-color` | tekst |
+| `--homeai-secondary-text-color` | `--secondary-text-color` | tekst drugoplanowy, godziny |
+| `--homeai-accent-color` | `--primary-color` | przyciski, aktywną zakładkę, pola wyboru |
+| `--homeai-on-accent-color` | `--text-primary-color` | tekst na kolorze akcentu |
+| `--homeai-background` | `--primary-background-color` | tło panelu |
+| `--homeai-surface-color` | `--secondary-background-color` | spokojniejsze powierzchnie (wiadomości HomeAI w rozmowie) |
+| `--homeai-divider-color` | `--divider-color` | linie między pozycjami |
+| `--homeai-error-color` | `--error-color` | komunikaty o błędach |
+| `--homeai-header-background` | `--app-header-background-color` | górny pasek panelu |
+| `--homeai-header-text-color` | `--app-header-text-color` | jego tekst |
+| `--homeai-severity-0-color`, `--homeai-severity-1-color`, `--homeai-severity-2-color`, `--homeai-severity-3-color`, `--homeai-severity-4-color` | `--secondary-text-color`, `--success-color`, `--info-color`, `--warning-color`, `--error-color` | znaczki wagi 0–4 |
+| `--homeai-severity-text-color` | `--text-primary-color` | cyfry na znaczkach |
+| `--homeai-card-background` | `--ha-card-background`, inaczej `--card-background-color` | karty |
+| `--homeai-card-border-color` | `--ha-card-border-color`, inaczej `--divider-color` | ramkę karty |
+| `--homeai-card-border-width` | `--ha-card-border-width`, inaczej `--ha-border-width-sm` | ramkę karty |
+| `--homeai-card-border-radius` | `--ha-card-border-radius`, inaczej `--ha-border-radius-lg` | rogi karty |
+| `--homeai-card-box-shadow` | `--ha-card-box-shadow`, inaczej brak | cień karty |
+| `--homeai-card-padding` | `--ha-space-4` | wnętrze karty |
+| `--homeai-card-spacing` | `--ha-space-3` | odstęp między kartami |
+| `--homeai-button-border-radius` | `--ha-border-radius-pill` | przyciski |
+| `--homeai-button-padding` | `--ha-space-2` `--ha-space-4` | przyciski |
+| `--homeai-button-border-color` | `--homeai-divider-color` | przyciski |
+| `--homeai-input-background` | `--input-fill-color` | pola |
+| `--homeai-input-text-color` | `--input-ink-color` | pola |
+| `--homeai-input-border-color` | `--input-outlined-idle-border-color` | pola |
+| `--homeai-input-border-radius` | `--ha-border-radius-sm` | pola |
+| `--homeai-input-padding` | `--ha-space-2` | pola |
+| `--homeai-badge-border-radius` | `--ha-border-radius-pill` | znaczki wagi |
+| `--homeai-message-border-radius` | `--ha-border-radius-xl` | wiadomości w rozmowie |
+| `--homeai-user-message-background` | `--homeai-accent-color` | twoje wiadomości |
+| `--homeai-user-message-text-color` | `--homeai-on-accent-color` | twoje wiadomości |
+| `--homeai-assistant-message-background` | `--homeai-surface-color` | wiadomości HomeAI |
+| `--homeai-assistant-message-text-color` | `--homeai-text-color` | wiadomości HomeAI |
+| `--homeai-font-family` | `--ha-font-family-body` | cały tekst |
+| `--homeai-code-font-family` | `--ha-font-family-code` | prompty i ustawienia JSON |
+| `--homeai-font-size` | `--ha-font-size-m` | tekst |
+| `--homeai-secondary-font-size` | `--ha-font-size-s` | tekst drugoplanowy, znaczki |
+| `--homeai-title-font-size` | `--ha-font-size-l` | tytuły kart, nagłówki |
+| `--homeai-title-font-weight` | `--ha-font-weight-medium` | tytuły kart, nagłówki |
+| `--homeai-header-font-size` | `--ha-font-size-xl` | tytuł panelu |
+| `--homeai-header-font-weight` | `--ha-font-weight-normal` | tytuł panelu |
+| `--homeai-spacing` | `--ha-space-2` | podstawowy krok (odstępy, wiersze list); mniejsze i większe idą za nim |
+| `--homeai-content-padding` | `--ha-content-gutter` | margines treści panelu |
+| `--homeai-content-max-width` | 68em | szerokość treści panelu |
+| `--homeai-header-height` | `--header-height` | górny pasek panelu |
+
+Części do `::part()` ze strony, na której jest element (card-mod, moduł frontendu z własnym CSS; same pliki motywów
+Home Assistanta ustawiają tylko zmienne). Panel przekazuje dalej części swoich zakładek, więc
+`homeai-panel::part(card)` sięga kart w każdej zakładce:
+
+| Część | Co |
+|---|---|
+| `card`, `title`, `heading` | karta, jej tytuł, nagłówek między kartami |
+| `badge`, `badge-0`, `badge-1`, `badge-2`, `badge-3`, `badge-4` | znaczek wagi (i ten dla danej wagi) |
+| `button`, `button-primary` | każdy przycisk, przycisk główny |
+| `input` | pola, listy wyboru, pola wyboru |
+| `list`, `empty`, `error` | lista w karcie, napis „nic tu nie ma”, błąd |
+| `log`, `message`, `message-user`, `message-assistant` | rozmowa: przebieg i wiadomości |
+| `header`, `header-title`, `tabs`, `tab`, `tab-active`, `content` | tylko panel: górny pasek, tytuł, zakładki, treść |
+
+```css
+homeai-panel::part(card),
+homeai-situations-card::part(card) { backdrop-filter: blur(12px); }
+homeai-panel::part(tab-active) { font-weight: 700; }
+```
+
 ## Na telefonie
 
 <p>
@@ -336,7 +424,8 @@ sections:
 - Powiadomienia trafiają do aplikacji Companion każdej osoby (znajdowanej automatycznie; dodatkowe cele dla osoby w
   *Ustawienia → Powiadomienia*). Mają przyciski **Wiem**, **Zajmę się** i **Wycisz**; prośby o zgodę mają **Zgoda**
   i **Odmowa**.
-- Kto dostaje co, zależy od wagi: krytyczne trafiają od razu do wszystkich i się powtarzają (mogą budzić), wysokie do
+- Kto dostaje co, zależy od wagi: krytyczne (tylko bezpieczeństwo) trafiają od razu do wszystkich alertem
+  krytycznym i powtarzają się co 5 minut (mogą budzić), wysokie do
   osób w domu (inaczej do wszystkich) i po 15 minutach do wszystkich, średnie do osób w domu (inaczej do wszystkich),
   niskie tylko do panelu i podsumowania. Każda drabina to ustawienie.
 - Śpiący dostają tylko powiadomienia krytyczne. Dzienne limity, przełącznik pauzy i podsumowanie dbają o spokój.
@@ -489,7 +578,7 @@ HomeAI tworzy te etykiety; nadaj je encjom albo urządzeniom w Home Assistancie:
 | Etykieta | Działanie |
 |---|---|
 | **HomeAI: ignore** | HomeAI tego nie pilnuje i nie dotyka |
-| **HomeAI: critical** | Problemy z tym są poważniejsze (np. gniazdko zamrażarki, pompa w studzience) |
+| **HomeAI: critical** | Problemy z tym są zawsze pilne, a krytyczne, gdy dotyczą bezpieczeństwa (np. gniazdko zamrażarki, pompa w studzience, czujnik dymu) |
 | **HomeAI: protective action** | Przy alarmie bezpieczeństwa HomeAI może od razu przełączyć to w bezpieczny stan (zawory, grzałki) |
 | **HomeAI: personal** | Urządzenie osobiste (telefon, laptop): nie jest zgłaszane, gdy znika z sieci |
 | **HomeAI: private** | Nigdy nie trafia do AI w chmurze |

@@ -65,43 +65,43 @@ export class HomeAIAI extends LitElement {
   private promptCard(p: Prompt) {
     const lang = this.hass.language;
     const draft = this.drafts[p.mission] ?? (p.custom || p.default);
-    return html`<details class="card"><summary class="row"><span class="title grow">${t(lang, `prompt_${p.mission}`)}</span>
+    return html`<details part="card" class="card"><summary class="row"><span part="title" class="title grow">${t(lang, `prompt_${p.mission}`)}</span>
         <span class="muted">${p.custom ? t(lang, "prompt_custom") : t(lang, "prompt_default")}</span></summary>
       <p class="muted">${t(lang, "prompt_hint")}</p>
-      <textarea style="min-height: 240px" .value=${live(draft)} @input=${(e: Event) => (this.drafts = { ...this.drafts, [p.mission]: (e.target as HTMLTextAreaElement).value })}></textarea>
-      <div class="row" style="margin-top: 8px">
-        <button class="primary" @click=${() => this.savePrompt(p, draft.trim() === p.default.trim() ? "" : draft)}>${t(lang, "save")}</button>
-        ${p.custom ? html`<button @click=${() => this.restorePrompt(p)}>${t(lang, "prompt_restore")}</button>` : nothing}
+      <textarea part="input" class="tall" .value=${live(draft)} @input=${(e: Event) => (this.drafts = { ...this.drafts, [p.mission]: (e.target as HTMLTextAreaElement).value })}></textarea>
+      <div class="row actions">
+        <button part="button button-primary" class="primary" @click=${() => this.savePrompt(p, draft.trim() === p.default.trim() ? "" : draft)}>${t(lang, "save")}</button>
+        ${p.custom ? html`<button part="button" @click=${() => this.restorePrompt(p)}>${t(lang, "prompt_restore")}</button>` : nothing}
       </div>
-      ${p.custom ? html`<details><summary class="muted">${t(lang, "prompt_show_default")}</summary><textarea readonly style="min-height: 200px">${p.default}</textarea></details>` : nothing}
+      ${p.custom ? html`<details><summary class="muted">${t(lang, "prompt_show_default")}</summary><textarea part="input" readonly class="tall">${p.default}</textarea></details>` : nothing}
     </details>`;
   }
 
   render() {
     const lang = this.hass.language;
-    if (!this.hass.user.is_admin) return html`<div class="empty">${t(lang, "admin_only")}</div>`;
+    if (!this.hass.user.is_admin) return html`<div part="empty" class="empty">${t(lang, "admin_only")}</div>`;
     const s = this.status;
     if (!s) return nothing;
     const tiers = Object.entries(s.tiers ?? {});
     return html`
-      <div class="card row">
-        <div class="grow"><div class="muted">${t(lang, "cost_today")}</div><div class="title">$${(s.ledger?.today ?? 0).toFixed(3)}</div></div>
-        <div class="grow"><div class="muted">${t(lang, "cost_month")}</div><div class="title">$${(s.ledger?.month ?? 0).toFixed(2)}</div></div>
+      <div part="card" class="card row">
+        <div class="grow"><div class="muted">${t(lang, "cost_today")}</div><div part="title" class="title">$${(s.ledger?.today ?? 0).toFixed(3)}</div></div>
+        <div class="grow"><div class="muted">${t(lang, "cost_month")}</div><div part="title" class="title">$${(s.ledger?.month ?? 0).toFixed(2)}</div></div>
         ${(s.ledger?.limits ?? []).map((l) => html`<div class="grow"><div class="muted">${t(lang, `limit_${l.period}`)}</div><div>$${l.spent.toFixed(2)} / $${l.limit}</div></div>`)}
       </div>
-      <div class="card">
-        <div class="title">${t(lang, "tiers")}</div>
+      <div part="card" class="card">
+        <div part="title" class="title">${t(lang, "tiers")}</div>
         ${tiers.length
-          ? html`<ul class="plain">${tiers.flatMap(([tier, list]) => list.map((c) => html`<li class="row"><b>${tier.toUpperCase()}</b>
+          ? html`<ul part="list" class="plain">${tiers.flatMap(([tier, list]) => list.map((c) => html`<li class="row"><b>${tier.toUpperCase()}</b>
               <span class="grow">${c.model} <span class="muted">(${c.provider}, ${c.priority})</span></span><span class="muted">${c.status ?? "—"}</span></li>`))}</ul>`
           : html`<p class="muted">${t(lang, "no_tiers")}</p>`}
       </div>
-      <div class="title" style="margin: 16px 0 8px">${t(lang, "prompts")}</div>
-      ${this.message ? html`<div class="card muted">${this.message}</div>` : nothing}
+      <div part="heading" class="heading">${t(lang, "prompts")}</div>
+      ${this.message ? html`<div part="card" class="card muted">${this.message}</div>` : nothing}
       ${this.prompts.map((p) => this.promptCard(p))}
       ${Object.entries(s.last_prompts ?? {}).map(
-        ([tier, p]) => html`<div class="card"><div class="title">${t(lang, "last_prompt")} · ${tier.toUpperCase()} · ${p.model} · ${p.purpose} · $${p.cost.toFixed(4)}</div>
-          <details><summary class="muted">${p.ts}</summary><textarea readonly>${JSON.stringify(p.messages, null, 2)}</textarea><textarea readonly>${p.answer}</textarea></details></div>`,
+        ([tier, p]) => html`<div part="card" class="card"><div part="title" class="title">${t(lang, "last_prompt")} · ${tier.toUpperCase()} · ${p.model} · ${p.purpose} · $${p.cost.toFixed(4)}</div>
+          <details><summary class="muted">${p.ts}</summary><textarea part="input" readonly>${JSON.stringify(p.messages, null, 2)}</textarea><textarea part="input" readonly>${p.answer}</textarea></details></div>`,
       )}`;
   }
 }

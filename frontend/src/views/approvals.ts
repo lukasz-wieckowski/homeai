@@ -49,20 +49,20 @@ export class HomeAIApprovals extends LitElement {
   render() {
     const lang = this.hass.language;
     return html`
-      ${this.error ? html`<div class="card" style="color: var(--error-color)">${this.error}</div>` : ""}
+      ${this.error ? html`<div part="card error" class="card error">${this.error}</div>` : ""}
       ${this.pending.length
         ? this.pending.map(
-            (a) => html`<div class="card">
-              <div class="row"><span class="sev sev-${Math.min(a.risk, 4)}">R${a.risk}</span><span class="title grow">${a.what}</span>
+            (a) => html`<div part="card" class="card">
+              <div class="row"><span part="badge badge-${Math.min(a.risk, 4)}" class="sev sev-${Math.min(a.risk, 4)}">R${a.risk}</span><span part="title" class="title grow">${a.what}</span>
                 <span class="muted">${t(lang, "expires")} ${when(a.expires, lang)}</span></div>
               <p class="muted">${a.reason}</p>
-              <div class="row"><button class="primary" @click=${() => this.decide("approve", a)}>${t(lang, "approve")}</button>
-                <button @click=${() => this.decide("deny", a)}>${t(lang, "deny")}</button></div>
+              <div class="row"><button part="button button-primary" class="primary" @click=${() => this.decide("approve", a)}>${t(lang, "approve")}</button>
+                <button part="button" @click=${() => this.decide("deny", a)}>${t(lang, "deny")}</button></div>
             </div>`,
           )
-        : html`<div class="empty">${t(lang, "no_approvals")}</div>`}
+        : html`<div part="empty" class="empty">${t(lang, "no_approvals")}</div>`}
       ${this.recent.length
-        ? html`<div class="card"><ul class="plain">${this.recent.slice(0, 15).map(
+        ? html`<div part="card" class="card"><ul part="list" class="plain">${this.recent.slice(0, 15).map(
             (a) => html`<li class="row"><span class="grow">${a.what}</span><span class="muted">${a.status}${a.decided_by ? ` · ${a.decided_by}` : ""}</span></li>`,
           )}</ul></div>`
         : ""}

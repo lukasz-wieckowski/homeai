@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HomeAI preview</title>
+    <!-- Serve the repository root (e.g. `python3 -m http.server`) and open /frontend/preview/?theme=dark&tab=chat.
+         Builds are read from custom_components/homeai/frontend, so run `npm run build` first. -->
+    <link rel="stylesheet" href="themes.css" />
+    <style>
+      body { margin: 0; background: var(--primary-background-color); color: var(--primary-text-color);
+        font-family: var(--ha-font-family-body); }
+      .bar { display: flex; gap: var(--ha-space-2); padding: var(--ha-space-2) var(--ha-space-4); align-items: center;
+        border-bottom: var(--ha-border-width-sm) solid var(--divider-color); flex-wrap: wrap; }
+      .bar a { color: var(--primary-color); }
+      .bar a.on { font-weight: var(--ha-font-weight-bold); }
+      .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24em); }
+      aside { padding: var(--ha-space-4); display: grid; gap: var(--ha-space-4); align-content: start; }
+      @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    </style>
+  </head>
+  <body>
+    <div class="bar" id="bar"></div>
+    <div class="grid">
+      <homeai-panel></homeai-panel>
+      <aside>
+        <homeai-situations-card></homeai-situations-card>
+        <homeai-plan-card></homeai-plan-card>
+        <homeai-chat-card></homeai-chat-card>
+      </aside>
+    </div>
+    <script type="module">
+      import { hass } from "./mock.js";
+      import "../../custom_components/homeai/frontend/homeai-panel.js";
+
+      const params = new URLSearchParams(location.search);
+      const theme = params.get("theme") || "light";
+      document.documentElement.dataset.theme = theme;
+      const link = (key, value) => {
+        const next = new URLSearchParams(location.search);
+        next.set(key, value);
+        const on = (params.get(key) || (key === "theme" ? "light" : key === "lang" ? "en" : "situations")) === value;
+        return `<a class="${on ? "on" : ""}" href="?${next}">${value}</a>`;
+      };
+      document.getElementById("bar").innerHTML = [
+        ...["light", "dark", "custom"].map((v) => link("theme", v)),
+        "·",
+        ...["en", "pl"].map((v) => link("lang", v)),
+        "·",
+        ...["situations", "approvals", "chat", "plan", "presence", "learning", "rules", "journal", "settings", "ai"].map((v) => link("tab", v)),
+      ].join(" ");
+
+      const panel = document.querySelector("homeai-panel");
+      panel.hass = hass;
+      for (const [tag, config] of [
+        ["homeai-situations-card", { type: "custom:homeai-situations-card", title: "Open situations" }],
+        ["homeai-plan-card", { type: "custom:homeai-plan-card" }],
+        ["homeai-chat-card", { type: "custom:homeai-chat-card", title: "Chat" }],
+      ]) {
+        const card = document.querySelector(tag);
+        card.setConfig(config);
+        card.hass = hass;
+      }
+    </script>
+  </body>
+</html>

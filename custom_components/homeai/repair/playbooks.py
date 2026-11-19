@@ -49,7 +49,9 @@ def _reload(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest
 def _backup(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest]:
     if params.get("paused") or not rt.hass.services.has_service("backup", "create_automatic"):
         return []
-    return [ActionRequest("backup", "create_automatic", {}, reason=s.title(rt.language), situation_id=s.id)]
+    return [
+        ActionRequest("backup", "create_automatic", {}, reason=s.title(rt.language), situation_id=s.id, background=True)
+    ]
 
 
 def _addon(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest]:

@@ -7,6 +7,7 @@ Two documented ways in:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime
 from typing import Any
@@ -45,8 +46,15 @@ def parse_external(raw: Any, *, source: str, entity_id: str | None = None) -> Si
         data={"title": title.strip()[:200], "description": str(raw.get("description") or "")[:500]},
         need=need,
         root=raw.get("group") if isinstance(raw.get("group"), str) else None,
-        confidence=float(raw.get("confidence", 0.8)),
+        confidence=_confidence(raw.get("confidence", 0.8)),
     )
+
+
+def _confidence(value: Any) -> float:
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except TypeError, ValueError:  # one malformed attribute must not stop every external signal
+        return 0.8
 
 
 class ExternalDetector(Detector):
@@ -54,12 +62,36 @@ class ExternalDetector(Detector):
 
     def __init__(self) -> None:
         self.reported: dict[str, tuple[Signal, datetime | None]] = {}
+        self.on_change: Callable[[], None] | None = None  # the hub stores reported signals
 
     def report(self, signal: Signal, expires: datetime | None) -> None:
         self.reported[signal.id] = (signal, expires)
+        self._changed()
 
     def clear(self, signal_id: str) -> bool:
-        return self.reported.pop(signal_id, None) is not None
+        cleared = self.reported.pop(signal_id, None) is not None
+        if cleared:
+            self._changed()
+        return cleared
+
+    def _changed(self) -> None:
+        if self.on_change is not None:
+            self.on_change()
+
+    def dump(self) -> list[dict[str, Any]]:
+        return [
+            {"signal": signal.as_dict(), "expires": expires.isoformat() if expires else None}
+            for signal, expires in self.reported.values()
+        ]
+
+    def restore(self, items: Any) -> None:
+        for item in items if isinstance(items, list) else []:
+            try:
+                signal = Signal.from_dict(item["signal"])
+                expires = dt_util.parse_datetime(item["expires"]) if item.get("expires") else None
+            except KeyError, TypeError, ValueError:
+                continue
+            self.reported[signal.id] = (signal, expires)
 
     def evaluate(self, ctx: DetectionContext) -> list[Signal]:
         out: list[Signal] = []
@@ -67,6 +99,7 @@ class ExternalDetector(Detector):
         for sid, (signal, expires) in list(self.reported.items()):
             if expires is not None and expires <= now:
                 del self.reported[sid]
+                self._changed()
                 continue
             out.append(signal)
         if not ctx.settings.get("detectors.external.attributes"):

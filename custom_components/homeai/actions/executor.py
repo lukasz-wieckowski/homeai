@@ -245,7 +245,9 @@ class Executor:
         timeout = float(self.rt.settings.get("executor.timeout"))
         try:
             async with asyncio.timeout(timeout):
-                await self.hass.services.async_call(request.domain, request.service, data, blocking=True, context=ctx)
+                await self.hass.services.async_call(
+                    request.domain, request.service, data, blocking=not request.background, context=ctx
+                )
         except TimeoutError:
             return self._finish(
                 request, ActionResult("failed", risk, "timeout", action_id, decision=decision.as_dict()), ctx

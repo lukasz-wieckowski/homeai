@@ -86,6 +86,12 @@ class Situation:
             return True
         return self.acked_at is not None
 
+    def notify_since(self, now: datetime) -> datetime:
+        """When the notification ladder starts: at opening, or later when it was started again (a snooze ended,
+        the matter got worse after “Got it”)."""
+        again = dt_util.parse_datetime(str(self.notify.get("since") or ""))
+        return again or self.opened_at or now
+
     def log(self, event: str, text: str = "", **data: Any) -> None:
         self.history.append(
             {"ts": dt_util.utcnow().isoformat(timespec="seconds"), "event": event, "text": text, **data}

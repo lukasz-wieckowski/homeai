@@ -14,9 +14,10 @@ from typing import Any
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import Event, callback
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from ..const import LOGGER
+from ..const import DOMAIN, LOGGER
 from .base import DetectionContext, Detector, Signal
 from .detectors.behaviour import LightsAwayDetector, WindowHeatingDetector
 from .detectors.custom import CustomDetector
@@ -41,6 +42,8 @@ from .detectors.system import (
 from .system import SystemSnapshot, async_refresh
 
 QUICK_DELAY = 1.0
+WATCH_DELAY = 0.5  # registry and state bursts (startup, an integration reloading) rebuild the watch list once
+EXTERNAL_KEY = f"{DOMAIN}.external_signals"
 
 Listener = Callable[[dict[str, Signal | None]], None]
 
@@ -82,6 +85,8 @@ class SignalHub:
         self._watch: dict[str, set[str]] = {}  # entity_id → detector keys
         self._pending: set[str] = set()
         self._cancel_quick: Callable[[], None] | None = None
+        self._cancel_watch: Callable[[], None] | None = None
+        self._external_store: Store[dict[str, Any]] = Store(self.hass, 1, EXTERNAL_KEY)
         self._listeners: list[Listener] = []
         self._unsubs: list[Callable[[], None]] = []
         self.system = SystemSnapshot()
@@ -98,10 +103,15 @@ class SignalHub:
             self._schedule_quick()
 
     async def async_setup(self) -> None:
+        # signals other integrations reported through the service stay until cleared or expired, also over a restart
+        self.external.restore((await self._external_store.async_load() or {}).get("reported"))
+        self.external.on_change = lambda: self._external_store.async_delay_save(
+            lambda: {"reported": self.external.dump()}, 2
+        )
         self._rebuild_watch()
         self._unsubs += [
             self.hass.bus.async_listen(EVENT_STATE_CHANGED, self._on_state),
-            self.rt.world.listen(lambda kind, _ids: self._rebuild_watch() if kind != "person" else None),
+            self.rt.world.listen(lambda kind, _ids: self._watch_changed() if kind != "person" else None),
             self.rt.settings.listen("detectors", lambda _key: self.schedule_all()),
             self.rt.on_tick(self._tick),
         ]
@@ -112,6 +122,12 @@ class SignalHub:
         self._unsubs.clear()
         if self._cancel_quick:
             self._cancel_quick()
+            self._cancel_quick = None
+        if self._cancel_watch:
+            self._cancel_watch()
+            self._cancel_watch = None
+        self.external.on_change = None
+        await self._external_store.async_save({"reported": self.external.dump()})
 
     @callback
     def listen(self, cb: Listener) -> Callable[[], None]:
@@ -129,6 +145,20 @@ class SignalHub:
         )
 
     # ——— Scheduling ———
+    @callback
+    def _watch_changed(self) -> None:
+        """The world changed: rebuild the watch list soon, once for a whole burst of changes (every tick evaluates
+        all detectors anyway, so nothing is missed meanwhile)."""
+        if self._cancel_watch is not None:
+            return
+
+        @callback
+        def run(_now: datetime) -> None:
+            self._cancel_watch = None
+            self._rebuild_watch()
+
+        self._cancel_watch = async_call_later(self.hass, WATCH_DELAY, run)
+
     def _rebuild_watch(self) -> None:
         ctx = self.context()
         watch: dict[str, set[str]] = {}

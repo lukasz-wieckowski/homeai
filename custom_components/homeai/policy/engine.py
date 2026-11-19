@@ -56,6 +56,9 @@ class ActionRequest:
     approved_by: str | None = None  # an approval was granted (the approver's name, for the journal)
     approved_by_user: str | None = None  # the Home Assistant user who granted it (people's approvals)
     dry_run: bool = False
+    # Start the service and do not wait for it to finish (a backup takes longer than any sensible timeout); the
+    # result is then judged by what follows, not by the call.
+    background: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

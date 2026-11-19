@@ -7,6 +7,8 @@ service. Settings may add notify entities or services per person, or exclude tab
 
 from __future__ import annotations
 
+import re
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import slugify
@@ -17,8 +19,13 @@ APP = "mobile_app"
 
 
 def _is_handheld(data: dict) -> bool:
-    text = f"{data.get('model', '')} {data.get('device_name', '')} {data.get('os_name', '')}".lower()
-    return not any(x in text for x in ("ipad", "mac", "windows", "linux", "tablet"))
+    """A phone, not a tablet or computer. What the device is comes from its model and system; its name is the
+    owner's (“Maciek's iPhone” is not a Mac) and counts only as whole words."""
+    kind = f"{data.get('model', '')} {data.get('os_name', '')}".lower()
+    if any(x in kind for x in ("ipad", "mac", "windows", "linux")):
+        return False
+    words = set(re.split(r"[^a-z0-9]+", str(data.get("device_name", "")).lower()))
+    return not words & {"ipad", "tablet", "macbook", "imac", "tab"}
 
 
 def app_targets(hass: HomeAssistant, person_entity_id: str, *, include_tablets: bool = False) -> list[str]:

@@ -15,7 +15,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 
 from ..situations.model import Phase, Situation
-from .playbooks import PLAYBOOKS, protective_requests
+from .playbooks import PLAYBOOKS, Defer, protective_requests
 
 ACTIVE = ("waiting", "trying", "verifying")
 
@@ -132,7 +132,11 @@ class RepairRunner:
         now = now or dt_util.utcnow()
         key = s.repair["playbook"]
         playbook = PLAYBOOKS[key]
-        requests = playbook.build(self.rt, s, s.repair.get("params") or {})
+        try:
+            requests = playbook.build(self.rt, s, s.repair.get("params") or {})
+        except Defer as later:
+            s.repair["due"] = (now + timedelta(minutes=later.minutes)).isoformat(timespec="seconds")
+            return
         if not requests:
             if (s.repair.get("params") or {}).get("paused"):
                 s.repair["due"] = (now + timedelta(minutes=int(self.rt.settings.get(playbook.wait_setting)))).isoformat(

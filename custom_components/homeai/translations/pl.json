@@ -691,6 +691,28 @@
     "no_areas": {
       "title": "HomeAI nie zna pokoi",
       "description": "W Home Assistancie nie ma obszarów. Dzięki nim HomeAI mówi, gdzie coś się dzieje, łączy powiązane problemy i kieruje akcje; dodaj je w Ustawienia → Obszary."
+    },
+    "finish_setup": {
+      "title": "Dokończ konfigurację HomeAI",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Język i prywatność",
+            "description": "Wpis konfiguracji HomeAI nie powstał w kreatorze (na przykład został po wcześniejszej integracji o nazwie HomeAI). HomeAI działa na ustawieniach domyślnych: język z Home Assistanta, standardowa prywatność, a role osób według ich kont w Home Assistancie. Wybierz je teraz.",
+            "data": {
+              "language": "Język komunikatów HomeAI",
+              "privacy": "Dane wysyłane do AI w chmurze"
+            }
+          },
+          "people": {
+            "title": "Osoby",
+            "description": "Wybierz rolę każdej osoby. Administratorzy zatwierdzają ryzykowne akcje i zmiany konfiguracji, domownicy dostają powiadomienia, a goście i pominięte osoby nie są liczeni jako mieszkańcy. Osoby: {people}"
+          }
+        },
+        "abort": {
+          "not_loaded": "HomeAI nie jest uruchomione. Przeładuj je i spróbuj ponownie."
+        }
+      }
     }
   }
 }

@@ -12,6 +12,15 @@ from typing import Any
 
 from ..policy import ActionRequest
 from ..situations.model import Situation
+from .restart import quiet_now, restart_button
+
+
+class Defer(Exception):  # a signal to the runner, not an error
+    """Not now: the runner tries again after `minutes`."""
+
+    def __init__(self, minutes: int) -> None:
+        super().__init__(minutes)
+        self.minutes = minutes
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +59,16 @@ def _addon(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest]
     return [ActionRequest("hassio", "addon_restart", {"addon": addon}, reason=s.title(rt.language), situation_id=s.id)]
 
 
+def _press_restart(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest]:
+    """Press the hub's restart button; with `quiet`, only when nobody is home or everyone at home sleeps."""
+    button = restart_button(rt.hass, params.get("device_id"))
+    if button is None:
+        return []
+    if params.get("quiet") and not quiet_now(rt):
+        raise Defer(30)
+    return [ActionRequest("button", "press", {}, entity_ids=[button], reason=s.title(rt.language), situation_id=s.id)]
+
+
 def _action(rt: Any, s: Situation, params: dict[str, Any]) -> list[ActionRequest]:
     service = str(params.get("service") or "")
     domain, _, name = service.partition(".")
@@ -68,6 +87,7 @@ PLAYBOOKS: dict[str, Playbook] = {
     "reload_after_outage": Playbook("reload_after_outage", "repair.outage_wait", _reload),
     "retry_backup": Playbook("retry_backup", "repair.backup_wait", _backup),
     "restart_addon": Playbook("restart_addon", "repair.reload_wait", _addon),
+    "press_restart": Playbook("press_restart", "repair.reload_wait", _press_restart),
     "action": Playbook("action", "repair.action_wait", _action, actor="homeai"),
 }
 

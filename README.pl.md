@@ -80,7 +80,7 @@ API OpenAI.</sub>
 
 **Przez HACS**
 
-1. Otwórz HACS → ⋮ → *Własne repozytoria*, dodaj `https://github.com/THEFIX-PL/homeai`, kategoria **Integracja**.
+1. Otwórz HACS → ⋮ → *Własne repozytoria*, dodaj `https://github.com/lukasz-wieckowski/homeai`, kategoria **Integracja**.
 2. Znajdź **HomeAI** w HACS, zainstaluj i uruchom Home Assistanta ponownie.
 
 **Ręcznie**
@@ -102,8 +102,9 @@ Po kreatorze:
 
 - W pasku bocznym pojawia się panel **HomeAI**: sprawy, zgody, rozmowa, plan, obecność, uczenie, reguły, dziennik,
   wszystkie ustawienia i stan AI.
-- Przez pierwsze **14 dni** (ustawienie *Okres obserwacji*) HomeAI tylko *obserwuje* akcje komfortu i urządzeń,
-  które wykonałoby samo: dziennik pokazuje, co by zrobiło. Bezpieczeństwo i naprawy działają od pierwszego dnia.
+- Przez pierwsze **14 dni** (ustawienie *Okres obserwacji*) HomeAI tylko *obserwuje* akcje komfortu, urządzeń
+  i napraw systemu, które wykonałoby samo: dziennik pokazuje, co by zrobiło. Wykrywanie spraw, powiadomienia
+  i akcje ochronne na oznaczonych encjach działają od pierwszego dnia.
 - HomeAI tworzy [etykiety](#etykiety), którymi oznaczasz encje i urządzenia, żeby powiedzieć mu, co jest ważne.
 
 ## Dodanie AI (opcjonalnie)
@@ -426,7 +427,7 @@ AWTRIX albo na dowolnej encji powiadomień (telewizor, tablet, wyświetlacz).
 | R0 odczyt | stany, historia, logi | tak | tak |
 | R1 komfort | światła, sceny, wentylatory, media, wiadomości | działa i informuje (po okresie obserwacji) | tak |
 | R2 urządzenia | przełączniki, rolety, temperatura ogrzewania, odkurzacz | proponuje i pyta | tak albo z potwierdzeniem (ustawienie) |
-| R3 system | przeładowanie integracji, restart dodatku, ponowienie kopii | tylko ze scenariuszy napraw, w dziennym limicie | administratorzy |
+| R3 system | przeładowanie integracji, restart dodatku lub mostka, ponowienie kopii | tylko ze scenariuszy napraw, w dziennym limicie (po okresie obserwacji) | administratorzy |
 | R4 konfiguracja | automatyzacje, skrypty, sceny, pomocnicy, pulpity | proponuje; zatwierdza administrator | administratorzy, z potwierdzeniem |
 | R5 ochrona | zamki, alarmy, bramy i drzwi garażowe, kamery | nigdy, poza akcjami ochronnymi | z potwierdzeniem |
 | R6 nieodwracalne | usuwanie konfiguracji, restart Home Assistanta | nigdy | administratorzy, z potwierdzeniem |

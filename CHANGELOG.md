@@ -3,6 +3,50 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0]
+
+Fixes from an independent review before the first installation in a real home.
+
+### Security
+- Confirmation comes from the person, never from a model: AI tools no longer take `confirmed`. A conversation gets
+  a one-time code bound to the person, the conversation and the exact action; it works only in the person's next
+  message, only when that message is a plain yes, and only once. Other assistants using HomeAI's tools get an
+  approval addressed to the person instead.
+- Action targets are resolved like Home Assistant resolves a service call (entities, devices, areas, floors,
+  labels, groups; every entity, also those HomeAI does not watch), and the action runs on exactly the judged list.
+  `homeassistant.turn_off` on a floor or label can no longer pass as a comfort action. A target with nothing behind
+  it and `entity_id: all` are refused.
+- Controls take the class of their device (a thermostat's valve position is a device action, a lock's relay a
+  security one); a device's configuration entities are at least R2; restart buttons are R3.
+- Reading automations, scripts and dashboards through HomeAI is for administrators only.
+
+### Fixed
+- Learned norms with sparse hours were stored as NaN, came back as null and crashed the anomaly detector on every
+  evaluation after a restart.
+- An administrator's approval of a resident's request created a new approval instead of running it; it now runs
+  once, in the administrator's account. Residents approving R1–R2 requests no longer fail.
+- The observation period covers system repairs too: a new home sees nothing reloaded or backed up before people
+  have watched HomeAI work (set the period to 0 to act at once).
+- A stale backup follows Home Assistant's backup schedule (twice a week is not stale after 30 hours), and switched
+  off automatic backups are never retried. Backup locations are listed every 6 hours or after a backup, not every
+  5 minutes; periodic work no longer overlaps when a tick runs long.
+- Conversations keep working past their turn limit on models with preserved thinking: when old turns are dropped,
+  the kept turns lose their thinking blocks instead of being rejected.
+- The Anthropic SDK is imported off the event loop.
+- iPhones report battery state as "Charging" / "Full"; charging sensors now understand them.
+- A situation whose severity changes right after opening no longer pushes the same step twice.
+- AI cost sensors report `last_reset`, so the recorder no longer sees the daily or monthly reset as negative spend.
+- Configuration changes kept for undo are capped at 50.
+
+### Added
+- People without a chosen role are administrators when their Home Assistant account is one; the wizard stores
+  every role it is given.
+- A config entry not made by HomeAI's wizard (for example one left by an earlier integration with the same domain)
+  is cleaned of foreign data and Repairs offers *Finish setting up HomeAI* (language, privacy, roles).
+- Repair playbook *Restart a hub with its restart button* (`press_restart`): used when a hub with a working restart
+  button goes offline (installations without the Supervisor included), and when a hub reports that it needs a
+  restart — then only while nobody is home or everyone at home is asleep. Repairs can postpone themselves.
+
 ## [1.1.0]
 
 ### Added

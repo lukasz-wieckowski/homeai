@@ -29,8 +29,8 @@ EXPOSED = (
 PROMPT = (
     "HomeAI looks after this home: it tracks situations (problems, risks, maintenance), the home's plan and what it "
     "did. Use its tools to answer questions about the home's state and to act; actions go through HomeAI's policy "
-    "and may need the person's confirmation (status needs_confirmation: ask, then call again with confirmed true) "
-    "or someone's approval."
+    "and may need the person's confirmation or someone's approval (status pending_approval: the person or an "
+    "administrator approves it in HomeAI, on their phone or in the panel; say so)."
 )
 
 

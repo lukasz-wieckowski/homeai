@@ -4,7 +4,7 @@ blueprint:
     Sends HomeAI notifications (ladder steps with the event channel) to any notify entity, for example a TV, a
     tablet or a wall display.
   domain: automation
-  source_url: https://github.com/THEFIX-PL/homeai/blob/main/blueprints/automation/homeai/notification_to_notify.yaml
+  source_url: https://github.com/lukasz-wieckowski/homeai/blob/main/blueprints/automation/homeai/notification_to_notify.yaml
   input:
     target:
       name: Notify entity

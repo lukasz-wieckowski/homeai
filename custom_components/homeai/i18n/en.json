@@ -24,7 +24,9 @@
       "turn_on": "Turn on: {targets}",
       "valve.close_valve": "Close the valve: {targets}",
       "valve.open_valve": "Open the valve: {targets}"
-    }
+    },
+    "yes_words": "yes, yeah, yep, yup, ok, okay, sure, confirm, confirmed, i confirm, go ahead, do it, please do, of course, correct, right, affirmative",
+    "no_words": "no, nope, not, don't, do not, cancel, stop, wait, never, abort"
   },
   "ai": {
     "all_quiet": "Everything is fine at home. Nothing needs attention.",
@@ -352,6 +354,7 @@
       "reload_after_outage": "Reload after the internet returns",
       "retry_backup": "Retry a failed backup",
       "restart_addon": "Restart an add-on",
+      "press_restart": "Restart a hub with its restart button",
       "action": "Suggested quick actions"
     },
     "schedule.who_may_add": {
@@ -1277,7 +1280,7 @@
       "label": "Configuration (R4)"
     },
     "policy.observation_days": {
-      "description": "Days after installation during which comfort and device autonomy only observes.",
+      "description": "Days after installation during which HomeAI only observes: comfort, device and system repair actions are written to the journal but not done. 0 starts acting at once.",
       "label": "Observation period"
     },
     "policy.person_r2": {

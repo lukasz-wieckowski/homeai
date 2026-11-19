@@ -16,12 +16,30 @@ MAX_THREADS = 50
 MAX_LOG_TURNS = 30
 
 
+THINKING = frozenset({"thinking", "redacted_thinking"})
+
+
 def _prune(messages: list[dict[str, Any]], turns: int) -> list[dict[str, Any]]:
-    """Keep the last `turns` turns; a turn starts with a user message that carries text (not tool results)."""
+    """Keep the last `turns` turns; a turn starts with a user message that carries text (not tool results).
+
+    A model's thinking block is bound to everything before it in the conversation (Claude's preserved thinking:
+    replaying it after earlier turns were removed is rejected on newer accounts). So when turns are dropped, the
+    kept turns lose their thinking blocks — answers and tool calls stay. Until then the history is only appended to.
+    """
     starts = [i for i, m in enumerate(messages) if m.get("role") == "user" and isinstance(m.get("content"), str)]
     if len(starts) <= turns:
         return messages
-    return messages[starts[-turns] :]
+    return [_without_thinking(m) for m in messages[starts[-turns] :]]
+
+
+def _without_thinking(message: dict[str, Any]) -> dict[str, Any]:
+    content = message.get("content")
+    if message.get("role") != "assistant" or not isinstance(content, list):
+        return message
+    kept = [b for b in content if not (isinstance(b, dict) and b.get("type") in THINKING)]
+    if len(kept) == len(content):
+        return message
+    return {**message, "content": kept or [{"type": "text", "text": "…"}]}  # the API refuses empty text
 
 
 def may_talk(rt: Any, user_id: str | None) -> bool:
@@ -72,7 +90,10 @@ async def chat(ai: Any, text: str, conversation_id: str, user_id: str | None) ->
         + f"\n{length}\n"
         + home_card(rt, privacy)
     )
-    ctx = ToolContext(rt, privacy, actor="person", user_id=user_id)
+    thread["turn"] = int(thread.get("turn", 0)) + 1  # the person's messages in this thread (confirmations)
+    ctx = ToolContext(
+        rt, privacy, actor="person", user_id=user_id, conversation_id=conversation_id, turn=thread["turn"], said=text
+    )
     result = await run_agent(
         ai,
         tier,

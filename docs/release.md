@@ -13,5 +13,5 @@ Steps for a release. Items marked *(owner)* need the repository owner.
    wizard, add a P1 tier, trigger a test signal with `homeai.report_signal`, check the panel, a phone
    notification with actions, approvals and undo.
 6. *(owner)* Merge, tag `vX.Y.Z` on `main` and publish a GitHub release with the changelog section.
-7. *(owner)* For the default catalog: open a pull request to `hacs/default` adding `THEFIX-PL/homeai` to the
+7. *(owner)* For the default catalog: open a pull request to `hacs/default` adding `lukasz-wieckowski/homeai` to the
    `integration` list (the repository must be public and have a release).

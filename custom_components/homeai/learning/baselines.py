@@ -26,8 +26,9 @@ def hour_of_week(ts: float) -> int:
     return local.weekday() * 24 + local.hour
 
 
-def summarise(rows: list[dict[str, Any]], min_samples: int) -> dict[str, list[float]] | None:
-    """168 buckets of [mean, std, n] from hourly statistic rows."""
+def summarise(rows: list[dict[str, Any]], min_samples: int) -> dict[str, list[float | None]] | None:
+    """168 buckets of [mean, std, n] from hourly statistic rows; a bucket with fewer than two values is
+    [None, None, n]. The norms are stored as JSON, which has no NaN (Home Assistant writes it as null)."""
     buckets: list[list[float]] = [[] for _ in range(168)]
     for row in rows:
         mean = row.get("mean")
@@ -38,7 +39,7 @@ def summarise(rows: list[dict[str, Any]], min_samples: int) -> dict[str, list[fl
     filled = 0
     for values in buckets:
         if len(values) < 2:
-            out.append([math.nan, math.nan, float(len(values))])
+            out.append([None, None, float(len(values))])
             continue
         m = sum(values) / len(values)
         sd = math.sqrt(sum((v - m) ** 2 for v in values) / (len(values) - 1))
@@ -87,10 +88,16 @@ class Baselines:
         data = self.norms.get(entity_id)
         if data is None:
             return None
-        m, sd, n = data["buckets"][hour_of_week((now or dt_util.utcnow()).timestamp())]
-        if math.isnan(m) or n < 2:
+        try:
+            m, sd, n = data["buckets"][hour_of_week((now or dt_util.utcnow()).timestamp())]
+        except KeyError, IndexError, TypeError, ValueError:
+            return None  # a damaged or foreign record is no norm
+        # None after a round trip through storage (NaN in norms written before 1.1.1 also comes back as null)
+        if not isinstance(m, int | float) or not isinstance(sd, int | float) or not isinstance(n, int | float):
             return None
-        return m, sd
+        if math.isnan(m) or math.isnan(sd) or n < 2:
+            return None
+        return float(m), float(sd)
 
 
 class AnomalyDetector(Detector):

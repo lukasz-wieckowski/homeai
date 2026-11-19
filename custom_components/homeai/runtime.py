@@ -18,7 +18,7 @@ from homeassistant.helpers.event import async_call_later, async_track_time_inter
 from homeassistant.util import dt as dt_util
 
 from . import i18n
-from .const import CONF_INSTALLED_AT, CONF_SYSTEM_USER, LOGGER, NAME
+from .const import CONF_INITIAL_APPLIED, CONF_INITIAL_SETTINGS, CONF_INSTALLED_AT, CONF_SYSTEM_USER, LOGGER, NAME
 from .journal import Journal
 from .settings import SettingError, SettingsManager, build_registry
 from .world import Presence, WorldModel
@@ -45,6 +45,7 @@ class HomeAIRuntime:
         self.installed_at: str | None = None
         self.subentry_snapshot: dict[str, Any] | None = None
         self._tick_handlers: list[TickHandler] = []
+        self._ticking = False
         self._unsubs: list[Callable[[], None]] = []
         self._stoppers: list[Callable[[], Awaitable[None]]] = []
         # Modules added by later stages register themselves here (situations, notify, policy, ai…).
@@ -59,6 +60,14 @@ class HomeAIRuntime:
         await self.journal.async_load()
         await self.world.async_start()
         self._stoppers.append(self.world.async_stop)
+        await self.presence.async_refresh_users()
+
+        @callback
+        def users_changed(_event: Event) -> None:
+            self.hass.async_create_task(self.presence.async_refresh_users())
+
+        for event_type in ("user_added", "user_removed", "user_updated"):
+            self._unsubs.append(self.hass.bus.async_listen(event_type, users_changed))
         await self._setup_modules()
         self._start_timers()
 
@@ -91,8 +100,8 @@ class HomeAIRuntime:
 
     def _apply_initial_settings(self) -> None:
         """Values chosen in the setup wizard are written into the settings store once."""
-        initial = self.entry.data.get("initial_settings")
-        if not initial or self.entry.data.get("initial_settings_applied"):
+        initial = self.entry.data.get(CONF_INITIAL_SETTINGS)
+        if not initial or self.entry.data.get(CONF_INITIAL_APPLIED):
             return
 
         def apply(key: str, value: Any, skey: str = "global") -> None:
@@ -108,9 +117,7 @@ class HomeAIRuntime:
                         apply(k, v, skey)
             else:
                 apply(key, values)
-        self.hass.config_entries.async_update_entry(
-            self.entry, data={**self.entry.data, "initial_settings_applied": True}
-        )
+        self.hass.config_entries.async_update_entry(self.entry, data={**self.entry.data, CONF_INITIAL_APPLIED: True})
 
     def _start_timers(self) -> None:
         interval = timedelta(seconds=int(self.settings.get("general.tick_seconds")))
@@ -155,9 +162,18 @@ class HomeAIRuntime:
 
     @callback
     def _tick(self, now: datetime) -> None:
+        if self._ticking:
+            return  # the previous tick is still running (a slow backup agent, a slow AI call): skip, don't pile up
         self.hass.async_create_task(self._run_tick(now))
 
     async def _run_tick(self, now: datetime) -> None:
+        self._ticking = True
+        try:
+            await self._run_handlers(now)
+        finally:
+            self._ticking = False
+
+    async def _run_handlers(self, now: datetime) -> None:
         for handler in list(self._tick_handlers):
             try:
                 result = handler(now)

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from ...repair.restart import asks_for_restart, restart_button
 from ...world import Role
 from ..base import Category, DetectionContext, Detector, Need, Signal
 from .util import UNAVAILABLE, area_of, clock, critical, device_of, name, setting, state, where
@@ -119,6 +120,9 @@ class ProblemDetector(Detector):
                 continue
             area = area_of(ctx, entity_id)
             device_id = device_of(ctx, entity_id)
+            repair = None
+            if asks_for_restart(ctx.hass, entity_id) and restart_button(ctx.hass, device_id):
+                repair = {"playbook": "press_restart", "device_id": device_id, "quiet": True}
             out.append(
                 Signal(
                     id=f"problem:{entity_id}",
@@ -135,8 +139,9 @@ class ProblemDetector(Detector):
                         "device": ctx.world.device_name(device_id),
                         "where": where(ctx, area_id=area),
                     },
-                    need=Need.MEMBER,
+                    need=Need.ADMIN if repair else Need.MEMBER,
                     confidence=0.6,  # generic: AI triage may refine what this means
+                    repair=repair,
                 )
             )
         for entity_id in sorted(ctx.world.with_role(Role.PLANT)):

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -62,11 +63,12 @@ class TierConfig:
 
 async def build_provider(hass: HomeAssistant, cfg: TierConfig) -> Provider:
     price = price_for(cfg.model, cfg.price_input, cfg.price_output)
+    # Provider modules import their SDKs (anthropic takes seconds on a small machine): import them in the import
+    # executor, never on the event loop. Later calls find them in sys.modules.
+    load = importlib.import_module
     if cfg.provider == "openai_compatible":
-        from .providers.openai_compat import OpenAICompatProvider
-
-        return OpenAICompatProvider(hass, cfg.base_url, cfg.model, price, cfg.api_key)
-    from .providers.anthropic import AnthropicProvider, async_create_client
-
-    client = await async_create_client(hass, cfg.api_key)
-    return AnthropicProvider(client, cfg.model, price, fallbacks=cfg.fallbacks)
+        compat = await hass.async_add_import_executor_job(load, f"{__package__}.providers.openai_compat")
+        return compat.OpenAICompatProvider(hass, cfg.base_url, cfg.model, price, cfg.api_key)
+    module = await hass.async_add_import_executor_job(load, f"{__package__}.providers.anthropic")
+    client = await module.async_create_client(hass, cfg.api_key)
+    return module.AnthropicProvider(client, cfg.model, price, fallbacks=cfg.fallbacks)

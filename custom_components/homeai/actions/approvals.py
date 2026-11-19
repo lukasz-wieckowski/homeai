@@ -3,6 +3,10 @@
 Residents may approve R1–R2, administrators approve R3 and above (R6 is never run on approval: an
 administrator does it themselves with confirmation). Requests go to the panel, a persistent notification and
 phones with Approve / Deny buttons, and expire after `policy.approval_minutes`.
+
+A person's own request approved by an administrator runs in that administrator's context. A request that needs
+the person's own yes and came where HomeAI cannot ask in the conversation (another assistant using HomeAI's tools)
+becomes an approval addressed to that person (`approver: requester`); their Approve is their confirmation.
 """
 
 from __future__ import annotations
@@ -88,6 +92,7 @@ class Approvals:
             "risk": int(decision.risk),
             "reason": request.reason or decision.reason,
             "approver": decision.approver or "admins",
+            "requester": request.user_id if request.actor == "person" else None,
             "created": now.isoformat(timespec="seconds"),
             "expires": (now + timedelta(minutes=int(self.rt.settings.get("policy.approval_minutes")))).isoformat(
                 timespec="seconds"
@@ -110,7 +115,7 @@ class Approvals:
         persistent_notification.async_create(
             self.hass, message, title=title, notification_id=f"homeai_approval_{item['id']}"
         )
-        people = [p for p in self.rt.presence.residents() if item["approver"] == "residents" or p.role == "admin"]
+        people = [p for p in self.rt.presence.residents() if self._addressed(item, p)]
         data = {
             "tag": f"homeai_approval_{item['id']}",
             "group": "homeai",
@@ -145,11 +150,19 @@ class Approvals:
                 except Exception:
                     LOGGER.debug("Clearing approval on %s failed", target)
 
+    @staticmethod
+    def _addressed(item: dict[str, Any], person: Any) -> bool:
+        if item["approver"] == "requester":
+            return bool(person.user_id) and person.user_id == item.get("requester")
+        return item["approver"] == "residents" or person.role == "admin"
+
     # ——— Decisions ———
     async def can_decide(self, item: dict[str, Any], user_id: str | None) -> bool:
         user = await self.hass.auth.async_get_user(user_id) if user_id else None
         if user is None or not user.is_active:
             return False
+        if item["approver"] == "requester":
+            return user_id == item.get("requester") or user.is_admin
         if user.is_admin:
             return True
         if item["approver"] != "residents":
@@ -165,6 +178,9 @@ class Approvals:
         item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request = ActionRequest.from_dict(item["request"])
         request.approved_by = who
+        request.approved_by_user = user_id
+        if item["approver"] == "requester" and user_id == item.get("requester"):
+            request.confirmed = True  # the requester's own Approve is their explicit yes
         result = await self.rt.module("executor").execute(request)
         item["result"] = result.as_dict()
         self.rt.journal.add("approval", self.rt.text("journal|approval_granted", what=item["what"], who=who))
@@ -198,6 +214,8 @@ class Approvals:
         item = self.items.get(approval_id)
         if item is None or item["status"] != "pending" or int(item["risk"]) > 3:
             return None
+        if item["request"].get("actor") == "person" or item["approver"] == "requester":
+            return None  # a person's request waits for a person: the arbiter only advises
         who = self.rt.text("ai|arbiter_name")
         item.update(status="approved", decided_by=who, decided_at=dt_util.utcnow().isoformat(timespec="seconds"))
         request = ActionRequest.from_dict(item["request"])

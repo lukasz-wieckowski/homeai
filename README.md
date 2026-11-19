@@ -77,7 +77,7 @@ model.</sub>
 
 **With HACS**
 
-1. Open HACS → ⋮ → *Custom repositories*, add `https://github.com/THEFIX-PL/homeai`, category **Integration**.
+1. Open HACS → ⋮ → *Custom repositories*, add `https://github.com/lukasz-wieckowski/homeai`, category **Integration**.
 2. Find **HomeAI** in HACS, install it and restart Home Assistant.
 
 **Manually**
@@ -99,8 +99,9 @@ After the wizard:
 
 - The **HomeAI** panel appears in the sidebar. Situations, approvals, chat, the plan, presence, learning, rules, the
   journal, all settings and the AI status are there.
-- For the first **14 days** (setting *Observation period*) HomeAI only *observes* the comfort and device actions it
-  would take on its own: the journal shows what it would have done. Safety and repairs work from day one.
+- For the first **14 days** (setting *Observation period*) HomeAI only *observes* the comfort, device and system
+  repair actions it would take on its own: the journal shows what it would have done. Detecting situations,
+  notifications and protective actions on labelled entities work from day one.
 - HomeAI creates [labels](#labels) you can put on entities and devices to tell it what matters.
 
 ## Adding AI (optional)
@@ -419,7 +420,7 @@ clock or on any notify entity (a TV, a tablet, a display).
 | R0 read | states, history, logs | yes | yes |
 | R1 comfort | lights, scenes, fans, media, messages | act and tell (after the observation period) | yes |
 | R2 devices | switches, covers, heating targets, vacuum | propose and ask | yes, or confirm (setting) |
-| R3 system | reload an integration, restart an add-on, retry a backup | only from repair playbooks, within a daily limit | administrators |
+| R3 system | reload an integration, restart an add-on or a bridge, retry a backup | only from repair playbooks, within a daily limit (after the observation period) | administrators |
 | R4 configuration | automations, scripts, scenes, helpers, dashboards | propose; an administrator approves | administrators, with confirmation |
 | R5 security | locks, alarm panels, garage doors and gates, cameras | never, except protective actions | with confirmation |
 | R6 destructive | deleting configuration, restarting Home Assistant | never | administrators, with confirmation |

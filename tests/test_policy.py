@@ -62,6 +62,9 @@ async def test_system_actions_only_from_playbooks_within_limit(hass: HomeAssista
     repair = ActionRequest(
         "homeassistant", "reload_config_entry", {"entry_id": "x"}, actor="repair", playbook="reload_entry"
     )
+    # in the observation period repairs only observe too, like every other autonomous action
+    assert (await policy.decide(repair)).verdict is Verdict.OBSERVE
+    rt.settings.set("policy.observation_days", 0, confirmed=True)
     assert (await policy.decide(repair)).verdict is Verdict.ALLOW
     policy.count_repair()
     policy.count_repair()

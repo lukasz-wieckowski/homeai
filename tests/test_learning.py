@@ -27,6 +27,27 @@ def test_summarise_hour_of_week() -> None:
     assert summarise(rows, min_samples=10) is None
 
 
+def test_sparse_norms_survive_storage() -> None:
+    """Buckets with too few values are null in storage (JSON has no NaN); reading them is no norm, not a crash."""
+    from homeassistant.helpers.json import json_dumps
+    from homeassistant.util.json import json_loads
+
+    from custom_components.homeai.learning.baselines import Baselines
+
+    base = datetime(2026, 10, 5, 12, 0, tzinfo=dt_util.get_default_time_zone())
+    rows = [{"start": (base + timedelta(weeks=w)).timestamp(), "mean": 21.0} for w in range(4)]
+    summary = summarise(rows, min_samples=4)
+    stored = json_loads(json_dumps({"sensor.t": summary}))
+    baselines = Baselines(None)
+    baselines.norms = stored
+    assert baselines.norm("sensor.t", base) == (21.0, 0.0)
+    assert baselines.norm("sensor.t", base + timedelta(hours=1)) is None  # an empty hour of the week
+    # norms written before 1.1.1 kept NaN, which comes back as null; damaged records are no norm either
+    baselines.norms = {"sensor.t": {"buckets": [[None, None, 1.0]] * 168}, "sensor.u": {"buckets": []}}
+    assert baselines.norm("sensor.t", base) is None
+    assert baselines.norm("sensor.u", base) is None
+
+
 async def test_anomaly_signal_from_norm(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
     home = standard_home(hass)
     rt = await setup_homeai(hass, {"learning.anomaly_minutes": 10})

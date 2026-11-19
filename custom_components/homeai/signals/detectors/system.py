@@ -201,6 +201,16 @@ class BackupDetector(Detector):
     """Automatic backups that failed, are too old, or did not reach every backup location."""
 
     key = "backups"
+    GRACE_HOURS = 6.0
+
+    @classmethod
+    def max_age_hours(cls, ctx: DetectionContext) -> float:
+        """How old the last automatic backup may be: the setting, or longer when Home Assistant's own schedule
+        backs up less often (twice a week is fine for a twice-a-week schedule). Automatic backups switched off in
+        Home Assistant (`backup_every_hours == 0`) are not reported as stale at all, and never retried."""
+        configured = float(ctx.settings.get("detectors.backups.max_age_hours"))
+        every = ctx.system.backup_every_hours
+        return max(configured, every + cls.GRACE_HOURS) if every else configured
 
     def evaluate(self, ctx: DetectionContext) -> list[Signal]:
         out: list[Signal] = []
@@ -245,9 +255,10 @@ class BackupDetector(Detector):
                     repair=repair,
                 )
             )
-        elif last_ok_id and (
-            last_ok is None
-            or ctx.now - last_ok > timedelta(hours=float(ctx.settings.get("detectors.backups.max_age_hours")))
+        elif (
+            last_ok_id
+            and ctx.system.backup_every_hours != 0
+            and (last_ok is None or ctx.now - last_ok > timedelta(hours=self.max_age_hours(ctx)))
         ):
             out.append(
                 Signal(

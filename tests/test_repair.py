@@ -52,7 +52,7 @@ async def test_repair_first_then_people(hass: HomeAssistant) -> None:
     reloads = reload_service(hass)
     rt = await setup_homeai(
         hass,
-        {"repair.reload_wait": 1, "repair.verify_minutes": 5, "repair.max_attempts": 1},
+        {"policy.observation_days": 0, "repair.reload_wait": 1, "repair.verify_minutes": 5, "repair.max_attempts": 1},
         overrides={
             **phone_targets("anna"),
             "person:person.anna": {**phone_targets("anna")["person:person.anna"], "presence.role": "admin"},
@@ -81,7 +81,7 @@ async def test_repair_first_then_people(hass: HomeAssistant) -> None:
 async def test_repair_success_is_recorded(hass: HomeAssistant) -> None:
     home = standard_home(hass)
     reload_service(hass)
-    rt = await setup_homeai(hass, {"repair.reload_wait": 0, "situations.close_after": 0})
+    rt = await setup_homeai(hass, {"policy.observation_days": 0, "repair.reload_wait": 0, "situations.close_after": 0})
     signal = failing_integration(home.entry.entry_id)
     [s] = await open_with(hass, rt, signal)
     await rt.module("repair").tick(dt_util.utcnow() + timedelta(seconds=1))
@@ -101,7 +101,13 @@ async def test_retry_with_backoff_then_fail(hass: HomeAssistant) -> None:
     reloads = reload_service(hass)
     rt = await setup_homeai(
         hass,
-        {"repair.reload_wait": 0, "repair.max_attempts": 2, "repair.verify_minutes": 1, "repair.backoff_minutes": 3},
+        {
+            "policy.observation_days": 0,
+            "repair.reload_wait": 0,
+            "repair.max_attempts": 2,
+            "repair.verify_minutes": 1,
+            "repair.backoff_minutes": 3,
+        },
     )
     [s] = await open_with(hass, rt, failing_integration(home.entry.entry_id))
     runner = rt.module("repair")
@@ -118,7 +124,7 @@ async def test_retry_with_backoff_then_fail(hass: HomeAssistant) -> None:
 async def test_person_taking_it_cancels_repair(hass: HomeAssistant) -> None:
     home = standard_home(hass)
     reload_service(hass)
-    rt = await setup_homeai(hass, {"repair.reload_wait": 5})
+    rt = await setup_homeai(hass, {"policy.observation_days": 0, "repair.reload_wait": 5})
     [s] = await open_with(hass, rt, failing_integration(home.entry.entry_id))
     await rt.module("situations").handle(s.id, "Anna")
     assert s.repair["status"] == "cancelled"

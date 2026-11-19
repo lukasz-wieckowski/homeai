@@ -35,6 +35,7 @@ class PersonState:
     home: bool
     zone: str
     sleep: SleepState
+    user_id: str | None = None  # the person's Home Assistant user (approvals, conversations)
 
 
 def in_window(now: time, start: time, end: time) -> bool:
@@ -56,9 +57,22 @@ class Presence:
         # AI inference per person: (asleep, confidence, valid_until)
         self._ai_sleep: dict[str, tuple[bool, float, datetime]] = {}
         self.exceptions: Any = None  # PresenceExceptions, set by the schedule stage
+        self.admin_users: set[str] = set()  # Home Assistant administrators (people's default role)
+
+    async def async_refresh_users(self) -> None:
+        """Remember which Home Assistant users are administrators (on setup and when users change)."""
+        users = await self.hass.auth.async_get_users()
+        self.admin_users = {u.id for u in users if u.is_admin and u.is_active and not u.system_generated}
 
     def role(self, person_id: str) -> str:
-        return str(self.settings.get("presence.role", Target(person_id=person_id)))
+        """The role set for the person; without one, administrator for a Home Assistant administrator's person and
+        the default (member) for everyone else — so a home where nobody chose roles still has administrators."""
+        target = Target(person_id=person_id)
+        if self.settings.source("presence.role", target) == "default":
+            person = self.world.persons.get(person_id)
+            if person is not None and person.user_id and person.user_id in self.admin_users:
+                return "admin"
+        return str(self.settings.get("presence.role", target))
 
     def people(self, now: datetime | None = None) -> list[PersonState]:
         now = now or dt_util.now()
@@ -75,6 +89,7 @@ class Presence:
                     home=p.home,
                     zone=p.state,
                     sleep=self.sleep(p, now),
+                    user_id=p.user_id,
                 )
             )
         return result
@@ -145,7 +160,9 @@ class Presence:
         charging = [self.hass.states.get(e) for e in self.settings.get("presence.charging_entities", target)]
         charging = [s for s in charging if s is not None and s.state not in ("unknown", "unavailable")]
         if charging and self._night(target, now, margin=timedelta(hours=1)):
-            return SleepState(any(s.state in ("on", "charging", "full") for s in charging), 0.7, "sensors")
+            # phones report battery state in their own words: iOS "Charging" / "Full", Android "charging" / "full"
+            plugged = ("on", "charging", "full")
+            return SleepState(any(s.state.lower() in plugged for s in charging), 0.7, "sensors")
         return None
 
     def _ai(self, person_id: str) -> SleepState | None:

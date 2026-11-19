@@ -105,6 +105,9 @@ class NotificationRouter:
             if now < opened + timedelta(minutes=step.get("after", 0)):
                 continue
             done = sent.setdefault(f"{severity}:{index}", {})
+            # the same step already sent at another severity (triage often changes it right after opening): a
+            # person who got it does not get it again just because the number changed; critical steps still go
+            earlier = [d for key, d in sent.items() if key.endswith(f":{index}") and key != f"{severity}:{index}"]
             critical = bool(step.get("critical"))
             channels = step.get("channels") or []
             people = self.recipients(step.get("to", "none"), now)
@@ -125,6 +128,9 @@ class NotificationRouter:
             repeat = timedelta(minutes=step.get("repeat", 0))
             for person in people:
                 last = dt_util.parse_datetime(done[person.entity_id]) if person.entity_id in done else None
+                if last is None and not critical:
+                    before = [t for d in earlier if (t := dt_util.parse_datetime(d.get(person.entity_id) or ""))]
+                    last = max(before) if before else None
                 if last is not None and (not repeat or now - last < repeat):
                     continue
                 if person.sleep.asleep and not critical:

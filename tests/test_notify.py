@@ -217,3 +217,37 @@ async def test_notify_entity_target(hass: HomeAssistant) -> None:
     )
     await open_with(hass, rt, minor(2))
     assert sent and sent[0].data["entity_id"] in ("notify.kitchen_display", ["notify.kitchen_display"])
+
+
+async def test_changed_severity_does_not_repeat_the_same_step(hass: HomeAssistant) -> None:
+    """Triage often sets the severity right after a situation opens: the person already told is not told twice."""
+    standard_home(hass)
+    calls = phones(hass, "anna", "ben")
+    rt = await setup_homeai(hass, overrides=phone_targets("anna", "ben"))
+    [s] = await open_with(hass, rt, minor(2))
+    assert [c.service for c in pushes(calls)] == ["mobile_app_anna"]
+    s.assessment["severity"] = 3  # the AI tier raised it a moment later
+    await rt.module("notify").deliver(s)
+    assert [c.service for c in pushes(calls)].count("mobile_app_anna") == 1
+
+
+def test_phone_battery_states_count_as_charging(hass: HomeAssistant) -> None:
+    from custom_components.homeai.world.presence import Presence
+
+    class _Settings:
+        def __init__(self, values):
+            self.values = values
+
+        def get(self, key, target=None):
+            return self.values[key]
+
+    hass.states.async_set("sensor.anna_phone_battery_state", "Charging")  # iOS spelling
+    presence = Presence(
+        hass,
+        None,
+        _Settings({"presence.bed_entities": [], "presence.charging_entities": ["sensor.anna_phone_battery_state"]}),
+    )
+    presence._night = lambda target, now, margin=None: True
+    assert presence._sensors(None, dt_util.utcnow()).asleep
+    hass.states.async_set("sensor.anna_phone_battery_state", "Not Charging")
+    assert not presence._sensors(None, dt_util.utcnow()).asleep

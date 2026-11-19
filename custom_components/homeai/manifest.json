@@ -17,20 +17,20 @@
     "tts"
   ],
   "codeowners": [
-    "@THEFIX-PL"
+    "@lukasz-wieckowski"
   ],
   "config_flow": true,
   "dependencies": [
     "http",
     "websocket_api"
   ],
-  "documentation": "https://github.com/THEFIX-PL/homeai",
+  "documentation": "https://github.com/lukasz-wieckowski/homeai",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/THEFIX-PL/homeai/issues",
+  "issue_tracker": "https://github.com/lukasz-wieckowski/homeai/issues",
   "requirements": [
     "anthropic>=0.125.0"
   ],
   "single_config_entry": true,
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

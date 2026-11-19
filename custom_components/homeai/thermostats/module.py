@@ -4,7 +4,9 @@
   itself, through the policy like any change of a device: by the autonomy level, and only observed during the
   observation period. Each carries `source: homeai`, a reason and a stable id. HomeAI renews its rolling overrides,
   trims them when a higher reason comes, and removes them when the reason is gone. When a person removes one on the
-  thermostat, HomeAI does not set it again for the same reason and learns from it as from an undo.
+  thermostat, HomeAI does not set it again for the same reason and learns from it as from an undo. When a person
+  changes the thermostat by hand while HomeAI's override runs, HomeAI neither renews nor moves it: a re-sent override
+  with new times would be a newer instruction than the person's.
 - **Valve limits** (R2): while an activity entity is active (a desk's power), the thermostat's valve-limit `number`
   is set to `heating.activity_valve` and put back afterwards (with `heating.activity_action: valve_limit`).
 - **Schedule proposals** (R4): from habits (`habits.py`), a new weekly schedule an administrator approves. A proposal
@@ -47,7 +49,9 @@ MANUAL_MAX = 1000  # remembered manual changes per thermostat
 OK = ("done", "unverified")
 # A record's status: what became of HomeAI's request.
 LIVE = ("applied", "approved")  # on the thermostat (approved: allowed, to be sent again with fresh times)
-FINAL = ("refused", "expired", "removed")  # people said no or took it off: not again for this reason
+# People said no, took it off, or changed the thermostat by hand meanwhile: not again (or renewed) for this reason.
+FINAL = ("refused", "expired", "removed", "superseded")
+MANUAL_SOURCES = ("hold", "manual")  # optional `source` attribute: the current target is a person's
 ACTIVE_STATES = ("on", "playing")
 
 
@@ -395,9 +399,22 @@ class Thermostats:
             elif status == "approved":
                 await self._start(intent, now, follow_up=True)  # allowed: send it with current times
             elif status == "applied":
-                if not self._same(record, intent, now):
-                    # renew or move it: the same reason and preset continue without a new decision
-                    await self._start(intent, now, follow_up=record.get("preset") == intent.preset)
+                if self._same(record, intent, now):
+                    continue
+                if self._by_hand_since(intent.entity_id, _time(record.get("at"))):
+                    # a person took over: their change stays; HomeAI's override just runs out
+                    record.update(status="superseded", decided_at=_iso(now))
+                    self.rt.journal.add(
+                        "decision",
+                        self.rt.text(
+                            "heating|override_superseded",
+                            name=self.rt.world.display_name(intent.entity_id),
+                            reason=record.get("reason") or "",
+                        ),
+                    )
+                    continue
+                # renew or move it: the same reason and preset continue without a new decision
+                await self._start(intent, now, follow_up=record.get("preset") == intent.preset)
             else:  # failed, or a request that was withdrawn
                 await self._start(intent, now)
 
@@ -453,7 +470,7 @@ class Thermostats:
             return
         if status == "pending":
             await self._withdraw(record)
-        elif status in LIVE and end is not None and end > now:
+        elif status in (*LIVE, "superseded") and end is not None and end > now:
             t = self.thermostats.get(record["entity_id"])
             if t is None:
                 if self.hass.states.get(record["entity_id"]) is not None:
@@ -621,12 +638,38 @@ class Thermostats:
         self._save()
 
     def _manual(self, state: State) -> bool:
-        """A person changed it: in the app or by voice (their user), or through an automation a remote or a button
-        started (a parent context). Not the thermostat's own schedule (a fresh context) and not HomeAI."""
+        """A person changed it. When the thermostat says where its target comes from (optional attribute `source`:
+        schedule, override, hold, manual, preheat), a hold or manual target is a person's — also a turn of the knob.
+        Otherwise by the change's context: a person's user (app, voice) or an automation a remote or button started
+        (a parent context); the thermostat's own schedule writes with a fresh context. HomeAI's own changes never count.
+        """
         ctx = state.context
+        if ctx.user_id and ctx.user_id == self.rt.system_user_id:
+            return False
+        source = state.attributes.get("source")
+        if isinstance(source, str) and source:
+            return source in MANUAL_SOURCES
         if ctx.user_id:
-            return ctx.user_id != self.rt.system_user_id
+            return True
         return ctx.parent_id is not None
+
+    def _by_hand_since(self, entity_id: str, since: datetime | None) -> bool:
+        """Someone changed this thermostat by hand after `since`."""
+        if since is None:
+            return False
+        return any((t := _time(c[0])) is not None and t > since for c in self.manual.get(entity_id, []))
+
+    def preset_temperatures(self, entity_id: str) -> dict[str, float]:
+        """What each preset means in °C: learned from the thermostat's states, and its optional
+        `preset_temperatures` attribute, which wins."""
+        out = dict(self.preset_temps.get(entity_id, {}))
+        state = self.hass.states.get(entity_id)
+        published = state.attributes.get("preset_temperatures") if state is not None else None
+        if isinstance(published, dict):
+            for preset, value in published.items():
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    out[str(preset)] = float(value)
+        return out
 
     # ——— Schedule proposals ———
     async def _daily(self, _now: datetime) -> None:
@@ -676,7 +719,7 @@ class Thermostats:
             shifts = find_shifts(
                 week,
                 changes,
-                self.preset_temps.get(t.entity_id, {}),
+                self.preset_temperatures(t.entity_id),
                 today=dt_util.as_local(now).date(),
                 days=int(settings.get("learning.habit_days")),
                 min_days=int(settings.get("learning.habit_min_days")),

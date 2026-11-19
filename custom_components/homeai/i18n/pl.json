@@ -1901,6 +1901,7 @@
     "override_removed": "Ktoś zdjął nadpisanie ogrzewania HomeAI ({name}: {reason}); z tego powodu HomeAI go już nie ustawi.",
     "proposal_reason": "{days}, {name}: ogrzewanie jest zmieniane ręcznie około {to}, przed blokiem o {from} (w {seen} z {possible} dni). Przesuń ten blok na {to}.",
     "days_workday": "W dni robocze",
-    "days_weekend": "W weekendy"
+    "days_weekend": "W weekendy",
+    "override_superseded": "Ktoś ręcznie zmienił {name}, gdy działało nadpisanie HomeAI ({reason}); HomeAI już go nie odnawia i pozwala mu wygasnąć."
   }
 }

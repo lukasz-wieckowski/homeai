@@ -1901,6 +1901,7 @@
     "override_removed": "Someone removed HomeAI's heating override ({name}: {reason}); HomeAI will not set it again for this reason.",
     "proposal_reason": "{days}, {name}: the heating is changed by hand at about {to}, before the block at {from} (on {seen} of {possible} days). Move that block to {to}.",
     "days_workday": "On workdays",
-    "days_weekend": "At weekends"
+    "days_weekend": "At weekends",
+    "override_superseded": "Someone changed {name} by hand while HomeAI's override ran ({reason}); HomeAI no longer renews it and lets it run out."
   }
 }

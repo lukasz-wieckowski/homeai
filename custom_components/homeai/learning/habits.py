@@ -82,8 +82,15 @@ async def collect(rt: Any, days: int) -> dict[str, list[tuple[Any, str]]]:
     def load() -> dict[str, list[tuple[Any, str]]]:
         out: dict[str, list[tuple[Any, str]]] = {}
         for entity_id in entities:
-            states = history.state_changes_during_period(hass, start, None, entity_id, True, False, 2000, False)
-            out[entity_id] = [(dt_util.as_local(s.last_changed), s.state) for s in states.get(entity_id, [])]
+            # newest first, so a busy entity keeps its latest changes, then back into the order they happened
+            states = history.state_changes_during_period(hass, start, None, entity_id, True, True, 2000, False)
+            items, previous = [], None
+            for s in reversed(states.get(entity_id, [])):
+                # coming back from unavailable (a restart, a device rejoining) is not something a person did
+                if previous not in (None, "unavailable", "unknown"):
+                    items.append((dt_util.as_local(s.last_changed), s.state))
+                previous = s.state
+            out[entity_id] = items
         return out
 
     return await get_instance(hass).async_add_executor_job(load)

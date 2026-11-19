@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { element } from "../define";
-import { t, when } from "../i18n";
+import { inZone, t, when } from "../i18n";
 import { shared } from "../styles";
 import type { HomeAssistant } from "../types";
 
@@ -115,8 +115,7 @@ export class HomeAIPlan extends LitElement {
   }
 
   private async skip(o: Occurrence): Promise<void> {
-    const d = new Date(o.at);
-    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const date = inZone(o.at, this.hass.config?.time_zone).date; // the home's day, whatever zone the browser is in
     await this.hass.callService("homeai", "plan_skip", { entry_id: o.entry_id, date });
     await this.load();
   }

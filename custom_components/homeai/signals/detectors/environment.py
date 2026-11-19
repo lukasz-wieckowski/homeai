@@ -47,6 +47,8 @@ class EnvironmentDetector(Detector):
                     continue
                 value = ctx.world.value(entity_id)
                 limit = float(setting(ctx, key, entity_id))
+                if value is not None and role == Role.TEMPERATURE and (info.unit or "").strip() in ("°F", "F"):
+                    limit = limit * 9 / 5 + 32  # limits are set in °C; this sensor reports Fahrenheit
                 if value is None or not (value < limit if direction == "below" else value > limit):
                     continue
                 marker = (kind, entity_id)
@@ -71,7 +73,7 @@ class EnvironmentDetector(Detector):
                             "where": where(ctx, area_id=area),
                             "value": round(value, 1),
                             "unit": info.unit or "",
-                            "limit": limit,
+                            "limit": round(limit, 1),
                         },
                         need=Need.MEMBER,
                         root=f"{kind}:{area}",

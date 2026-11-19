@@ -75,7 +75,11 @@ class Scheduler:
 
     async def async_setup(self) -> None:
         data = await self._store.async_load() or {}
-        self.entries = {e["id"]: e for e in data.get("entries", []) if isinstance(e, dict) and "id" in e}
+        self.entries = {
+            e["id"]: e
+            for e in data.get("entries", [])
+            if isinstance(e, dict) and "id" in e and isinstance(e.get("when"), dict) and "kind" in e["when"]
+        }
         started = dt_util.utcnow()
         if self.hass.is_running:
             await self._catch_up(started, started)

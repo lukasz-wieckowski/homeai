@@ -17,3 +17,10 @@ updates:
       - dependency-name: hassil
       - dependency-name: home-assistant-intents
       - dependency-name: gazetteer-matcher
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ["*"]

@@ -294,6 +294,7 @@ class NotificationRouter:
             },
         )
         s.notify["event"] = True
+        s.notify["event_critical"] = bool(step.get("critical")) or bool(s.notify.get("event_critical"))
 
     async def _speak(self, s: Situation) -> bool:
         tts = self.rt.settings.get("notify.tts_entity")
@@ -327,7 +328,15 @@ class NotificationRouter:
         if s.notify.get("event"):
             self.hass.bus.async_fire(
                 EVENT_NOTIFICATION,
-                {"situation_id": s.id, "state": "cleared", "reason": event, "title": "", "message": ""},
+                {
+                    "situation_id": s.id,
+                    "state": "cleared",
+                    "reason": event,
+                    "title": "",
+                    "message": "",
+                    # displays hold only critical notices: they dismiss on this one, not on any cleared matter
+                    "critical": bool(s.notify.get("event_critical")),
+                },
             )
         if event == "resolved" and s.notify.get("targets") and self.rt.settings.get("notify.announce_resolved"):
             title = self.rt.text("notify|resolved_title")

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Any
 
 from homeassistant.components import persistent_notification
@@ -43,6 +44,7 @@ class Learning:
         self.reviews: list[dict[str, Any]] = []
         self.rejected: set[str] = set()  # habit keys people did not want
         self._unsubs: list[Callable[[], None]] = []
+        self._timers: list[Callable[[], None]] = []  # the nightly run and the review, set again when times change
         self._listeners: list[Callable[[], None]] = []
 
     async def async_setup(self) -> None:
@@ -60,9 +62,10 @@ class Learning:
         self._unsubs.append(self.rt.settings.listen("learning", lambda _k: self._schedule()))
 
     async def async_unload(self) -> None:
-        for unsub in self._unsubs:
+        for unsub in self._unsubs + self._timers:
             unsub()
         self._unsubs.clear()
+        self._timers.clear()
         await self._store.async_save(self._data())
 
     def _data(self) -> dict[str, Any]:
@@ -86,15 +89,15 @@ class Learning:
         return lambda: self._listeners.remove(cb) if cb in self._listeners else None
 
     def _schedule(self) -> None:
-        for unsub in self._unsubs[1:]:
+        for unsub in self._timers:
             unsub()
-        del self._unsubs[1:]
+        self._timers.clear()
         nightly = parse_time(str(self.rt.settings.get("learning.nightly_time")))
-        self._unsubs.append(
+        self._timers.append(
             async_track_time_change(self.hass, self._nightly, hour=nightly.hour, minute=nightly.minute, second=0)
         )
         review = parse_time(str(self.rt.settings.get("learning.review_time")))
-        self._unsubs.append(
+        self._timers.append(
             async_track_time_change(self.hass, self._maybe_review, hour=review.hour, minute=review.minute, second=0)
         )
 
@@ -121,11 +124,14 @@ class Learning:
         days = int(self.rt.settings.get("learning.habit_days"))
         if changes is None:
             changes = await collect(self.rt, days)
-        found = find_habits(
-            changes,
-            days=days,
-            min_days=int(self.rt.settings.get("learning.habit_min_days")),
-            window=int(self.rt.settings.get("learning.habit_window")),
+        found = await self.hass.async_add_executor_job(  # comparing every change with every other takes a while
+            partial(
+                find_habits,
+                changes,
+                days=days,
+                min_days=int(self.rt.settings.get("learning.habit_min_days")),
+                window=int(self.rt.settings.get("learning.habit_window")),
+            )
         )
         new = []
         existing = {p["key"] for p in self.proposals.values()}

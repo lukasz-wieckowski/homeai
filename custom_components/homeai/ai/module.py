@@ -70,6 +70,14 @@ class AIModule:
             unsub()
         for task in list(self._tasks):
             task.cancel()
+        for provider in self._providers.values():
+            close = getattr(getattr(provider, "client", None), "close", None)
+            if close is not None:
+                try:
+                    await close()  # the SDK's HTTP connections
+                except Exception:
+                    LOGGER.debug("Closing an AI client failed")
+        self._providers.clear()
         await self.ledger.async_save()
 
     # ——— Tiers ———

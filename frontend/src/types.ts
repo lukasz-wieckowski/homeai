@@ -12,6 +12,7 @@ export interface HassUser {
 
 export interface HomeAssistant {
   language: string;
+  config?: { time_zone?: string };
   user: HassUser;
   states: Record<string, HassEntity>;
   areas?: Record<string, { area_id: string; name: string; floor_id?: string | null }>;

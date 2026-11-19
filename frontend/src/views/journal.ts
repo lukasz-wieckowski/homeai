@@ -14,8 +14,12 @@ export class HomeAIJournal extends LitElement {
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
-    const res = await this.hass.callWS<{ entries: JournalEntry[] }>({ type: "homeai/journal/recent", limit: 200 });
-    this.entries = res.entries;
+    try {
+      const res = await this.hass.callWS<{ entries: JournalEntry[] }>({ type: "homeai/journal/recent", limit: 200 });
+      this.entries = res.entries;
+    } catch {
+      this.entries = [];
+    }
   }
 
   render() {

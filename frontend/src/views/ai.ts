@@ -1,5 +1,6 @@
 import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
+import { live } from "lit/directives/live.js";
 import { element } from "../define";
 import { t } from "../i18n";
 import { shared } from "../styles";
@@ -20,14 +21,21 @@ export class HomeAIAI extends LitElement {
   @state() private status?: AIStatus;
   @state() private prompts: Prompt[] = [];
   @state() private message = "";
+  // What is typed into each prompt, kept across re-renders (the view re-renders on every state change in the home).
+  @state() private drafts: Record<string, string> = {};
 
   static styles = shared;
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
     if (!this.hass.user.is_admin) return;
-    this.status = await this.hass.callWS<AIStatus>({ type: "homeai/ai/status" });
-    await this.loadPrompts();
+    try {
+      this.status = await this.hass.callWS<AIStatus>({ type: "homeai/ai/status" });
+      await this.loadPrompts();
+    } catch (err: any) {
+      this.status = { enabled: false };
+      this.message = err?.message ?? String(err);
+    }
   }
 
   private async loadPrompts(): Promise<void> {
@@ -38,6 +46,8 @@ export class HomeAIAI extends LitElement {
     try {
       await this.hass.callWS({ type: "homeai/settings/set", key: p.key, value });
       this.message = `${t(this.hass.language, `prompt_${p.mission}`)}: ${t(this.hass.language, "saved")}`;
+      const { [p.mission]: _saved, ...rest } = this.drafts;
+      this.drafts = rest;
     } catch (err: any) {
       this.message = err?.message ?? String(err);
     }
@@ -47,16 +57,18 @@ export class HomeAIAI extends LitElement {
   private async restorePrompt(p: Prompt): Promise<void> {
     await this.hass.callWS({ type: "homeai/settings/reset", key: p.key });
     this.message = `${t(this.hass.language, `prompt_${p.mission}`)}: ${t(this.hass.language, "prompt_restored")}`;
+    const { [p.mission]: _restored, ...rest } = this.drafts;
+    this.drafts = rest;
     await this.loadPrompts();
   }
 
   private promptCard(p: Prompt) {
     const lang = this.hass.language;
-    let draft = p.custom || p.default;
+    const draft = this.drafts[p.mission] ?? (p.custom || p.default);
     return html`<details class="card"><summary class="row"><span class="title grow">${t(lang, `prompt_${p.mission}`)}</span>
         <span class="muted">${p.custom ? t(lang, "prompt_custom") : t(lang, "prompt_default")}</span></summary>
       <p class="muted">${t(lang, "prompt_hint")}</p>
-      <textarea style="min-height: 240px" .value=${draft} @input=${(e: Event) => (draft = (e.target as HTMLTextAreaElement).value)}></textarea>
+      <textarea style="min-height: 240px" .value=${live(draft)} @input=${(e: Event) => (this.drafts = { ...this.drafts, [p.mission]: (e.target as HTMLTextAreaElement).value })}></textarea>
       <div class="row" style="margin-top: 8px">
         <button class="primary" @click=${() => this.savePrompt(p, draft.trim() === p.default.trim() ? "" : draft)}>${t(lang, "save")}</button>
         ${p.custom ? html`<button @click=${() => this.restorePrompt(p)}>${t(lang, "prompt_restore")}</button>` : nothing}

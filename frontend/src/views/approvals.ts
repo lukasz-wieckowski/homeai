@@ -17,17 +17,24 @@ export class HomeAIApprovals extends LitElement {
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
-    this.unsub = await this.hass.connection.subscribeMessage<{ pending: Approval[] }>(
-      (msg) => (this.pending = msg.pending),
-      { type: "homeai/approvals/subscribe" },
-    );
-    const list = await this.hass.callWS<{ recent: Approval[] }>({ type: "homeai/approvals/list" });
-    this.recent = list.recent.filter((a) => a.status !== "pending");
+    try {
+      const unsub = await this.hass.connection.subscribeMessage<{ pending: Approval[] }>(
+        (msg) => (this.pending = msg.pending),
+        { type: "homeai/approvals/subscribe" },
+      );
+      if (!this.isConnected) return unsub(); // the tab was left while subscribing
+      this.unsub = unsub;
+      const list = await this.hass.callWS<{ recent: Approval[] }>({ type: "homeai/approvals/list" });
+      this.recent = list.recent.filter((a) => a.status !== "pending");
+    } catch (err: any) {
+      this.error = err?.message ?? String(err);
+    }
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unsub?.();
+    this.unsub = undefined;
   }
 
   private async decide(verb: "approve" | "deny", a: Approval): Promise<void> {

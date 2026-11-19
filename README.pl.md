@@ -148,7 +148,7 @@ Twoje reakcje:
 | **Wiem** | Wiesz o sprawie. Drabina powiadomień przestaje eskalować. |
 | **Zajmę się** | Bierzesz sprawę. Inni przestają dostawać powiadomienia, naprawy się zatrzymują. |
 | **Wycisz** | Cisza na jakiś czas (ustawienie *Wycisz na*); wraca, jeśli sprawa trwa. |
-| **To nie problem** | Odrzucasz sprawę. Jej sygnały są wyciszone na kilka dni, a HomeAI uczy się, że to u Ciebie normalne. |
+| **To nie problem** | Odrzucasz sprawę. Jej sygnały są wyciszone na kilka dni, a HomeAI uczy się, że to u Ciebie normalne. Alarm bezpieczeństwa (dym, gaz, woda) milczy tylko do końca tego alarmu. |
 
 Sprawa rozwiązuje się sama, gdy jej sygnały znikną; ostatnio rozwiązane są na dole listy.
 

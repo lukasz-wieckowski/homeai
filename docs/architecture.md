@@ -44,7 +44,10 @@ Signals with the same root form one situation. A signal that suppresses tags (in
 offline → `via:<hub>`) pulls the signals it explains into its own situation. A new situation waits a minimum
 time per category (no wait for safety) and nothing opens during the startup grace period. When its signals
 are gone it waits before resolving and reopens if they come back. People can acknowledge, take, snooze or
-dismiss (“not a problem”, which mutes the signals for some days and teaches calibration).
+dismiss (“not a problem”, which mutes the signals for some days and teaches calibration; a safety alarm is
+silent only while that alarm lasts). “Got it” and snooze cover what the person saw: when another signal joins the
+situation or it gets worse, people are told again. A leak, smoke, gas or CO sensor that stops answering while it
+alarms keeps its alarm for an hour; only an explicit *off* ends it at once.
 
 Processors run on every lifecycle event in order: repair, triage, notifications; then entities, the bus event
 `homeai_situation` and listeners (AI, arbiter).

@@ -145,7 +145,7 @@ Your reactions:
 | **Got it** | You know about it. The notification ladder stops escalating. |
 | **I'll handle it** | You take it. Others stop getting notifications and repairs stop. |
 | **Snooze** | Quiet for a while (setting *Snooze for*); it comes back if it is still open. |
-| **Not a problem** | Dismiss it. Its signals are muted for some days and HomeAI learns that this is normal for your home. |
+| **Not a problem** | Dismiss it. Its signals are muted for some days and HomeAI learns that this is normal for your home. A safety alarm (smoke, gas, water) is silent only until that alarm ends. |
 
 A situation resolves by itself when its signals are gone; recently resolved ones are listed at the bottom.
 

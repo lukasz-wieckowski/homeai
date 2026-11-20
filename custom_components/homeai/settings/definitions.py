@@ -399,7 +399,10 @@ PLAYBOOK_KEYS = (
     "action",
 )
 RISK_OVERRIDES = ("auto", "R0", "R1", "R2", "R3", "R4", "R5", "R6")
-MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule")
+MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule", "heating")
+# HomeAI's own heating overrides (a while of eco, comfort or away on a thermostat, a valve limit at a desk) run by
+# themselves: they end on their own and a person's change wins. A new weekly schedule stays configuration (R4).
+ACTOR_DEFAULTS = {("heating", 2): "act"}
 
 
 def _policy() -> list[Setting]:
@@ -454,7 +457,7 @@ def _policy() -> list[Setting]:
                 Setting(
                     f"policy.actor_{actor}_r{n}",
                     T.SELECT,
-                    "inherit",
+                    ACTOR_DEFAULTS.get((actor, n), "inherit"),
                     s,
                     options=options,
                     advanced=True,

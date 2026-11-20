@@ -734,7 +734,11 @@
               "policy_actor_schedule_r1": "Plan: komfort (R1)",
               "policy_actor_schedule_r2": "Plan: urządzenia (R2)",
               "policy_actor_schedule_r3": "Plan: system (R3)",
-              "policy_actor_schedule_r4": "Plan: konfiguracja (R4)"
+              "policy_actor_schedule_r4": "Plan: konfiguracja (R4)",
+              "policy_actor_heating_r1": "Nadpisania ogrzewania: komfort (R1)",
+              "policy_actor_heating_r2": "Nadpisania ogrzewania: urządzenia (R2)",
+              "policy_actor_heating_r3": "Nadpisania ogrzewania: system (R3)",
+              "policy_actor_heating_r4": "Nadpisania ogrzewania: konfiguracja (R4)"
             },
             "data_description": {
               "policy_repairs_per_day": "Najwięcej automatycznych napraw systemu (R3) na dzień; więcej wymaga administratora.",
@@ -756,7 +760,11 @@
               "policy_actor_schedule_r1": "Poziom dla: Plan, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
               "policy_actor_schedule_r2": "Poziom dla: Plan, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
               "policy_actor_schedule_r3": "Poziom dla: Plan, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
-              "policy_actor_schedule_r4": "Poziom dla: Plan, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa."
+              "policy_actor_schedule_r4": "Poziom dla: Plan, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_heating_r1": "Poziom dla: Nadpisania ogrzewania, przy akcjach klasy komfort (R1); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_heating_r2": "Poziom dla: Nadpisania ogrzewania, przy akcjach klasy urządzenia (R2); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_heating_r3": "Poziom dla: Nadpisania ogrzewania, przy akcjach klasy system (R3); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa.",
+              "policy_actor_heating_r4": "Poziom dla: Nadpisania ogrzewania, przy akcjach klasy konfiguracja (R4); „Jak dla klasy” używa poziomu klasy. Suwak autonomii nadal działa."
             }
           }
         }
@@ -1888,6 +1896,44 @@
         "ai": "AI",
         "prompts": "Prompty AI",
         "learning": "Uczenie"
+      }
+    },
+    "policy_actor_heating_r1": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_heating_r2": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_heating_r3": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj",
+        "act_tell": "Działaj i informuj",
+        "act": "Działaj"
+      }
+    },
+    "policy_actor_heating_r4": {
+      "options": {
+        "inherit": "Jak dla klasy",
+        "never": "Nigdy",
+        "observe": "Tylko obserwuj",
+        "propose": "Proponuj i pytaj"
       }
     }
   },

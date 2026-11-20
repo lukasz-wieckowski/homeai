@@ -520,8 +520,10 @@ thermostat keeps its own weekly schedule; HomeAI never has a heating plan of its
   | someone active in a room (an entity labelled *HomeAI: activity*, e.g. a desk's power above 20 W) | that room | `comfort`, or a lower valve limit |
 
   Each override goes to the thermostat with `source: homeai` and a reason, through the policy as a device action
-  (R2): during the observation period HomeAI only notes it, and with the default level *propose and ask* residents
-  approve it on their phones. Calendar events are sent a few hours ahead so the room is warm in time. When the reason
+  (R2) of its own actor, *Heating overrides*: HomeAI sets it by itself (setting *Heating overrides: devices (R2)*,
+  default *Act*), because it runs out on its own and a person's change on the thermostat wins. During the
+  observation period HomeAI only notes it; a home that wants to approve each override sets that level to *Propose
+  and ask*. Calendar events are sent a few hours ahead so the room is warm in time. When the reason
   is gone (the trip was cancelled, someone came home) HomeAI removes its override; when a person removes it on the
   thermostat, HomeAI does not set it again for that reason.
 - **Schedule changes, only proposed.** When people keep warming up by hand before a block (or going to sleep earlier)
@@ -618,7 +620,7 @@ clock or on any notify entity (a TV, a tablet, a display).
 |---|---|---|---|
 | R0 read | states, history, logs | yes | yes |
 | R1 comfort | lights, scenes, fans, media, messages | act and tell (after the observation period) | yes |
-| R2 devices | switches, covers, heating targets and overrides, vacuum | propose and ask | yes, or confirm (setting) |
+| R2 devices | switches, covers, heating targets and overrides, vacuum | propose and ask; HomeAI's own heating overrides act | yes, or confirm (setting) |
 | R3 system | reload an integration, restart an add-on or a bridge, retry a backup | only from repair playbooks, within a daily limit (after the observation period) | administrators |
 | R4 configuration | automations, scripts, scenes, helpers, dashboards, a thermostat's weekly schedule | propose; an administrator approves | administrators, with confirmation |
 | R5 security | locks, alarm panels, garage doors and gates, cameras | never, except protective actions | with confirmation |

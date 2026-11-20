@@ -280,11 +280,51 @@ async def test_observation_period_only_notes(hass: HomeAssistant, freezer: Froze
     assert {r["status"] for r in module.records.values()} == {"applied"}
 
 
+async def test_heating_overrides_run_by_themselves_by_default(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """HomeAI sets its heating overrides itself (they end on their own and a person's change wins), even where other
+    device actions are only proposed; nobody is asked and the thermostat gets the preset."""
+    freezer.move_to(NOW)
+    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose"})
+    module, approvals = rt.module("thermostats"), rt.module("approvals")
+    assert rt.settings.get("policy.actor_heating_r2") == "act"
+    rt.module("presence_exceptions").save({"kind": "guests", "start": "2026-11-18T08:00:00", "end": "2026-11-18T23:00"})
+    await module.reconcile()
+    await hass.async_block_till_done()
+    assert approvals.pending() == []
+    assert preset_calls(heat, "climate.living") == ["comfort"]
+    assert {r["status"] for r in module.records.values()} == {"applied"}
+    # a new weekly schedule is still configuration: never the heating actor's own decision
+    policy = rt.module("policy")
+    from custom_components.homeai.actions.executor import ActionRequest
+
+    weekly = ActionRequest("fake_heat", "set_schedule", {"weekly": {}}, entity_ids=["climate.living"], actor="heating")
+    assert (await policy.decide(weekly)).verdict.name != "ALLOW"
+
+
+async def test_waiting_requests_run_once_the_policy_allows(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    """Requests asked under an older policy do not wait for someone once HomeAI may set overrides itself."""
+    freezer.move_to(NOW)
+    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose", "policy.actor_heating_r2": "propose"})
+    module, approvals = rt.module("thermostats"), rt.module("approvals")
+    rt.module("presence_exceptions").save({"kind": "guests", "start": "2026-11-18T08:00:00", "end": "2026-11-18T23:00"})
+    await module.reconcile()
+    [item] = approvals.pending()
+    rt.settings.set("policy.actor_heating_r2", "act", user="test", confirmed=True)
+    await module.reconcile()
+    await hass.async_block_till_done()
+    assert approvals.pending() == [] and approvals.items[item["id"]]["status"] == "withdrawn"
+    assert preset_calls(heat, "climate.living") == ["comfort"]
+    assert {r["status"] for r in module.records.values()} == {"applied"}
+
+
 async def test_proposed_overrides_wait_for_residents(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, hass_admin_user
 ) -> None:
     freezer.move_to(NOW)
-    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose"})
+    # a home that wants to be asked about HomeAI's heating overrides says so for the heating actor
+    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose", "policy.actor_heating_r2": "propose"})
     module, approvals = rt.module("thermostats"), rt.module("approvals")
     exceptions = rt.module("presence_exceptions")
     exceptions.save({"kind": "guests", "start": "2026-11-18T08:00:00", "end": "2026-11-18T23:00"})
@@ -321,7 +361,7 @@ async def test_pending_request_is_withdrawn_when_the_reason_goes(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
     freezer.move_to(NOW)
-    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose"})
+    rt, heat = await thermostats_rt(hass, {"policy.autonomy_r2": "propose", "policy.actor_heating_r2": "propose"})
     module, approvals = rt.module("thermostats"), rt.module("approvals")
     item = rt.module("presence_exceptions").save(
         {"kind": "guests", "start": "2026-11-18T08:00:00", "end": "2026-11-18T23:00"}
@@ -674,7 +714,13 @@ async def test_observation_asks_nobody(hass: HomeAssistant, freezer: FrozenDateT
     """homeai#18: with the default levels (R2 propose) the observation period notes overrides, it does not ask."""
     freezer.move_to(NOW)
     rt, heat = await thermostats_rt(
-        hass, {"policy.observation_days": 14, "policy.autonomy_r2": "propose", "heating.nobody_home_minutes": 30}
+        hass,
+        {
+            "policy.observation_days": 14,
+            "policy.autonomy_r2": "propose",
+            "policy.actor_heating_r2": "propose",
+            "heating.nobody_home_minutes": 30,
+        },
     )
     module, approvals = rt.module("thermostats"), rt.module("approvals")
     hass.states.async_set("person.anna", "not_home", {"friendly_name": "Anna"})

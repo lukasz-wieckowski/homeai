@@ -28,8 +28,9 @@ from homeassistant.util import dt as dt_util
 
 from .risk import Risk, carried_entities, classify, is_protective
 
-ACTORS = ("person", "homeai", "ai", "repair", "schedule")
-MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule")  # actors with their own row in the actor × class matrix
+ACTORS = ("person", "homeai", "ai", "repair", "schedule", "heating")
+# actors with their own row in the actor × class matrix
+MATRIX_ACTORS = ("homeai", "ai", "repair", "schedule", "heating")
 LEVELS = ("never", "observe", "propose", "act_tell", "act")
 
 
@@ -185,7 +186,7 @@ class Policy:
             return Decision(Verdict.ALLOW, risk, "approved", tell=True)
         if risk == Risk.R0:
             return Decision(Verdict.ALLOW, risk, "read")
-        if request.follow_up and request.actor == "homeai" and risk <= Risk.R2:
+        if request.follow_up and request.actor in ("homeai", "heating") and risk <= Risk.R2:
             return Decision(Verdict.ALLOW, risk, "follow_up")
         if is_protective(request.domain, request.service, request.entity_ids, world) and self.rt.settings.get(
             "policy.protective_actions"

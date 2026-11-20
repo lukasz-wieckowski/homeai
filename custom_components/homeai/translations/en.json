@@ -734,7 +734,11 @@
               "policy_actor_schedule_r1": "The plan: comfort (R1)",
               "policy_actor_schedule_r2": "The plan: devices (R2)",
               "policy_actor_schedule_r3": "The plan: system (R3)",
-              "policy_actor_schedule_r4": "The plan: configuration (R4)"
+              "policy_actor_schedule_r4": "The plan: configuration (R4)",
+              "policy_actor_heating_r1": "Heating overrides: comfort (R1)",
+              "policy_actor_heating_r2": "Heating overrides: devices (R2)",
+              "policy_actor_heating_r3": "Heating overrides: system (R3)",
+              "policy_actor_heating_r4": "Heating overrides: configuration (R4)"
             },
             "data_description": {
               "policy_repairs_per_day": "Most automatic system repairs (R3) per day; more need an administrator.",
@@ -756,7 +760,11 @@
               "policy_actor_schedule_r1": "Level for The plan with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
               "policy_actor_schedule_r2": "Level for The plan with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
               "policy_actor_schedule_r3": "Level for The plan with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
-              "policy_actor_schedule_r4": "Level for The plan with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies."
+              "policy_actor_schedule_r4": "Level for The plan with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_heating_r1": "Level for Heating overrides with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_heating_r2": "Level for Heating overrides with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_heating_r3": "Level for Heating overrides with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+              "policy_actor_heating_r4": "Level for Heating overrides with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies."
             }
           }
         }
@@ -1888,6 +1896,44 @@
         "ai": "AI",
         "prompts": "AI prompts",
         "learning": "Learning"
+      }
+    },
+    "policy_actor_heating_r1": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_heating_r2": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_heating_r3": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask",
+        "act_tell": "Act and tell",
+        "act": "Act"
+      }
+    },
+    "policy_actor_heating_r4": {
+      "options": {
+        "inherit": "As the class",
+        "never": "Never",
+        "observe": "Only observe",
+        "propose": "Propose and ask"
       }
     }
   },

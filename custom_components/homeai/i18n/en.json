@@ -211,6 +211,36 @@
       "observe": "Only observe",
       "propose": "Propose and ask"
     },
+    "policy.actor_heating_r1": {
+      "inherit": "As the class",
+      "never": "Never",
+      "observe": "Only observe",
+      "propose": "Propose and ask",
+      "act_tell": "Act and tell",
+      "act": "Act"
+    },
+    "policy.actor_heating_r2": {
+      "inherit": "As the class",
+      "never": "Never",
+      "observe": "Only observe",
+      "propose": "Propose and ask",
+      "act_tell": "Act and tell",
+      "act": "Act"
+    },
+    "policy.actor_heating_r3": {
+      "inherit": "As the class",
+      "never": "Never",
+      "observe": "Only observe",
+      "propose": "Propose and ask",
+      "act_tell": "Act and tell",
+      "act": "Act"
+    },
+    "policy.actor_heating_r4": {
+      "inherit": "As the class",
+      "never": "Never",
+      "observe": "Only observe",
+      "propose": "Propose and ask"
+    },
     "policy.actor_homeai_r1": {
       "inherit": "As the class",
       "never": "Never",
@@ -1324,6 +1354,22 @@
     "policy.actor_ai_r4": {
       "description": "Level for AI with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
       "label": "AI: configuration (R4)"
+    },
+    "policy.actor_heating_r1": {
+      "description": "Level for Heating overrides with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+      "label": "Heating overrides: comfort (R1)"
+    },
+    "policy.actor_heating_r2": {
+      "description": "Level for Heating overrides with devices (R2) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+      "label": "Heating overrides: devices (R2)"
+    },
+    "policy.actor_heating_r3": {
+      "description": "Level for Heating overrides with system (R3) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+      "label": "Heating overrides: system (R3)"
+    },
+    "policy.actor_heating_r4": {
+      "description": "Level for Heating overrides with configuration (R4) actions; “As the class” uses the class's level. The autonomy slider still applies.",
+      "label": "Heating overrides: configuration (R4)"
     },
     "policy.actor_homeai_r1": {
       "description": "Level for HomeAI's own rules with comfort (R1) actions; “As the class” uses the class's level. The autonomy slider still applies.",

@@ -524,8 +524,10 @@ Heat Zones. Termostat ma własny harmonogram tygodniowy; HomeAI nigdy nie ma wł
   | ktoś aktywny w pokoju (encja z etykietą *HomeAI: activity*, np. moc przy biurku powyżej 20 W) | ten pokój | `comfort` albo niższy limit zaworu |
 
   Każde nadpisanie trafia do termostatu ze `source: homeai` i powodem, przez politykę jako działanie na urządzeniu
-  (R2): w okresie obserwacji HomeAI tylko je zapisuje, a przy domyślnym poziomie *Zaproponuj i zapytaj* domownicy
-  zatwierdzają je na telefonach. Wydarzenia z kalendarza idą kilka godzin wcześniej, żeby pokój zdążył się nagrzać.
+  (R2) osobnego aktora, *Nadpisania ogrzewania*: HomeAI ustawia je samo (ustawienie *Nadpisania ogrzewania:
+  urządzenia (R2)*, domyślnie *Działaj*), bo kończą się same, a zmiana człowieka na termostacie wygrywa. W okresie
+  obserwacji HomeAI tylko je zapisuje; dom, który chce zatwierdzać każde nadpisanie, ustawia ten poziom na
+  *Zaproponuj i zapytaj*. Wydarzenia z kalendarza idą kilka godzin wcześniej, żeby pokój zdążył się nagrzać.
   Gdy powód znika (wyjazd odwołany, ktoś wrócił), HomeAI zdejmuje swoje nadpisanie; gdy zdejmie je człowiek na
   termostacie, HomeAI nie ustawi go ponownie z tego powodu.
 - **Zmiany harmonogramu tylko jako propozycje.** Gdy ludzie stale grzeją ręcznie przed blokiem (albo wcześniej
@@ -622,7 +624,7 @@ AWTRIX albo na dowolnej encji powiadomień (telewizor, tablet, wyświetlacz).
 |---|---|---|---|
 | R0 odczyt | stany, historia, logi | tak | tak |
 | R1 komfort | światła, sceny, wentylatory, media, wiadomości | działa i informuje (po okresie obserwacji) | tak |
-| R2 urządzenia | przełączniki, rolety, temperatura i nadpisania ogrzewania, odkurzacz | proponuje i pyta | tak albo z potwierdzeniem (ustawienie) |
+| R2 urządzenia | przełączniki, rolety, temperatura i nadpisania ogrzewania, odkurzacz | proponuje i pyta; własne nadpisania ogrzewania HomeAI robi sam | tak albo z potwierdzeniem (ustawienie) |
 | R3 system | przeładowanie integracji, restart dodatku lub mostka, ponowienie kopii | tylko ze scenariuszy napraw, w dziennym limicie (po okresie obserwacji) | administratorzy |
 | R4 konfiguracja | automatyzacje, skrypty, sceny, pomocnicy, pulpity, harmonogram tygodniowy termostatu | proponuje; zatwierdza administrator | administratorzy, z potwierdzeniem |
 | R5 ochrona | zamki, alarmy, bramy i drzwi garażowe, kamery | nigdy, poza akcjami ochronnymi | z potwierdzeniem |

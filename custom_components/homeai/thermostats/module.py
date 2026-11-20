@@ -347,7 +347,7 @@ class Thermostats:
             "add_override",
             data,
             entity_ids=[intent.entity_id],
-            actor="homeai",
+            actor="heating",
             reason=intent.reason,
             follow_up=follow_up,
         )
@@ -390,7 +390,8 @@ class Thermostats:
             if retry is not None and retry > now:
                 continue
             if status == "pending":
-                if not self._same(record, intent, now) and not intent.rolling:
+                # asked about other times, or the policy now lets HomeAI do it itself: stop asking and act
+                if (not self._same(record, intent, now) and not intent.rolling) or await self._allowed(intent, now):
                     await self._withdraw(record)
                     await self._start(intent, now)
             elif status in ("observed", "denied"):
@@ -458,6 +459,14 @@ class Thermostats:
         )
         self.records[intent.override_id] = record
 
+    async def _allowed(self, intent: Intent, now: datetime) -> bool:
+        """Whether the policy would let this override run now without anyone's approval."""
+        policy = self.rt.module("policy")
+        if policy is None:
+            return False
+        decision = await policy.decide(self._request(intent, now))
+        return decision.verdict == "allow"
+
     async def _withdraw(self, record: dict[str, Any]) -> None:
         approvals = self.rt.module("approvals")
         if approvals is not None and record.get("approval_id"):
@@ -486,7 +495,7 @@ class Thermostats:
                         "remove_override",
                         {"override_id": oid},
                         entity_ids=[t.entity_id],
-                        actor="homeai",
+                        actor="heating",
                         reason=self.rt.text("heating|reason_gone", reason=record.get("reason") or ""),
                         follow_up=True,
                     )
@@ -516,7 +525,7 @@ class Thermostats:
                             "set_value",
                             {"value": previous},
                             entity_ids=[entity_id],
-                            actor="homeai",
+                            actor="heating",
                             reason=self.rt.text("heating|reason_gone", reason=record.get("reason") or ""),
                             follow_up=True,
                         )
@@ -539,7 +548,7 @@ class Thermostats:
                     "set_value",
                     {"value": want["value"]},
                     entity_ids=[entity_id],
-                    actor="homeai",
+                    actor="heating",
                     reason=want["reason"],
                     follow_up=status == "approved",
                 )
@@ -616,7 +625,7 @@ class Thermostats:
             "add_override",
             {"preset_mode": record.get("preset")},
             entity_ids=[t.entity_id],
-            actor="homeai",
+            actor="heating",
         )
 
     # ——— Manual changes and what presets mean ———

@@ -3,6 +3,16 @@
 All notable changes to HomeAI are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.1]
+
+### Fixed
+- **HomeAI's heating overrides run by themselves**, as designed: an override for a while (trip, guests, working
+  from home, an empty home, someone at the desk) and a valve limit at a desk now go through the policy as their own
+  actor, *Heating overrides*, whose devices level (`policy.actor_heating_r2`) defaults to *Act*. Before, they used
+  HomeAI's general level for devices (*Propose and ask*), so every override waited for a resident's approval. Other
+  device actions still ask; a new weekly schedule is still configuration (R4) for an administrator; the observation
+  period still only notes. Requests already waiting are withdrawn and carried out once the policy allows them.
+
 ## [1.7.0]
 
 Managing HomeAI moves to the places Home Assistant users already know; the *Manage HomeAI* panel is gone.
